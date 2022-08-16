@@ -17,7 +17,7 @@
 package github_ethereum_go_ethereum
 
 import (
-	"aurora-relayer-common/log"
+	"aurora-relayer-go-common/log"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/jinzhu/copier"
 	"github.com/spf13/viper"

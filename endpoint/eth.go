@@ -1,7 +1,7 @@
 package endpoint
 
 import (
-	"aurora-relayer-common/utils"
+	"aurora-relayer-go-common/utils"
 	"context"
 	"fmt"
 )

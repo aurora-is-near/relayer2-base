@@ -1,7 +1,7 @@
 package db
 
 import (
-	"aurora-relayer-common/utils"
+	"aurora-relayer-go-common/utils"
 )
 
 type Handler interface {

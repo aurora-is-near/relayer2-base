@@ -1,4 +1,4 @@
-module aurora-relayer-common
+module aurora-relayer-go-common
 
 go 1.18
 

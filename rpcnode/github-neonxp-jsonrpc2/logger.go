@@ -1,6 +1,6 @@
 package github_neonxp_jsonrpc2
 
-import "aurora-relayer-common/log"
+import "aurora-relayer-go-common/log"
 
 type Logger struct {
 	*log.Log

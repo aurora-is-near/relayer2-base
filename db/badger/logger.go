@@ -1,7 +1,7 @@
 package badger
 
 import (
-	"aurora-relayer-common/log"
+	"aurora-relayer-go-common/log"
 	"fmt"
 )
 

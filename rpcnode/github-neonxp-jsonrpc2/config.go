@@ -1,7 +1,7 @@
 package github_neonxp_jsonrpc2
 
 import (
-	"aurora-relayer-common/log"
+	"aurora-relayer-go-common/log"
 	"go.neonxp.dev/jsonrpc2/rpc"
 )
 
