@@ -33,6 +33,7 @@ func bind(_ *cobra.Command) error {
 	viper.AddConfigPath("/home/altug/repo/new-relayer-2/aurora-relayer-go")
 	viper.SetEnvPrefix(envPrefix)
 	viper.AutomaticEnv()
+	viper.WatchConfig()
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {

@@ -201,7 +201,10 @@ func (e *Eth) GetTransactionByBlockNumberAndIndex(_ context.Context, number, ind
 	return tx.ToResponse(), nil
 }
 
-func (e *Eth) GetLogs(addr utils.Address, bn utils.Uint256, topic ...[]string) (*utils.Log, error) {
+func (e *Eth) GetLogs(_ context.Context, addr utils.Address, bn utils.Uint256, topic ...[]string) (*utils.Log, error) {
+	if err := e.IsEndpointAllowed("eth_getLogs"); err != nil {
+		return nil, err
+	}
 	// TODO implement
 	return nil, nil
 }

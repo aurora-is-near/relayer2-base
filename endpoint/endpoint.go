@@ -4,6 +4,8 @@ import (
 	"aurora-relayer-go-common/db"
 	"aurora-relayer-go-common/log"
 	"aurora-relayer-go-common/utils"
+
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 )
 
@@ -15,6 +17,7 @@ type Endpoint struct {
 	DbHandler         *db.Handler
 	Logger            *log.Log
 	disabledEndpoints map[string]bool
+	IsEndpointAllowed func(name string) error
 }
 
 func New(dbh *db.Handler) *Endpoint {
@@ -31,22 +34,55 @@ func New(dbh *db.Handler) *Endpoint {
 				"falling back to defaults", configPath, viper.ConfigFileUsed())
 		}
 	}
-
-	de := make(map[string]bool, 0)
-	for _, e := range conf.DisabledEndpoints {
-		de[e] = true
-	}
-
-	return &Endpoint{
+	ep := &Endpoint{
 		DbHandler:         dbh,
 		Logger:            logger,
-		disabledEndpoints: de,
+		disabledEndpoints: setDisabledEndpoints(conf),
 	}
+	ep.IsEndpointAllowed = func(name string) error {
+		return isEndpointAllowed(name, ep)
+	}
+
+	viper.OnConfigChange(func(e fsnotify.Event) {
+		handleConfigChange(ep)
+	})
+	return ep
 }
 
-func (e *Endpoint) IsEndpointAllowed(name string) error {
-	if e.disabledEndpoints[name] {
+func isEndpointAllowed(name string, ep *Endpoint) error {
+	if ep.disabledEndpoints[name] {
 		return &utils.MethodNotFoundError{Method: name}
 	}
 	return nil
+}
+
+func handleConfigChange(e *Endpoint) error {
+	newConf := Config{}
+	sub := viper.Sub(configPath)
+	if sub != nil {
+		if err := sub.Unmarshal(&newConf); err != nil {
+			e.Logger.Warn().Err(err).Msgf("failed to parse new configuration [%s] from [%s], "+
+				"falling back to the old config", configPath, viper.ConfigFileUsed())
+			return err
+		}
+		if len(newConf.DisabledEndpoints) != len(e.disabledEndpoints) {
+			e.disabledEndpoints = setDisabledEndpoints(newConf)
+		} else {
+			for _, de := range newConf.DisabledEndpoints {
+				if !e.disabledEndpoints[de] && len(de) != 0 {
+					e.disabledEndpoints = setDisabledEndpoints(newConf)
+					break
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func setDisabledEndpoints(conf Config) map[string]bool {
+	de := make(map[string]bool, len(conf.DisabledEndpoints))
+	for _, e := range conf.DisabledEndpoints {
+		de[e] = true
+	}
+	return de
 }
