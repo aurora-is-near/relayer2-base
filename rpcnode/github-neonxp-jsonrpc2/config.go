@@ -6,18 +6,12 @@ import (
 )
 
 type Config struct {
-	EndpointConfig EndpointConfig `yaml:"endpoint"`
-	HTTPConfig     HTTPConfig     `yaml:"http"`
-	Logger         rpc.Logger
-}
-
-type EndpointConfig struct {
-	EnabledMethods []string `yaml:"methods"`
-	enabledMethods map[string]bool
+	HTTPConfig HTTPConfig // `yaml:"http"`
+	Logger     rpc.Logger // `yaml:"logger, omitempty"`
 }
 
 type HTTPConfig struct {
-	Port int16 `yaml:"port"`
+	Port int16 // `yaml:"port"`
 }
 
 func DefaultConfig() *Config {

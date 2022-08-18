@@ -37,3 +37,9 @@ func (e *TxNotFoundError) Error() string {
 	}
 	return "tx not found"
 }
+
+type GenericError struct{ Err error }
+
+func (e *GenericError) ErrorCode() int { return -32000 }
+
+func (e *GenericError) Error() string { return e.Err.Error() }

@@ -34,7 +34,8 @@ func New() (*JsonRpc2, error) {
 func NewWithConf(config *Config) (*JsonRpc2, error) {
 	n := rpc.New(
 		rpc.WithLogger(config.Logger),
-		rpc.WithTransport(&transport.HTTP{Bind: fmt.Sprintf("%d", config.HTTPConfig.Port)}),
+		rpc.WithTransport(&transport.HTTP{Bind: fmt.Sprintf("127.0.0.1:%d", config.HTTPConfig.Port)}),
+		rpc.WithMiddleware(DefaultParams()),
 	)
 	return &JsonRpc2{*n}, nil
 }

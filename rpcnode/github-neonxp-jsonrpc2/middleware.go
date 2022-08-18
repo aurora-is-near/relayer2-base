@@ -2,7 +2,6 @@ package github_neonxp_jsonrpc2
 
 import (
 	"context"
-
 	"go.neonxp.dev/jsonrpc2/rpc"
 )
 
