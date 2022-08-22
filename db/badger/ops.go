@@ -1,11 +1,12 @@
 package badger
 
 import (
+	"bytes"
 	"github.com/dgraph-io/badger/v3"
 	"github.com/fxamacker/cbor/v2"
 )
 
-func FetchFromDB[T any](db *badger.DB, key []byte) (*T, error) {
+func fetchFromDB[T any](db *badger.DB, key []byte) (*T, error) {
 	res := new(T)
 	err := db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
@@ -21,7 +22,7 @@ func FetchFromDB[T any](db *badger.DB, key []byte) (*T, error) {
 	return res, err
 }
 
-func FetchPrefixedFromDB[T any](db *badger.DB, prefix []byte) ([]T, error) {
+func fetchPrefixedFromDB[T any](db *badger.DB, prefix []byte) ([]T, error) {
 	results := make([]T, 0)
 	err := db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
@@ -44,7 +45,7 @@ func FetchPrefixedFromDB[T any](db *badger.DB, prefix []byte) ([]T, error) {
 	return results, err
 }
 
-func InsertToDB[T any](db *badger.DB, key []byte, val T) error {
+func insertToDB[T any](db *badger.DB, key []byte, val T) error {
 	b, err := cbor.Marshal(val)
 	if err != nil {
 		return err
@@ -53,4 +54,12 @@ func InsertToDB[T any](db *badger.DB, key []byte, val T) error {
 		e := badger.NewEntry(key, b)
 		return txn.SetEntry(e)
 	})
+}
+
+func concatBytes(pieces ...[]byte) []byte {
+	var buf bytes.Buffer
+	for _, piece := range pieces {
+		buf.Write(piece)
+	}
+	return buf.Bytes()
 }

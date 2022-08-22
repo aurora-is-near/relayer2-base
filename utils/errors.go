@@ -21,23 +21,6 @@ func (e *InvalidParamsError) ErrorCode() int { return -32602 }
 
 func (e *InvalidParamsError) Error() string { return e.Message }
 
-type TxNotFoundError struct {
-	Number Uint256
-	Hash   H256
-}
-
-func (e *TxNotFoundError) ErrorCode() int { return 1 }
-
-func (e *TxNotFoundError) Error() string {
-	if e.Number != "" {
-		return fmt.Sprintf("tx with number [%s] not found", e.Number)
-	}
-	if e.Hash != "" {
-		return fmt.Sprintf("tx with hash [%s] not found", e.Hash)
-	}
-	return "tx not found"
-}
-
 type GenericError struct{ Err error }
 
 func (e *GenericError) ErrorCode() int { return -32000 }

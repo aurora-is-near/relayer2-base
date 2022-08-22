@@ -26,7 +26,7 @@ type Config struct {
 }
 
 // New returns common library logger with default config
-// Common libary logger is a zerolog implementation
+// Common library logger is a zerolog implementation
 func New() *Log {
 	logConfig := DefaultConfig()
 	_ = viper.Sub("Log").Unmarshal(&logConfig)
@@ -34,7 +34,7 @@ func New() *Log {
 }
 
 // NewWithConf returns common library logger with the specified config
-// Common libary logger is a zerolog implementation
+// Common library logger is a zerolog implementation
 func NewWithConf(config Config) *Log {
 	l, err := zerolog.ParseLevel(config.Level)
 	if err != nil {
