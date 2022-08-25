@@ -6,10 +6,10 @@ import (
 )
 
 type Logger struct {
-	log *log.Log
+	log *log.Logger
 }
 
-func NewBadgerLogger(log *log.Log) Logger {
+func NewBadgerLogger(log *log.Logger) Logger {
 	return Logger{
 		log: log,
 	}

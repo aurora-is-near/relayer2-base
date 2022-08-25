@@ -39,19 +39,18 @@ func Preprocess[T any](name string, endpoint *Endpoint, handler func() (T, error
 
 type Endpoint struct {
 	DbHandler        *db.Handler
-	Logger           *log.Log
+	Logger           *log.Logger
 	WithPreprocessor func(Preprocessor)
 	Preprocessors    []Preprocessor
 }
 
-func New(dbh *db.Handler) *Endpoint {
+func New(dbh db.Handler) *Endpoint {
 	if dbh == nil {
 		panic("DB Handler should be initialized")
 	}
-	logger := log.New()
 	ep := Endpoint{
-		DbHandler:     dbh,
-		Logger:        logger,
+		DbHandler:     &dbh,
+		Logger:        log.Log(),
 		Preprocessors: []Preprocessor{},
 	}
 

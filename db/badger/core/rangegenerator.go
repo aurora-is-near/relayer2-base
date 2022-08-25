@@ -1,6 +1,7 @@
-package badger
+package core
 
 import (
+	"bytes"
 	"sync"
 )
 
@@ -75,4 +76,12 @@ func (rg *rangeGenerator) iterate(pos uint, pieces [][]byte) bool {
 	}
 
 	return true
+}
+
+func concatBytes(pieces ...[]byte) []byte {
+	var buf bytes.Buffer
+	for _, piece := range pieces {
+		buf.Write(piece)
+	}
+	return buf.Bytes()
 }

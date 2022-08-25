@@ -1,29 +1,29 @@
-package github_neonxp_jsonrpc2
+package nats
 
 import (
 	"aurora-relayer-go-common/log"
+	"github.com/nats-io/nats.go"
 	"github.com/spf13/viper"
-	"go.neonxp.dev/jsonrpc2/rpc"
 )
 
 const (
-	defaultHttpHost = "localhost" // Default host interface for the HTTP RPC server
-	defaultHttpPort = 8545        // Default TCP port for the HTTP RPC server
+	defaultBucket = "filter_bucket"
+	defaultUrl    = "nats://localhost:4222/"
 
-	configPath = "RpcNode.JsonRpc2"
+	configPath = "DB.NATS"
 )
 
 type Config struct {
-	HttpPort int16
-	HttpHost string
-	Logger   rpc.Logger // `yaml:"logger, omitempty"`
+	Bucket     string
+	NatsConfig nats.Options
 }
 
 func defaultConfig() *Config {
+	options := nats.GetDefaultOptions()
+	options.Url = defaultUrl
 	return &Config{
-		HttpPort: defaultHttpPort,
-		HttpHost: defaultHttpHost,
-		Logger:   NewNeonxpJsonRpc2Logger(log.Log()),
+		Bucket:     defaultBucket,
+		NatsConfig: options,
 	}
 }
 

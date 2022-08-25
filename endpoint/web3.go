@@ -18,24 +18,33 @@ func NewWeb3(endpoint *Endpoint) *Web3 {
 	return &Web3{endpoint}
 }
 
-func (ep *Web3) ClientVersion(_ context.Context) (string, error) {
+// ClientVersion returns client version
+//
+// 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
+// 	TODO: implement
+func (e *Web3) ClientVersion(_ context.Context) (string, error) {
 	return "Aurora Relayer", nil
 }
 
-func (ep *Web3) Sha3(_ context.Context, in string) (string, error) {
+// Sha3 returns Keccak-256 hash of the given data.
+//
+// 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
+// 	On failure, returns error code '-32000' with custom message.
+func (e *Web3) Sha3(_ context.Context, in string) (string, error) {
 	in = strings.TrimPrefix(in, "0x")
 	dec := make([]byte, hex.DecodedLen(len(in)))
 	_, err := hex.Decode(dec, []byte(in))
 	if err != nil {
-		ep.Logger.Err(err).Msgf("could hex decode [%s]", in)
-		return "", err
+		e.Logger.Err(err).Msgf("could hex decode [%s]", in)
+		return "", &utils.GenericError{Err: err}
 	}
 	hash := crypto.Keccak256(dec)
 	return "0x" + hex.EncodeToString(hash), nil
 }
 
 // A sample method to show the usage of single optional parameter
-func (ep *Web3) Sha31(_ context.Context, arg1 *string) (string, error) {
+// TODO: delete
+func (e *Web3) Sha31(_ context.Context, arg1 *string) (string, error) {
 
 	in := "123456"
 	if arg1 != nil {
@@ -45,7 +54,7 @@ func (ep *Web3) Sha31(_ context.Context, arg1 *string) (string, error) {
 	dec := make([]byte, hex.DecodedLen(len(in)))
 	_, err := hex.Decode(dec, []byte(in))
 	if err != nil {
-		ep.Logger.Err(err).Msgf("could hex decode [%s]", in)
+		e.Logger.Err(err).Msgf("could hex decode [%s]", in)
 		return "", err
 	}
 	hash := crypto.Keccak256(dec)
@@ -53,12 +62,14 @@ func (ep *Web3) Sha31(_ context.Context, arg1 *string) (string, error) {
 }
 
 // A sample method to show the usage of two mandatory arguments
-func (ep *Web3) GetBlockByNumber(_ context.Context, param1 string, param2 bool) (string, error) {
+// TODO: delete
+func (e *Web3) GetBlockByNumber(_ context.Context, param1 string, param2 bool) (string, error) {
 	return fmt.Sprintf("First param is %s, and Second param is %t", param1, param2), nil
 }
 
 // A sample method to show the usage of single optional parameter
-func (ep *Web3) GetBlockByNumber1(_ context.Context, param1 string, param2 *bool) (string, error) {
+// TODO: delete
+func (e *Web3) GetBlockByNumber1(_ context.Context, param1 string, param2 *bool) (string, error) {
 
 	block := param1
 	hydratedTxs := false
@@ -70,7 +81,8 @@ func (ep *Web3) GetBlockByNumber1(_ context.Context, param1 string, param2 *bool
 }
 
 // A sample method to show the usage of two optional parameters
-func (ep *Web3) GetBlockByNumber2(_ context.Context, param1, param2 *any) (string, error) {
+// TODO: delete
+func (e *Web3) GetBlockByNumber2(_ context.Context, param1, param2 *any) (string, error) {
 
 	block := "LATEST"
 	hydratedTxs := false

@@ -1,6 +1,8 @@
-package badger
+package core
 
-import "sync"
+import (
+	"sync"
+)
 
 type valueFetcher struct {
 	scan *Scan

@@ -20,6 +20,7 @@ import (
 	"aurora-relayer-go-common/log"
 	gel "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -95,7 +96,7 @@ type Config struct {
 	Logger gel.Logger `toml:",omitempty"`
 }
 
-// DefaultConfig is a helper to initialize Go-Ethereum RPC node with following defaults
+// defaultConfig is a helper to initialize Go-Ethereum RPC node with following defaults
 // HTTPHost: DefaultHost
 // HTTPPort: DefaultHTTPPort
 // HTTPPathPrefix: DefaultPathPrefix
@@ -108,7 +109,7 @@ type Config struct {
 // WSModules: ["net", "web3", "eth"]
 // WSPathPrefix: DefaultPathPrefix
 // WSOrigins: []
-func DefaultConfig() *Config {
+func defaultConfig() *Config {
 	return &Config{
 		HTTPHost:         DefaultHost,
 		HTTPPort:         DefaultHTTPPort,
@@ -122,6 +123,18 @@ func DefaultConfig() *Config {
 		WSHost:           DefaultHost,
 		WSModules:        []string{"net", "web3", "eth"},
 		WSOrigins:        []string{},
-		Logger:           NewGoEthLogger(log.New()),
+		Logger:           NewGoEthLogger(log.Log()),
 	}
+}
+
+func GetConfig() *Config {
+	config := defaultConfig()
+	sub := viper.Sub(configPath)
+	if sub != nil {
+		if err := sub.Unmarshal(&config); err != nil {
+			log.Log().Warn().Err(err).Msgf("failed to parse configuration [%s] from [%s], "+
+				"falling back to defaults", configPath, viper.ConfigFileUsed())
+		}
+	}
+	return config
 }

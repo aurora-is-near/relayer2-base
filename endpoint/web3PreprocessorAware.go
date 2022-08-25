@@ -18,7 +18,7 @@ func (e *Web3PreprocessorAware) ClientVersion(ctx context.Context) (string, erro
 	}, ctx)
 }
 
-func (e Web3PreprocessorAware) Sha3(ctx context.Context, in *string) (string, error) {
+func (e Web3PreprocessorAware) Sha3(ctx context.Context, in string) (string, error) {
 	return Preprocess("web3_sha3", e.Endpoint, func() (string, error) {
 		return e.Web3.Sha3(ctx, in)
 	}, ctx, in)

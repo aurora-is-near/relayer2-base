@@ -16,6 +16,15 @@ type Uinteger interface {
 	~uint | ~uint16 | ~uint32 | ~uint64
 }
 
+func ParseHexStringToAddress(s string) (*Address, error) {
+	var address common.Address
+	err := address.UnmarshalText([]byte(s))
+	if err != nil {
+		return nil, err
+	}
+	return &Address{address}, nil
+}
+
 func HexStringToAddress(s string) Address {
 	return Address{common.HexToAddress(s)}
 }

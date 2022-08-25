@@ -1,4 +1,4 @@
-package badger
+package core
 
 import (
 	"sync"
@@ -58,7 +58,7 @@ func (index *Index) StartScan(
 
 	s := &Scan{
 		index:             index,
-		opts:              opts.FillMissingFields(),
+		opts:              *opts,
 		txn:               txn,
 		originTablePrefix: originTablePrefix,
 		indexTablePrefix:  indexTablePrefix,

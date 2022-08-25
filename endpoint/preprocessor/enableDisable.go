@@ -16,7 +16,7 @@ func NewEnableDisable() endpoint.Preprocessor {
 
 	conf, err := readConfig()
 	if err != nil {
-		log.New().Warn().Err(err).Msgf("failed to parse configuration [%s] from [%s], "+
+		log.Log().Warn().Err(err).Msgf("failed to parse configuration [%s] from [%s], "+
 			"falling back to defaults", endpoint.ConfigPath, viper.ConfigFileUsed())
 	}
 
@@ -45,7 +45,7 @@ func handleConfigChange(e *EnableDisable) {
 
 	newConf, err := readConfig()
 	if err != nil {
-		log.New().Warn().Err(err).Msgf("failed to parse new configuration [%s] from [%s], "+
+		log.Log().Warn().Err(err).Msgf("failed to parse new configuration [%s] from [%s], "+
 			"falling back to the old config", endpoint.ConfigPath, viper.ConfigFileUsed())
 	}
 

@@ -19,7 +19,7 @@ func NewProxy() endpoint.Preprocessor {
 	sub := viper.Sub(configPathProxy)
 	if sub != nil {
 		if err := sub.Unmarshal(&conf); err != nil {
-			log.New().Warn().Err(err).Msgf("failed to parse configuration [%s] from [%s], "+
+			log.Log().Warn().Err(err).Msgf("failed to parse configuration [%s] from [%s], "+
 				"falling back to defaults", configPathProxy, viper.ConfigFileUsed())
 		}
 	}

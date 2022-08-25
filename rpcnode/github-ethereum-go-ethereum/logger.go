@@ -6,10 +6,10 @@ import (
 )
 
 type Logger struct {
-	log *log.Log
+	log *log.Logger
 }
 
-func NewGoEthLogger(log *log.Log) Logger {
+func NewGoEthLogger(log *log.Logger) Logger {
 	return Logger{
 		log: log,
 	}
@@ -17,7 +17,7 @@ func NewGoEthLogger(log *log.Log) Logger {
 
 func (l Logger) New(ctx ...interface{}) gel.Logger {
 	return Logger{
-		log: &log.Log{Logger: l.log.With().Fields(ctx).Logger()},
+		log: &log.Logger{Logger: l.log.With().Fields(ctx).Logger()},
 	}
 }
 

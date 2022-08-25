@@ -17,10 +17,8 @@
 package github_ethereum_go_ethereum
 
 import (
-	"aurora-relayer-go-common/log"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/jinzhu/copier"
-	"github.com/spf13/viper"
 )
 
 // GoEthereum is a container on which underlying go-ethereum services can be registered.
@@ -34,16 +32,7 @@ const (
 
 // New creates a new node with default config
 func New() (*GoEthereum, error) {
-	logger := log.New()
-	conf := DefaultConfig()
-	conf.Logger = NewGoEthLogger(logger)
-	sub := viper.Sub(configPath)
-	if sub != nil {
-		if err := sub.Unmarshal(&conf); err != nil {
-			logger.Warn().Err(err).Msgf("failed to parse configuration [%s] from [%s], "+
-				"falling back to defaults", configPath, viper.ConfigFileUsed())
-		}
-	}
+	conf := GetConfig()
 	return NewWithConf(conf)
 }
 
