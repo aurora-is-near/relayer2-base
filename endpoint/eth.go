@@ -19,31 +19,26 @@ func NewEth(endpoint *Endpoint) *Eth {
 }
 
 func (e *Eth) Accounts(_ context.Context) ([]string, error) {
-	if err := e.IsEndpointAllowed("eth_accounts"); err != nil {
-		return nil, err
-	}
 	// TODO implement
 	return nil, nil
 }
 
 func (e *Eth) Coinbase(_ context.Context) (*utils.Uint256, error) {
-	if err := e.IsEndpointAllowed("eth_coinbase"); err != nil {
-		return nil, err
-	}
 	return &hashrate, nil
 }
 
 func (e *Eth) ProtocolVersion(_ context.Context) (*utils.Uint256, error) {
-	if err := e.IsEndpointAllowed("eth_protocolVersion"); err != nil {
-		return nil, err
-	}
 	return &protocolVersion, nil
 }
 
+/*
+	Hashrate returns constant 0x0
+
+	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
+
+	On DB failure, returns error code '-32000' with custom message.
+*/
 func (e *Eth) Hashrate(_ context.Context) (string, error) {
-	if err := e.IsEndpointAllowed("eth_hashrate"); err != nil {
-		return "", err
-	}
 	return utils.IntToHex(0), nil
 }
 
@@ -53,9 +48,6 @@ func (e *Eth) Hashrate(_ context.Context) (string, error) {
 //
 // On DB failure, returns error code '-32000' with custom message.
 func (e *Eth) BlockNumber(_ context.Context) (*utils.Uint256, error) {
-	if err := e.IsEndpointAllowed("eth_blockNumber"); err != nil {
-		return nil, err
-	}
 	bn, err := (*e.DbHandler).BlockNumber()
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
@@ -73,9 +65,6 @@ func (e *Eth) BlockNumber(_ context.Context) (*utils.Uint256, error) {
 //
 // On missing or invalid param returns error code '-32602' with custom message.
 func (e *Eth) GetBlockByHash(_ context.Context, hash utils.H256, isFull bool) (*utils.BlockResponse, error) {
-	if err := e.IsEndpointAllowed("eth_getBlockByHash"); err != nil {
-		return nil, err
-	}
 	block, err := (*e.DbHandler).GetBlockByHash(hash)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
@@ -93,9 +82,6 @@ func (e *Eth) GetBlockByHash(_ context.Context, hash utils.H256, isFull bool) (*
 //
 // On missing or invalid param returns error code '-32602' with custom message.
 func (e *Eth) GetBlockByNumber(_ context.Context, number utils.Uint256, isFull bool) (*utils.BlockResponse, error) {
-	if err := e.IsEndpointAllowed("eth_getBlockByNumber"); err != nil {
-		return nil, err
-	}
 	block, err := (*e.DbHandler).GetBlockByNumber(number)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
@@ -111,9 +97,6 @@ func (e *Eth) GetBlockByNumber(_ context.Context, number utils.Uint256, isFull b
 //
 // On missing or invalid param returns error code '-32602' with custom message.
 func (e *Eth) GetBlockTransactionCountByHash(_ context.Context, hash utils.H256) (*utils.Uint256, error) {
-	if err := e.IsEndpointAllowed("eth_getBlockTransactionCountByHash"); err != nil {
-		return nil, err
-	}
 	cnt, err := (*e.DbHandler).GetBlockTransactionCountByHash(hash)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
@@ -130,9 +113,6 @@ func (e *Eth) GetBlockTransactionCountByHash(_ context.Context, hash utils.H256)
 //
 // On missing or invalid param returns error code '-32602' with custom message.
 func (e *Eth) GetBlockTransactionCountByNumber(_ context.Context, number utils.Uint256) (*utils.Uint256, error) {
-	if err := e.IsEndpointAllowed("eth_getBlockTransactionCountByNumber"); err != nil {
-		return nil, err
-	}
 	cnt, err := (*e.DbHandler).GetBlockTransactionCountByNumber(number)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
@@ -149,9 +129,6 @@ func (e *Eth) GetBlockTransactionCountByNumber(_ context.Context, number utils.U
 //
 // On missing or invalid param returns error code '-32602' with custom message.
 func (e *Eth) GetTransactionByHash(_ context.Context, hash utils.H256) (*utils.TransactionResponse, error) {
-	if err := e.IsEndpointAllowed("eth_getTransactionByHash"); err != nil {
-		return nil, err
-	}
 	tx, err := (*e.DbHandler).GetTransactionByHash(hash)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
@@ -165,9 +142,6 @@ func (e *Eth) GetTransactionByHash(_ context.Context, hash utils.H256) (*utils.T
 //
 // On DB failure or hash not found, returns error code '-32000' with custom message.
 func (e *Eth) GetTransactionByBlockHashAndIndex(_ context.Context, hash utils.H256, index utils.Uint256) (*utils.TransactionResponse, error) {
-	if err := e.IsEndpointAllowed("eth_getTransactionByBlockHashAndIndex"); err != nil {
-		return nil, err
-	}
 	idx := index.Int64()
 	tx, err := (*e.DbHandler).GetTransactionByBlockHashAndIndex(hash, idx)
 	if err != nil {
@@ -182,9 +156,6 @@ func (e *Eth) GetTransactionByBlockHashAndIndex(_ context.Context, hash utils.H2
 //
 // On DB failure or number not found, returns error code '-32000' with custom message.
 func (e *Eth) GetTransactionByBlockNumberAndIndex(_ context.Context, number, index utils.Uint256) (*utils.TransactionResponse, error) {
-	if err := e.IsEndpointAllowed("eth_getTransactionByBlockNumberAndIndex"); err != nil {
-		return nil, err
-	}
 	idx := index.Int64()
 	tx, err := (*e.DbHandler).GetTransactionByBlockNumberAndIndex(number, idx)
 	if err != nil {
@@ -199,9 +170,6 @@ func (e *Eth) GetTransactionByBlockNumberAndIndex(_ context.Context, number, ind
 //
 // On DB failure or number not found, returns error code '-32000' with custom message.
 func (e *Eth) GetLogs(_ context.Context, rawFilter utils.FilterOptions) (*[]utils.LogResponse, error) {
-	if err := e.IsEndpointAllowed("eth_getLogs"); err != nil {
-		return nil, err
-	}
 	filter, err := e.formatFilterOptions(&rawFilter)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
@@ -231,10 +199,6 @@ func (e *Eth) GetLogs(_ context.Context, rawFilter utils.FilterOptions) (*[]util
 //
 // On DB failure, returns error code '-32000' with custom message.
 func (e *Eth) NewFilter(_ context.Context, filterOptions utils.FilterOptions) (*utils.Uint256, error) {
-	if err := e.IsEndpointAllowed("eth_newFilter"); err != nil {
-		return nil, err
-	}
-
 	parsedFilter, err := e.formatFilterOptions(&filterOptions)
 	if err != nil {
 		return nil, &utils.InvalidParamsError{Message: err.Error()}
@@ -272,10 +236,6 @@ func (e *Eth) NewFilter(_ context.Context, filterOptions utils.FilterOptions) (*
 //
 // On DB failure, returns error code '-32000' with custom message.
 func (e *Eth) NewBlockFilter(_ context.Context) (*utils.Uint256, error) {
-	if err := e.IsEndpointAllowed("eth_newBlockFilter"); err != nil {
-		return nil, err
-	}
-
 	bn, err := (*e.DbHandler).BlockNumber()
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
@@ -308,9 +268,6 @@ func (e *Eth) UninstallFilter(_ context.Context, filterId utils.Uint256) (bool, 
 //
 // TODO comment
 func (e *Eth) GetFilterChanges(_ context.Context, filterId utils.Uint256) (*[]interface{}, error) {
-	if err := e.IsEndpointAllowed("eth_getFilterChanges"); err != nil {
-		return nil, err
-	}
 
 	bn, err := (*e.DbHandler).BlockNumber()
 	if err != nil {

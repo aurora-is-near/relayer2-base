@@ -13,6 +13,7 @@ type Uint256 struct{ V *big.Int }
 type H256 struct{ common.Hash }
 type Address struct{ common.Address }
 type Bytea []byte
+type TxnData string
 
 type Block struct {
 	ChainId          uint64        `cbor:"chain_id"`

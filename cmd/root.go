@@ -30,7 +30,7 @@ func bind(_ *cobra.Command) error {
 	viper.SetConfigName(defaultConfigName)
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
-	viper.AddConfigPath("/home/altug/repo/new-relayer-2/aurora-relayer-go")
+	viper.AddConfigPath("/home/altug/repo/aurora-relayer-go")
 	viper.SetEnvPrefix(envPrefix)
 	viper.AutomaticEnv()
 	viper.WatchConfig()
