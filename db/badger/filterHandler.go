@@ -27,6 +27,7 @@ func NewFilterHandler() (db.FilterHandler, error) {
 }
 
 func (h *FilterHandler) StoreFilter(id utils.Uint256, filter *utils.StoredFilter) error {
+	// TODO store with TTL
 	return insert(h.codec, filterByIdKey(id), filter)
 }
 

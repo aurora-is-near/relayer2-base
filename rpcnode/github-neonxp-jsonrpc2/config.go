@@ -3,7 +3,6 @@ package github_neonxp_jsonrpc2
 import (
 	"aurora-relayer-go-common/log"
 	"github.com/spf13/viper"
-	"go.neonxp.dev/jsonrpc2/rpc"
 )
 
 const (
@@ -16,14 +15,12 @@ const (
 type Config struct {
 	HttpPort int16
 	HttpHost string
-	Logger   rpc.Logger // `yaml:"logger, omitempty"`
 }
 
 func defaultConfig() *Config {
 	return &Config{
 		HttpPort: defaultHttpPort,
 		HttpHost: defaultHttpHost,
-		Logger:   NewNeonxpJsonRpc2Logger(log.Log()),
 	}
 }
 

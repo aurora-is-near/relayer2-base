@@ -1,6 +1,7 @@
 package github_neonxp_jsonrpc2
 
 import (
+	"aurora-relayer-go-common/log"
 	"context"
 	"fmt"
 	"go.neonxp.dev/jsonrpc2/rpc"
@@ -18,7 +19,7 @@ func New() (*JsonRpc2, error) {
 
 func NewWithConf(config *Config) (*JsonRpc2, error) {
 	n := rpc.New(
-		rpc.WithLogger(config.Logger),
+		rpc.WithLogger(NewNeonxpJsonRpc2Logger(log.Log())),
 		rpc.WithTransport(&transport.HTTP{Bind: fmt.Sprintf("%s:%d", config.HttpHost, config.HttpPort)}),
 		rpc.WithMiddleware(DefaultParams()),
 	)
