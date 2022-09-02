@@ -14,73 +14,6 @@ import (
 	"time"
 )
 
-func TestUint256UnmarshalJSON(t *testing.T) {
-	ttable := []struct {
-		data    string
-		want    utils.Uint256
-		wantErr string
-	}{
-		{"1", utils.IntToUint256(1), ""},
-		{"0x1", utils.IntToUint256(1), ""},
-		{"0x01", utils.IntToUint256(1), ""},
-		{"10", utils.IntToUint256(16), ""},
-		{"0x10", utils.IntToUint256(16), ""},
-		{"0x100", utils.IntToUint256(256), ""},
-		{"0xffff", utils.IntToUint256(65535), ""},
-		{"0xFFFF", utils.IntToUint256(65535), ""},
-		{"0x", utils.Uint256{}, "failed to parse"},
-		{"0xG", utils.Uint256{}, "failed to parse"},
-		{"0xZ", utils.Uint256{}, "failed to parse"},
-	}
-	for _, tc := range ttable {
-		t.Run(tc.data, func(t *testing.T) {
-			b := []byte(`"` + tc.data + `"`)
-			var parsed utils.Uint256
-			err := json.Unmarshal(b, &parsed)
-			if tc.wantErr != "" {
-				assert.ErrorContains(t, err, tc.wantErr)
-			} else {
-				assert.Nil(t, err)
-				assert.Equal(t, tc.want, parsed)
-			}
-		})
-	}
-}
-
-func TestUint256MarshalJSON(t *testing.T) {
-	ttable := []struct {
-		data *big.Int
-		want string
-	}{
-		{nil, `"0x0"`},
-		{big.NewInt(0), `"0x0"`},
-		{big.NewInt(1), `"0x1"`},
-		{big.NewInt(10), `"0xa"`},
-		{big.NewInt(16), `"0x10"`},
-		{big.NewInt(65535), `"0xffff"`},
-		{big.NewInt(65536), `"0x10000"`},
-	}
-	for _, tc := range ttable {
-		t.Run(tc.want, func(t *testing.T) {
-			value := utils.Uint256{Int: tc.data}
-			res, err := json.Marshal(&value)
-			assert.Nil(t, err)
-			assert.Equal(t, tc.want, string(res))
-		})
-	}
-}
-
-var addressParseTests = []struct {
-	data    string
-	want    utils.Address
-	wantErr string
-}{
-	{"0x0", utils.HexStringToAddress("0x0"), "hex string of odd length"},
-	{"0x00", utils.HexStringToAddress("0x0"), "hex string has length 2, want 40"},
-	{fmt.Sprintf("0x%040x", 0), utils.HexStringToAddress("0x0"), ""},
-	{fmt.Sprintf("0x%040x", 0x54d), utils.HexStringToAddress("0x54d"), ""},
-}
-
 func TestUint256Cbor(t *testing.T) {
 	before := utils.IntToUint256(1337)
 	bs, err := cbor.Marshal(&before)
@@ -105,7 +38,7 @@ func TestBlockCbor(t *testing.T) {
 		LogsBloom:        "",
 		TransactionsRoot: randomHash(),
 		ReceiptsRoot:     randomHash(),
-		Transactions: []utils.Transaction{
+		Transactions: []*utils.Transaction{
 			{
 				Hash:                 randomHash(),
 				BlockHash:            randomHash(),
@@ -126,7 +59,7 @@ func TestBlockCbor(t *testing.T) {
 				AccessList:           []utils.AccessList{},
 				TxType:               math.MaxUint8,
 				Status:               true,
-				Logs: []utils.Log{
+				Logs: []*utils.Log{
 					{
 						Address: randomAddress(),
 						Topics: []utils.Bytea{
@@ -207,7 +140,7 @@ func TestTransactionCbor(t *testing.T) {
 }
 
 func TestLogResponseCbor(t *testing.T) {
-	before := utils.LogResponse{ // we save LogResponse{} instead of Logger{} to DB
+	before := utils.LogResponse{ // we save LogResponse{} instead of Log{} to DB
 		Removed:          false,
 		LogIndex:         randomUint256(),
 		TransactionIndex: randomUint256(),
@@ -230,6 +163,73 @@ func TestLogResponseCbor(t *testing.T) {
 	assert.NotEqual(t, blank, after, "unmarshalled data doesn't equal default")
 }
 
+func TestUint256UnmarshalJSON(t *testing.T) {
+	ttable := []struct {
+		data    string
+		want    utils.Uint256
+		wantErr string
+	}{
+		{"1", utils.IntToUint256(1), ""},
+		{"0x1", utils.IntToUint256(1), ""},
+		{"0x01", utils.IntToUint256(1), ""},
+		{"10", utils.IntToUint256(16), ""},
+		{"0x10", utils.IntToUint256(16), ""},
+		{"0x100", utils.IntToUint256(256), ""},
+		{"0xffff", utils.IntToUint256(65535), ""},
+		{"0xFFFF", utils.IntToUint256(65535), ""},
+		{"0x", utils.Uint256{}, "failed to parse"},
+		{"0xG", utils.Uint256{}, "failed to parse"},
+		{"0xZ", utils.Uint256{}, "failed to parse"},
+	}
+	for _, tc := range ttable {
+		t.Run(tc.data, func(t *testing.T) {
+			b := []byte(`"` + tc.data + `"`)
+			var parsed utils.Uint256
+			err := json.Unmarshal(b, &parsed)
+			if tc.wantErr != "" {
+				assert.ErrorContains(t, err, tc.wantErr)
+			} else {
+				assert.Nil(t, err)
+				assert.Equal(t, tc.want, parsed)
+			}
+		})
+	}
+}
+
+func TestUint256MarshalJSON(t *testing.T) {
+	ttable := []struct {
+		data *big.Int
+		want string
+	}{
+		{nil, `"0x0"`},
+		{big.NewInt(0), `"0x0"`},
+		{big.NewInt(1), `"0x1"`},
+		{big.NewInt(10), `"0xa"`},
+		{big.NewInt(16), `"0x10"`},
+		{big.NewInt(65535), `"0xffff"`},
+		{big.NewInt(65536), `"0x10000"`},
+	}
+	for _, tc := range ttable {
+		t.Run(tc.want, func(t *testing.T) {
+			value := utils.Uint256{Int: tc.data}
+			res, err := json.Marshal(&value)
+			assert.Nil(t, err)
+			assert.Equal(t, tc.want, string(res))
+		})
+	}
+}
+
+var addressParseTests = []struct {
+	data    string
+	want    utils.Address
+	wantErr string
+}{
+	{"0x0", utils.HexStringToAddress("0x0"), "hex string of odd length"},
+	{"0x00", utils.HexStringToAddress("0x0"), "hex string has length 2, want 40"},
+	{fmt.Sprintf("0x%040x", 0), utils.HexStringToAddress("0x0"), ""},
+	{fmt.Sprintf("0x%040x", 0x54d), utils.HexStringToAddress("0x54d"), ""},
+}
+
 func TestAddressUnmarshalJSON(t *testing.T) {
 	for _, tc := range addressParseTests {
 		t.Run(tc.data, func(t *testing.T) {
@@ -242,6 +242,54 @@ func TestAddressUnmarshalJSON(t *testing.T) {
 				want := tc.want.Address.Hash().Big()
 				got := parsed.Hash().Big()
 				assert.Equal(t, got, want)
+			}
+		})
+	}
+}
+
+func TestUint256ToUint32Key(t *testing.T) {
+	ttable := []struct {
+		name    string
+		data    uint64
+		want    []byte
+		wantErr string
+	}{
+		{
+			name: "zero",
+			data: 0,
+			want: []byte{0, 0, 0, 0},
+		},
+		{
+			name: "one",
+			data: 1,
+			want: []byte{0, 0, 0, 0x1},
+		},
+		{
+			name: "large number",
+			data: 1234567890,
+			want: []byte{0x49, 0x96, 0x2, 0xd2},
+		},
+		{
+			name: "max number",
+			data: math.MaxUint32,
+			want: []byte{0xff, 0xff, 0xff, 0xff},
+		},
+		{
+			name:    "max number plus one",
+			data:    math.MaxUint32 + 1,
+			wantErr: "u256 doesn't fit in a u32",
+		},
+	}
+	for _, tc := range ttable {
+		t.Run(tc.name, func(t *testing.T) {
+			bi := utils.UintToUint256(tc.data)
+			key, err := bi.ToUint32Key()
+			if tc.wantErr != "" {
+				assert.ErrorContains(t, err, tc.wantErr)
+				assert.Nil(t, key)
+			} else {
+				assert.Nil(t, err)
+				assert.Equal(t, tc.want, key.KeyBytes())
 			}
 		})
 	}

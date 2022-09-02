@@ -28,6 +28,8 @@ const (
 	DefaultHTTPPort   = 8545        // Default TCP port for the HTTP RPC server
 	DefaultWSPort     = 8546        // Default TCP port for the websocket RPC server
 	DefaultPathPrefix = ""          // Default TCP port for the websocket RPC server
+
+	configPath = "rpcNode.geth"
 )
 
 // Config represents a small collection of configuration values to fine tune the
@@ -42,12 +44,12 @@ type Config struct {
 	// HTTPPort is the TCP port number on which to start the HTTP RPC server. The
 	// default zero value is/ valid and will pick a port number randomly (useful
 	// for ephemeral nodes).
-	HTTPPort int `toml:",omitempty"`
+	HTTPPort int `mapstructure:",omitempty"`
 
 	// HTTPCors is the Cross-Origin Resource Sharing header to send to requesting
 	// clients. Please be aware that CORS is a browser enforced security, it's fully
 	// useless for custom HTTP clients.
-	HTTPCors []string `toml:",omitempty"`
+	HTTPCors []string `mapstructure:",omitempty"`
 
 	// HTTPVirtualHosts is the list of virtual hostnames which are allowed on incoming requests.
 	// This is by default {'localhost'}. Using this prevents attacks like
@@ -56,7 +58,7 @@ type Config struct {
 	// By explicitly checking the Host-header, the server will not allow requests
 	// made against the server with a malicious host domain.
 	// Requests using ip address directly are not affected
-	HTTPVirtualHosts []string `toml:",omitempty"`
+	HTTPVirtualHosts []string `mapstructure:",omitempty"`
 
 	// HTTPModules is a list of API modules to expose via the HTTP RPC interface.
 	// If the module list is empty, all RPC API endpoints designated public will be
@@ -68,7 +70,7 @@ type Config struct {
 	HTTPTimeouts rpc.HTTPTimeouts
 
 	// HTTPPathPrefix specifies a path prefix on which http-rpc is to be served.
-	HTTPPathPrefix string `toml:",omitempty"`
+	HTTPPathPrefix string `mapstructure:",omitempty"`
 
 	// WSHost is the host interface on which to start the websocket RPC server. If
 	// this field is empty, no websocket API endpoint will be started.
@@ -77,15 +79,15 @@ type Config struct {
 	// WSPort is the TCP port number on which to start the websocket RPC server. The
 	// default zero value is/ valid and will pick a port number randomly (useful for
 	// ephemeral nodes).
-	WSPort int `toml:",omitempty"`
+	WSPort int `mapstructure:",omitempty"`
 
 	// WSPathPrefix specifies a path prefix on which ws-rpc is to be served.
-	WSPathPrefix string `toml:",omitempty"`
+	WSPathPrefix string `mapstructure:",omitempty"`
 
 	// WSOrigins is the list of domain to accept websocket requests from. Please be
 	// aware that the server can only act upon the HTTP request the client sends and
 	// cannot verify the validity of the request header.
-	WSOrigins []string `toml:",omitempty"`
+	WSOrigins []string `mapstructure:",omitempty"`
 
 	// WSModules is a list of API modules to expose via the websocket RPC interface.
 	// If the module list is empty, all RPC API endpoints designated public will be
@@ -93,7 +95,7 @@ type Config struct {
 	WSModules []string
 
 	// Logger is a custom log to use with the p2p.Server.
-	Logger gel.Logger `toml:",omitempty"`
+	Logger gel.Logger `mapstructure:",omitempty"`
 }
 
 // defaultConfig is a helper to initialize Go-Ethereum RPC node with following defaults

@@ -10,12 +10,12 @@ const (
 	defaultBucket = "filter_bucket"
 	defaultUrl    = "nats://localhost:4222/"
 
-	configPath = "DB.NATS"
+	configPath = "db.nats"
 )
 
 type Config struct {
-	Bucket     string
-	NatsConfig nats.Options
+	Bucket     string       `mapstructure:"bucket"`
+	NatsConfig nats.Options `mapstructure:"options"`
 }
 
 func defaultConfig() *Config {

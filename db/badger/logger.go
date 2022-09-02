@@ -16,17 +16,17 @@ func NewBadgerLogger(log *log.Logger) Logger {
 }
 
 func (l Logger) Errorf(f string, v ...interface{}) {
-	l.log.Error().Msg(fmt.Sprintf(f, v))
+	l.log.Error().Msg(fmt.Sprintf(f, v...))
 }
 
 func (l Logger) Warningf(f string, v ...interface{}) {
-	l.log.Warn().Msg(fmt.Sprintf(f, v))
+	l.log.Warn().Msg(fmt.Sprintf(f, v...))
 }
 
 func (l Logger) Infof(f string, v ...interface{}) {
-	l.log.Info().Msg(fmt.Sprintf(f, v))
+	l.log.Info().Msg(fmt.Sprintf(f, v...))
 }
 
 func (l Logger) Debugf(f string, v ...interface{}) {
-	l.log.Debug().Msg(fmt.Sprintf(f, v))
+	l.log.Debug().Msg(fmt.Sprintf(f, v...))
 }

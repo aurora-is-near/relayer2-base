@@ -2,25 +2,10 @@ package log
 
 import (
 	"github.com/rs/zerolog"
-	"github.com/spf13/viper"
 	"io"
 	"os"
 	"sync"
 )
-
-const (
-	defaultLogFilePath = "/tmp/relayer/log"
-	defaultLogLevel    = "info"
-	defaultLogToFile   = true
-	defaultLogToStdOut = true
-)
-
-type config struct {
-	LogToFile    bool
-	LogToConsole bool
-	Level        string
-	FilePath     string
-}
 
 type Logger struct {
 	zerolog.Logger
@@ -42,10 +27,7 @@ func Log() *Logger {
 }
 
 func log() *Logger {
-	config := defaultConfig()
-	if err := viper.Sub("Logger"); err != nil {
-		_ = viper.Unmarshal(&config)
-	}
+	config := GetConfig()
 	l, err := zerolog.ParseLevel(config.Level)
 	if err != nil {
 		l = zerolog.InfoLevel
@@ -59,13 +41,4 @@ func log() *Logger {
 		writers = append(writers, NewFileWriter(config.FilePath))
 	}
 	return &Logger{zerolog.New(io.MultiWriter(writers...)).With().Timestamp().Logger()}
-}
-
-func defaultConfig() config {
-	return config{
-		LogToFile:    defaultLogToFile,
-		LogToConsole: defaultLogToStdOut,
-		Level:        defaultLogLevel,
-		FilePath:     defaultLogFilePath,
-	}
 }

@@ -26,10 +26,6 @@ type GoEthereum struct {
 	node.Node
 }
 
-const (
-	configPath = "RpcNode.GoEthereum"
-)
-
 // New creates a new node with default config
 func New() (*GoEthereum, error) {
 	conf := GetConfig()
@@ -45,27 +41,6 @@ func NewWithConf(conf *Config) (*GoEthereum, error) {
 	}
 	return &GoEthereum{*n}, nil
 }
-
-// // Start starts Eth Node.
-// func (n *GoEthereum) Start() error {
-// 	return n.Start()
-// }
-
-// // Close stops the Eth Node and clean up the underlying resources
-// func (n *GoEthereum) Close() error {
-// 	return n.Close()
-// }
-
-// // RegisterEndpointAPIs takes the implemented RPC methods, converts them to go-ethereum-rpc-API type and registers them
-// func (n *GoEthereum) RegisterEndpointAPIs(apis []endpoint.API) {
-// 	a := make([]rpc.API, len(apis))
-// 	for i, e := range apis {
-// 		a[i].Namespace = e.Namespace
-// 		a[i].Service = e.EndpointInstance
-// 		a[i].Authenticated = false
-// 	}
-// 	n.RegisterAPIs(a)
-// }
 
 func convertConfigurationToEthNode(confAurora *Config) *node.Config {
 	confEth := &node.Config{}

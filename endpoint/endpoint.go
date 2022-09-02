@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	ConfigPath = "Endpoint"
+	ConfigPath = "endpoint"
 )
 
 type Preprocessor func(name string, endpoint *Endpoint, args ...any) (bool, *any, error)

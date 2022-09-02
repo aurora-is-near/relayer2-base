@@ -20,7 +20,13 @@ func Open(options badger.Options, gcIntervalSeconds int) (*badger.DB, error) {
 		lock.Lock()
 		defer lock.Unlock()
 		if bdb == nil {
-			logger.Info().Msgf("opening database with path [%s]", options.Dir)
+			if !options.InMemory {
+				logger.Info().Msgf("opening database with path [%s]", options.Dir)
+			} else {
+				options.Dir = ""
+				options.ValueDir = ""
+				logger.Info().Msg("opening database as in-memory")
+			}
 			bdb, err = open(options)
 			if err != nil {
 				snapshotBaseName := path.Base(options.Dir) + "_" + time.Now().Format("2006-01-02T15-04-05.000000000")
@@ -41,8 +47,16 @@ func Open(options badger.Options, gcIntervalSeconds int) (*badger.DB, error) {
 }
 
 func Close() error {
-	gcStop <- true
-	return bdb.Close()
+	if bdb != nil {
+		gcStop <- true
+		log.Log().Info().Msg("closing database")
+		err := bdb.Close()
+		if err != nil {
+			return err
+		}
+		bdb = nil
+	}
+	return nil
 }
 
 func Fetch(key []byte) (*[]byte, error) {
@@ -133,6 +147,7 @@ func open(options badger.Options) (*badger.DB, error) {
 }
 
 func runGC(gcIntervalSeconds int) {
+	gcStop = make(chan bool)
 	ticker := time.NewTicker(time.Duration(gcIntervalSeconds) * time.Second)
 	defer ticker.Stop()
 	for {

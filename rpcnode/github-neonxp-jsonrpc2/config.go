@@ -9,12 +9,12 @@ const (
 	defaultHttpHost = "localhost" // Default host interface for the HTTP RPC server
 	defaultHttpPort = 8545        // Default TCP port for the HTTP RPC server
 
-	configPath = "RpcNode.JsonRpc2"
+	configPath = "rpcNode.jsonRpc2"
 )
 
 type Config struct {
-	HttpPort int16
-	HttpHost string
+	HttpPort int16  `mapstructure:"httpPort"`
+	HttpHost string `mapstructure:"httpHost"`
 }
 
 func defaultConfig() *Config {

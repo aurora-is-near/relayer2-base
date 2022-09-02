@@ -1,7 +1,7 @@
 package endpoint
 
 type Config struct {
-	DisabledEndpoints []string
+	DisabledEndpoints []string `mapstructure:"disabledEndpoints"`
 }
 
 func DefaultConfig() Config {

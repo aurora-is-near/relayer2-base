@@ -18,16 +18,16 @@ const (
 	defaultIterationMaxItems       = 10000
 	defaultDataPath                = "/tmp/badger/data"
 
-	configPath = "DB.Badger"
+	configPath = "db.badger"
 )
 
 type Config struct {
-	GcIntervalSeconds       int
-	IterationTimeoutSeconds uint
-	IterationMaxItems       uint
-	LogFilterTtlMinutes     int
-	ScanConfig              core.ScanOpts
-	BadgerConfig            badger.Options
+	GcIntervalSeconds       int            `mapstructure:"gcIntervalSeconds"`
+	IterationTimeoutSeconds uint           `mapstructure:"iterationTimeoutSeconds"`
+	IterationMaxItems       uint           `mapstructure:"iterationMaxItems"`
+	LogFilterTtlMinutes     int            `mapstructure:"logFilterTtlMinutes"`
+	ScanConfig              core.ScanOpts  `mapstructure:"index"`
+	BadgerConfig            badger.Options `mapstructure:"options"`
 }
 
 func defaultConfig() *Config {
