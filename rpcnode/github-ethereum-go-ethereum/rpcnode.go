@@ -17,6 +17,8 @@
 package github_ethereum_go_ethereum
 
 import (
+	eventbroker "aurora-relayer-go-common/rpcnode/github-ethereum-go-ethereum/events"
+
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/jinzhu/copier"
 )
@@ -24,6 +26,7 @@ import (
 // GoEthereum is a container on which underlying go-ethereum services can be registered.
 type GoEthereum struct {
 	node.Node
+	EventBroker *eventbroker.EventBroker
 }
 
 // New creates a new node with default config
@@ -32,14 +35,24 @@ func New() (*GoEthereum, error) {
 	return NewWithConf(conf)
 }
 
-// NewWithConf creates a new node with given config
+// NewWithConf creates a new node with given config and the event broker if node supports websocket comm
 func NewWithConf(conf *Config) (*GoEthereum, error) {
 	ethConf := convertConfigurationToEthNode(conf)
 	n, err := node.New(ethConf)
 	if err != nil {
 		return nil, err
 	}
-	return &GoEthereum{*n}, nil
+
+	// Start eventbroker if WS configured
+	eb := eventbroker.NewEventBroker()
+	if conf.WSHost != "" && conf.WSPort > 0 {
+		go eb.Start()
+	}
+
+	return &GoEthereum{
+		Node:        *n,
+		EventBroker: eb,
+	}, nil
 }
 
 func convertConfigurationToEthNode(confAurora *Config) *node.Config {

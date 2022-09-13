@@ -18,6 +18,7 @@ package github_ethereum_go_ethereum
 
 import (
 	"aurora-relayer-go-common/log"
+
 	gel "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/spf13/viper"
@@ -106,6 +107,7 @@ type Config struct {
 // HTTPModules: ["net", "web3", "eth"]
 // HTTPVirtualHosts: []
 // HTTPTimeouts: rpc.DefaultHTTPTimeouts
+// -> WS parameters are optional. Add the following WS parameters to make them mandatory.
 // WSHost: DefaultHost
 // WSPort: DefaultWSPort
 // WSModules: ["net", "web3", "eth"]
@@ -120,11 +122,6 @@ func defaultConfig() *Config {
 		HTTPVirtualHosts: []string{},
 		HTTPCors:         []string{},
 		HTTPTimeouts:     rpc.DefaultHTTPTimeouts,
-		WSPort:           DefaultWSPort,
-		WSPathPrefix:     DefaultPathPrefix,
-		WSHost:           DefaultHost,
-		WSModules:        []string{"net", "web3", "eth"},
-		WSOrigins:        []string{},
 		Logger:           NewGoEthLogger(log.Log()),
 	}
 }
