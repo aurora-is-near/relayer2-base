@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/fxamacker/cbor/v2"
 	"math/big"
 	"strings"
+
+	"github.com/fxamacker/cbor/v2"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -82,6 +83,11 @@ type Log struct {
 	Address Address  `cbor:"Address"`
 	Topics  []Bytea  `cbor:"Topics"`
 	Data    Bytea    `cbor:"data"`
+}
+
+type LogSubscriptionOptions struct {
+	Address Addresses `json:"address"`
+	Topics  Topics    `json:"topics"`
 }
 
 type FilterOptions struct {
