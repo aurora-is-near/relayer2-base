@@ -17,6 +17,7 @@
 package github_ethereum_go_ethereum
 
 import (
+	"aurora-relayer-go-common/broker"
 	eventbroker "aurora-relayer-go-common/rpcnode/github-ethereum-go-ethereum/events"
 
 	"github.com/ethereum/go-ethereum/node"
@@ -26,7 +27,7 @@ import (
 // GoEthereum is a container on which underlying go-ethereum services can be registered.
 type GoEthereum struct {
 	node.Node
-	EventBroker *eventbroker.EventBroker
+	Broker broker.Broker
 }
 
 // New creates a new node with default config
@@ -50,8 +51,8 @@ func NewWithConf(conf *Config) (*GoEthereum, error) {
 	}
 
 	return &GoEthereum{
-		Node:        *n,
-		EventBroker: eb,
+		Node:   *n,
+		Broker: eb,
 	}, nil
 }
 
