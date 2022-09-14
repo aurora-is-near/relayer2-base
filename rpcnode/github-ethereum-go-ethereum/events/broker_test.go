@@ -1,6 +1,7 @@
 package eventbroker_test
 
 import (
+	"aurora-relayer-go-common/broker"
 	eventbroker "aurora-relayer-go-common/rpcnode/github-ethereum-go-ethereum/events"
 	"aurora-relayer-go-common/utils"
 	"crypto/rand"
@@ -32,8 +33,8 @@ func TestBrokerFlows(t *testing.T) {
 	}()
 
 	// Create client and subscribe to the events
-	clientNHSubs := make([]*eventbroker.Subscription, numClients)
-	clientLogSubs := make([]*eventbroker.Subscription, numClients)
+	clientNHSubs := make([]broker.Subscription, numClients)
+	clientLogSubs := make([]broker.Subscription, numClients)
 	for i := 0; i < numClients; i++ {
 		clientNHSubs[i], clientLogSubs[i] = createClientAndSubscribe(eb, eventCounterCh)
 		time.Sleep(1 * time.Millisecond)
@@ -41,12 +42,12 @@ func TestBrokerFlows(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
-	//Check if subscriptions OK
+	// Check if subscriptions OK
 	numSubsNH, numSubsLog := getNumberOfSubscriptions(eb)
 	assert.Equal(t, numSubsNH, numClients)
 	assert.Equal(t, numSubsLog, numClients)
 
-	//Start publishing events
+	// Start publishing events
 	sentNumMsgCh := make(chan int)
 	go func() {
 		sentMsgCounter := 0
@@ -74,7 +75,7 @@ func TestBrokerFlows(t *testing.T) {
 	// Syncs the end of event dissemination
 	sentEventCounter := <-sentNumMsgCh
 
-	//Check if sent and received event counters OK
+	// Check if sent and received event counters OK
 	assert.Equal(t, sentEventCounter*numClients*2, rcvEventCounter)
 
 	// Now unsubscribe
@@ -85,14 +86,14 @@ func TestBrokerFlows(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
-	//Check if unsubscription OK
+	// Check if unsubscription OK
 	numSubsNH, numSubsLog = getNumberOfSubscriptions(eb)
 	assert.Equal(t, numSubsNH, 0)
 	assert.Equal(t, numSubsLog, 0)
 
 }
 
-func createClientAndSubscribe(eb *eventbroker.EventBroker, eventCounterCh chan int) (*eventbroker.Subscription, *eventbroker.Subscription) {
+func createClientAndSubscribe(eb *eventbroker.EventBroker, eventCounterCh chan int) (broker.Subscription, broker.Subscription) {
 	clientNHCh := make(chan *utils.BlockResponse)
 	subsNH := eb.SubscribeNewHeads(clientNHCh)
 
