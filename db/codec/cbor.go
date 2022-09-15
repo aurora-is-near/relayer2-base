@@ -1,19 +1,6 @@
-package db
+package codec
 
 import "github.com/fxamacker/cbor/v2"
-
-type Encoder interface {
-	Marshal(v interface{}) ([]byte, error)
-}
-
-type Decoder interface {
-	Unmarshal(data []byte, v interface{}) error
-}
-
-type Codec interface {
-	Encoder
-	Decoder
-}
 
 type CborCodec struct {
 	Encoder
@@ -21,11 +8,11 @@ type CborCodec struct {
 }
 
 func NewCborCodec() Codec {
-	enc, dec := NewCborEncDec()
+	enc, dec := cborEncDec()
 	return CborCodec{enc, dec}
 }
 
-func NewCborEncDec() (Encoder, Decoder) {
+func cborEncDec() (Encoder, Decoder) {
 	enc, err := cbor.EncOptions{
 		BigIntConvert: cbor.BigIntConvertShortest,
 	}.EncMode()

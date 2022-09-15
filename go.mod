@@ -3,6 +3,7 @@ module aurora-relayer-go-common
 go 1.18
 
 require (
+	capnproto.org/go/capnp/v3 v3.0.0-alpha.5
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/ethereum/go-ethereum v1.10.21
 	github.com/fsnotify/fsnotify v1.4.9

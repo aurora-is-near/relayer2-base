@@ -3,23 +3,26 @@ package endpoint
 import (
 	"aurora-relayer-go-common/db"
 	"aurora-relayer-go-common/log"
+	"github.com/fsnotify/fsnotify"
+	"github.com/spf13/viper"
+	"golang.org/x/net/context"
 )
 
 const (
 	ConfigPath = "endpoint"
 )
 
-type Preprocessor func(name string, endpoint *Endpoint, args ...any) (bool, *any, error)
-
-func Preprocess[T any](name string, endpoint *Endpoint, handler func() (T, error), args ...any) (T, error) {
+func Process[T any](ctx context.Context, name string, endpoint *Endpoint, handler func(ctx context.Context) (T, error), args ...any) (T, error) {
 
 	var zeroVal T
 	var resp any
 	var err error
 	var stop bool
+	var childCtx context.Context
 
-	for _, m := range endpoint.Preprocessors {
-		stop, resp, err = m(name, endpoint, args)
+	for _, p := range endpoint.Processors {
+		childCtx, stop, resp, err = p.Pre(ctx, name, endpoint, args)
+		defer p.Post(childCtx, name, &resp, &err)
 		if stop {
 			if err != nil {
 				return zeroVal, err
@@ -29,7 +32,7 @@ func Preprocess[T any](name string, endpoint *Endpoint, handler func() (T, error
 		}
 	}
 
-	resp, err = handler()
+	resp, err = handler(childCtx)
 	if err != nil {
 		return zeroVal, err
 	}
@@ -38,10 +41,11 @@ func Preprocess[T any](name string, endpoint *Endpoint, handler func() (T, error
 }
 
 type Endpoint struct {
-	DbHandler        *db.Handler
-	Logger           *log.Logger
-	WithPreprocessor func(Preprocessor)
-	Preprocessors    []Preprocessor
+	DbHandler     *db.Handler
+	Logger        *log.Logger
+	Config        *Config
+	WithProcessor func(Processor)
+	Processors    []Processor
 }
 
 func New(dbh db.Handler) *Endpoint {
@@ -49,18 +53,27 @@ func New(dbh db.Handler) *Endpoint {
 		panic("DB Handler should be initialized")
 	}
 	ep := Endpoint{
-		DbHandler:     &dbh,
-		Logger:        log.Log(),
-		Preprocessors: []Preprocessor{},
+		DbHandler:  &dbh,
+		Logger:     log.Log(),
+		Config:     GetConfig(),
+		Processors: []Processor{},
 	}
 
-	ep.WithPreprocessor = func(p Preprocessor) {
-		withPreprocessor(&ep, p)
+	ep.WithProcessor = func(p Processor) {
+		withProcessor(&ep, p)
 	}
+
+	viper.OnConfigChange(func(e fsnotify.Event) {
+		handleConfigChange(&ep)
+	})
 
 	return &ep
 }
 
-func withPreprocessor(e *Endpoint, p Preprocessor) {
-	e.Preprocessors = append(e.Preprocessors, p)
+func withProcessor(e *Endpoint, p Processor) {
+	e.Processors = append(e.Processors, p)
+}
+
+func handleConfigChange(e *Endpoint) {
+	e.Config = GetConfig()
 }

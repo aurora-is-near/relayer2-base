@@ -4,6 +4,7 @@ import (
 	"aurora-relayer-go-common/db"
 	"aurora-relayer-go-common/db/badger"
 	"aurora-relayer-go-common/utils"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/spf13/viper"
@@ -54,6 +55,7 @@ func TestLogFilterUnmarshalJSON(t *testing.T) {
 func TestFormatFilterOptions(t *testing.T) {
 
 	var eth *Eth
+	ctx := context.Background()
 
 	viper.SetConfigType("yml")
 	err := viper.ReadConfig(strings.NewReader(ethTestYaml))
@@ -62,8 +64,8 @@ func TestFormatFilterOptions(t *testing.T) {
 	}
 
 	var blockData = utils.Block{
-		Sequence: utils.IntToUint256(1),
-		Hash:     utils.HexStringToHash("a"),
+		Height: 1,
+		Hash:   utils.HexStringToHash("a"),
 		Transactions: []*utils.Transaction{
 			{ContractAddress: utils.HexStringToAddress("0x2")},
 			{ContractAddress: utils.HexStringToAddress("0x1")},
@@ -83,16 +85,16 @@ func TestFormatFilterOptions(t *testing.T) {
 		{
 			name:     "empty options",
 			data:     utils.FilterOptions{},
-			wantFrom: blockData.Sequence,
-			wantTo:   blockData.Sequence,
+			wantFrom: utils.UintToUint256(blockData.Height),
+			wantTo:   utils.UintToUint256(blockData.Height),
 		},
 		{
 			name: "blockHash is added",
 			data: utils.FilterOptions{
 				BlockHash: &blockData.Hash,
 			},
-			wantFrom: blockData.Sequence,
-			wantTo:   blockData.Sequence,
+			wantFrom: utils.UintToUint256(blockData.Height),
+			wantTo:   utils.UintToUint256(blockData.Height),
 		},
 		{
 			name: "block range is not overwritten",
@@ -114,8 +116,8 @@ func TestFormatFilterOptions(t *testing.T) {
 					utils.HexStringToAddress("0x3"),
 				},
 			},
-			wantFrom: blockData.Sequence,
-			wantTo:   blockData.Sequence,
+			wantFrom: utils.UintToUint256(blockData.Height),
+			wantTo:   utils.UintToUint256(blockData.Height),
 			wantAddress: [][]byte{
 				utils.HexStringToAddress("0x2").Bytes(),
 				utils.HexStringToAddress("0x1").Bytes(),
@@ -127,8 +129,8 @@ func TestFormatFilterOptions(t *testing.T) {
 			data: utils.FilterOptions{
 				Topics: utils.Topics{{[]byte("foo")}, {[]byte("bar")}, {[]byte("bazz")}},
 			},
-			wantFrom:   blockData.Sequence,
-			wantTo:     blockData.Sequence,
+			wantFrom:   utils.UintToUint256(blockData.Height),
+			wantTo:     utils.UintToUint256(blockData.Height),
 			wantTopics: [][][]byte{{[]byte("foo")}, {[]byte("bar")}, {[]byte("bazz")}},
 		},
 	}
@@ -162,7 +164,7 @@ func TestFormatFilterOptions(t *testing.T) {
 				ToBlock:   &tc.wantTo,
 				Topics:    tc.wantTopics,
 			}
-			got, err := eth.formatFilterOptions(&tc.data)
+			got, err := eth.formatFilterOptions(ctx, &tc.data)
 			assert.Nil(t, err)
 			assert.Equal(t, want, got)
 		})

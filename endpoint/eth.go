@@ -6,9 +6,7 @@ import (
 )
 
 var (
-	protocolVersion = utils.IntToUint256(0x41)
-	hashrate        = utils.IntToUint256(0)
-	zero            = utils.IntToUint256(0)
+	zero = utils.IntToUint256(0)
 )
 
 type Eth struct {
@@ -29,30 +27,51 @@ func (e *Eth) Accounts(_ context.Context) ([]string, error) {
 // Coinbase returns constant 0x0
 //
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-func (e *Eth) Coinbase(_ context.Context) (*utils.Uint256, error) {
-	return &hashrate, nil
+func (e *Eth) Coinbase(_ context.Context) (*string, error) {
+	return &e.Config.EthConfig.zeroAddress, nil
+}
+
+// ChainId returns chainId configuration value, see relayer.yml to configure chainId
+//
+//	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
+func (e *Eth) ChainId(_ context.Context) (*utils.Uint256, error) {
+	return &e.Config.EthConfig.chainId, nil
 }
 
 // ProtocolVersion returns constant 0x41
 //
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 func (e *Eth) ProtocolVersion(_ context.Context) (*utils.Uint256, error) {
-	return &protocolVersion, nil
+	return &e.Config.EthConfig.protocolVersion, nil
 }
 
 // Hashrate returns constant 0x0
 //
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-func (e *Eth) Hashrate(_ context.Context) (string, error) {
-	return utils.IntToHex(0), nil
+func (e *Eth) Hashrate(_ context.Context) (*utils.Uint256, error) {
+	return &e.Config.EthConfig.hashrate, nil
+}
+
+// Mining returns constant false
+//
+//	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
+func (e *Eth) Mining(_ context.Context) (bool, error) {
+	return false, nil
+}
+
+// Syncing returns constant false
+//
+//	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
+func (e *Eth) Syncing(_ context.Context) (bool, error) {
+	return false, nil
 }
 
 // BlockNumber returns the latest block number from DB if API is enabled by configuration.
 //
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On DB failure, returns error code '-32000' with custom message.
-func (e *Eth) BlockNumber(_ context.Context) (*utils.Uint256, error) {
-	bn, err := (*e.DbHandler).BlockNumber()
+func (e *Eth) BlockNumber(ctx context.Context) (*utils.Uint256, error) {
+	bn, err := (*e.DbHandler).BlockNumber(ctx)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
@@ -66,8 +85,8 @@ func (e *Eth) BlockNumber(_ context.Context) (*utils.Uint256, error) {
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On DB failure or hash not found, returns error code '-32000' with custom message.
 // 	On missing or invalid param returns error code '-32602' with custom message.
-func (e *Eth) GetBlockByHash(_ context.Context, hash utils.H256, isFull bool) (*utils.BlockResponse, error) {
-	block, err := (*e.DbHandler).GetBlockByHash(hash)
+func (e *Eth) GetBlockByHash(ctx context.Context, hash utils.H256, isFull bool) (*utils.BlockResponse, error) {
+	block, err := (*e.DbHandler).GetBlockByHash(ctx, hash)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
@@ -81,8 +100,8 @@ func (e *Eth) GetBlockByHash(_ context.Context, hash utils.H256, isFull bool) (*
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On DB failure or number not found, returns error code '-32000' with custom message.
 //	On missing or invalid param returns error code '-32602' with custom message.
-func (e *Eth) GetBlockByNumber(_ context.Context, number utils.Uint256, isFull bool) (*utils.BlockResponse, error) {
-	block, err := (*e.DbHandler).GetBlockByNumber(number)
+func (e *Eth) GetBlockByNumber(ctx context.Context, number utils.Uint256, isFull bool) (*utils.BlockResponse, error) {
+	block, err := (*e.DbHandler).GetBlockByNumber(ctx, number)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
@@ -94,9 +113,9 @@ func (e *Eth) GetBlockByNumber(_ context.Context, number utils.Uint256, isFull b
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 //	On DB failure or hash not found, returns error code '-32000' with custom message.
 //	On missing or invalid param returns error code '-32602' with custom message.
-func (e *Eth) GetBlockTransactionCountByHash(_ context.Context, hash utils.H256) (utils.Uint256, error) {
+func (e *Eth) GetBlockTransactionCountByHash(ctx context.Context, hash utils.H256) (utils.Uint256, error) {
 	var count utils.Uint256
-	cnt, err := (*e.DbHandler).GetBlockTransactionCountByHash(hash)
+	cnt, err := (*e.DbHandler).GetBlockTransactionCountByHash(ctx, hash)
 	if err != nil {
 		return count, &utils.GenericError{Err: err}
 	}
@@ -109,9 +128,9 @@ func (e *Eth) GetBlockTransactionCountByHash(_ context.Context, hash utils.H256)
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On DB failure or number not found, returns error code '-32000' with custom message.
 // 	On missing or invalid param returns error code '-32602' with custom message.
-func (e *Eth) GetBlockTransactionCountByNumber(_ context.Context, number utils.Uint256) (utils.Uint256, error) {
+func (e *Eth) GetBlockTransactionCountByNumber(ctx context.Context, number utils.Uint256) (utils.Uint256, error) {
 	var count utils.Uint256
-	cnt, err := (*e.DbHandler).GetBlockTransactionCountByNumber(number)
+	cnt, err := (*e.DbHandler).GetBlockTransactionCountByNumber(ctx, number)
 	if err != nil {
 		return count, &utils.GenericError{Err: err}
 	}
@@ -124,8 +143,8 @@ func (e *Eth) GetBlockTransactionCountByNumber(_ context.Context, number utils.U
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On DB failure or hash not found, returns error code '-32000' with custom message.
 // 	On missing or invalid param returns error code '-32602' with custom message.
-func (e *Eth) GetTransactionByHash(_ context.Context, hash utils.H256) (*utils.TransactionResponse, error) {
-	tx, err := (*e.DbHandler).GetTransactionByHash(hash)
+func (e *Eth) GetTransactionByHash(ctx context.Context, hash utils.H256) (*utils.TransactionResponse, error) {
+	tx, err := (*e.DbHandler).GetTransactionByHash(ctx, hash)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
@@ -136,8 +155,8 @@ func (e *Eth) GetTransactionByHash(_ context.Context, hash utils.H256) (*utils.T
 //
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On DB failure or hash not found, returns error code '-32000' with custom message.
-func (e *Eth) GetTransactionByBlockHashAndIndex(_ context.Context, hash utils.H256, index utils.Uint256) (*utils.TransactionResponse, error) {
-	tx, err := (*e.DbHandler).GetTransactionByBlockHashAndIndex(hash, index)
+func (e *Eth) GetTransactionByBlockHashAndIndex(ctx context.Context, hash utils.H256, index utils.Uint256) (*utils.TransactionResponse, error) {
+	tx, err := (*e.DbHandler).GetTransactionByBlockHashAndIndex(ctx, hash, index)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
@@ -148,8 +167,8 @@ func (e *Eth) GetTransactionByBlockHashAndIndex(_ context.Context, hash utils.H2
 //
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On DB failure or number not found, returns error code '-32000' with custom message.
-func (e *Eth) GetTransactionByBlockNumberAndIndex(_ context.Context, number, index utils.Uint256) (*utils.TransactionResponse, error) {
-	tx, err := (*e.DbHandler).GetTransactionByBlockNumberAndIndex(number, index)
+func (e *Eth) GetTransactionByBlockNumberAndIndex(ctx context.Context, number, index utils.Uint256) (*utils.TransactionResponse, error) {
+	tx, err := (*e.DbHandler).GetTransactionByBlockNumberAndIndex(ctx, number, index)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
@@ -160,12 +179,12 @@ func (e *Eth) GetTransactionByBlockNumberAndIndex(_ context.Context, number, ind
 //
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On DB failure or hash not found, returns error code '-32000' with custom message.
-func (e *Eth) GetTransactionReceipt(_ context.Context, hash utils.H256) (*utils.TransactionReceiptResponse, error) {
-	tx, err := (*e.DbHandler).GetTransactionByHash(hash)
+func (e *Eth) GetTransactionReceipt(ctx context.Context, hash utils.H256) (*utils.TransactionReceiptResponse, error) {
+	tx, err := (*e.DbHandler).GetTransactionByHash(ctx, hash)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
-	logs, err := (*e.DbHandler).GetLogsForTransaction(tx)
+	logs, err := (*e.DbHandler).GetLogsForTransaction(ctx, tx)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
@@ -178,12 +197,12 @@ func (e *Eth) GetTransactionReceipt(_ context.Context, hash utils.H256) (*utils.
 //
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On DB failure or number not found, returns error code '-32000' with custom message.
-func (e *Eth) GetLogs(_ context.Context, rawFilter utils.FilterOptions) (*[]utils.LogResponse, error) {
-	filter, err := e.formatFilterOptions(&rawFilter)
+func (e *Eth) GetLogs(ctx context.Context, rawFilter utils.FilterOptions) (*[]utils.LogResponse, error) {
+	filter, err := e.formatFilterOptions(ctx, &rawFilter)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
-	logResponses, err := (*e.DbHandler).GetLogs(*filter)
+	logResponses, err := (*e.DbHandler).GetLogs(ctx, *filter)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
@@ -201,12 +220,12 @@ func (e *Eth) GetLogs(_ context.Context, rawFilter utils.FilterOptions) (*[]util
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On filter option parsing failure, returns error code '32602' with custom message.
 //	On DB failure, returns error code '-32000' with custom message.
-func (e *Eth) NewFilter(_ context.Context, filterOptions utils.FilterOptions) (*utils.Uint256, error) {
-	parsedFilter, err := e.formatFilterOptions(&filterOptions)
+func (e *Eth) NewFilter(ctx context.Context, filterOptions utils.FilterOptions) (*utils.Uint256, error) {
+	parsedFilter, err := e.formatFilterOptions(ctx, &filterOptions)
 	if err != nil {
 		return nil, &utils.InvalidParamsError{Message: err.Error()}
 	}
-	bn, err := (*e.DbHandler).BlockNumber()
+	bn, err := (*e.DbHandler).BlockNumber(ctx)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
@@ -224,7 +243,7 @@ func (e *Eth) NewFilter(_ context.Context, filterOptions utils.FilterOptions) (*
 		Topics:    parsedFilter.Topics,
 		PollBlock: *bn,
 	}
-	(*e.DbHandler).StoreFilter(*filterId, filter)
+	err = (*e.DbHandler).StoreFilter(ctx, *filterId, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -236,8 +255,8 @@ func (e *Eth) NewFilter(_ context.Context, filterOptions utils.FilterOptions) (*
 //
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On DB failure, returns error code '-32000' with custom message.
-func (e *Eth) NewBlockFilter(_ context.Context) (*utils.Uint256, error) {
-	bn, err := (*e.DbHandler).BlockNumber()
+func (e *Eth) NewBlockFilter(ctx context.Context) (*utils.Uint256, error) {
+	bn, err := (*e.DbHandler).BlockNumber(ctx)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
@@ -250,7 +269,7 @@ func (e *Eth) NewBlockFilter(_ context.Context) (*utils.Uint256, error) {
 		CreatedBy: "0.0.0.0",
 		PollBlock: *bn.Add(1),
 	}
-	err = (*e.DbHandler).StoreFilter(*filterId, filter)
+	err = (*e.DbHandler).StoreFilter(ctx, *filterId, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -262,8 +281,8 @@ func (e *Eth) NewBlockFilter(_ context.Context) (*utils.Uint256, error) {
 //
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On failure returns false
-func (e *Eth) UninstallFilter(_ context.Context, filterId utils.Uint256) (bool, error) {
-	err := (*e.DbHandler).DeleteFilter(filterId)
+func (e *Eth) UninstallFilter(ctx context.Context, filterId utils.Uint256) (bool, error) {
+	err := (*e.DbHandler).DeleteFilter(ctx, filterId)
 	if err != nil {
 		e.Logger.Err(err).Msgf("failed to uninstall filter [%d]", filterId)
 		return false, nil
@@ -275,9 +294,9 @@ func (e *Eth) UninstallFilter(_ context.Context, filterId utils.Uint256) (bool, 
 //
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 //	On failure, returns error code '-32000' with custom message.
-func (e *Eth) GetFilterChanges(_ context.Context, filterId utils.Uint256) (*[]interface{}, error) {
+func (e *Eth) GetFilterChanges(ctx context.Context, filterId utils.Uint256) (*[]interface{}, error) {
 
-	storedFilter, err := (*e.DbHandler).GetFilter(filterId)
+	storedFilter, err := (*e.DbHandler).GetFilter(ctx, filterId)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
@@ -287,12 +306,12 @@ func (e *Eth) GetFilterChanges(_ context.Context, filterId utils.Uint256) (*[]in
 	switch storedFilter.Type {
 	case "event":
 		logFilter := utils.LogFilter{
-			FromBlock: storedFilter.FromBlock,
+			FromBlock: &storedFilter.PollBlock,
 			ToBlock:   storedFilter.ToBlock,
 			Address:   storedFilter.Addresses,
 			Topics:    storedFilter.Topics,
 		}
-		logs, err := (*e.DbHandler).GetLogs(logFilter)
+		logs, err := (*e.DbHandler).GetLogs(ctx, logFilter)
 		if err != nil {
 			return nil, &utils.GenericError{Err: err}
 		}
@@ -301,7 +320,7 @@ func (e *Eth) GetFilterChanges(_ context.Context, filterId utils.Uint256) (*[]in
 		}
 
 	case "block":
-		blocks, err := (*e.DbHandler).GetBlockHashesSinceNumber(storedFilter.PollBlock)
+		blocks, err := (*e.DbHandler).GetBlockHashesSinceNumber(ctx, storedFilter.PollBlock)
 		if err != nil {
 			return nil, &utils.GenericError{Err: err}
 		}
@@ -312,12 +331,12 @@ func (e *Eth) GetFilterChanges(_ context.Context, filterId utils.Uint256) (*[]in
 	default:
 	}
 
-	bn, err := (*e.DbHandler).BlockNumber()
+	bn, err := (*e.DbHandler).BlockNumber(ctx)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
 	storedFilter.PollBlock = *bn.Add(1)
-	(*e.DbHandler).StoreFilter(filterId, storedFilter)
+	_ = (*e.DbHandler).StoreFilter(ctx, filterId, storedFilter)
 
 	return &filterChanges, nil
 }
@@ -326,9 +345,9 @@ func (e *Eth) GetFilterChanges(_ context.Context, filterId utils.Uint256) (*[]in
 //
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 //	On failure, returns error code '-32000' with custom message.
-func (e *Eth) GetFilterLogs(_ context.Context, filterId utils.Uint256) (*[]interface{}, error) {
+func (e *Eth) GetFilterLogs(ctx context.Context, filterId utils.Uint256) (*[]interface{}, error) {
 
-	storedFilter, err := (*e.DbHandler).GetFilter(filterId)
+	storedFilter, err := (*e.DbHandler).GetFilter(ctx, filterId)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
@@ -338,12 +357,12 @@ func (e *Eth) GetFilterLogs(_ context.Context, filterId utils.Uint256) (*[]inter
 	switch storedFilter.Type {
 	case "event":
 		logFilter := utils.LogFilter{
-			FromBlock: storedFilter.FromBlock,
+			FromBlock: &storedFilter.PollBlock,
 			ToBlock:   storedFilter.ToBlock,
 			Address:   storedFilter.Addresses,
 			Topics:    storedFilter.Topics,
 		}
-		logs, err := (*e.DbHandler).GetLogs(logFilter)
+		logs, err := (*e.DbHandler).GetLogs(ctx, logFilter)
 		if err != nil {
 			return nil, &utils.GenericError{Err: err}
 		}
@@ -352,7 +371,7 @@ func (e *Eth) GetFilterLogs(_ context.Context, filterId utils.Uint256) (*[]inter
 		}
 
 	case "block":
-		blocks, err := (*e.DbHandler).GetBlockHashesSinceNumber(storedFilter.PollBlock)
+		blocks, err := (*e.DbHandler).GetBlockHashesSinceNumber(ctx, storedFilter.PollBlock)
 		if err != nil {
 			return nil, &utils.GenericError{Err: err}
 		}
@@ -364,12 +383,12 @@ func (e *Eth) GetFilterLogs(_ context.Context, filterId utils.Uint256) (*[]inter
 	default:
 	}
 
-	curr, err := (*e.DbHandler).BlockNumber()
+	curr, err := (*e.DbHandler).BlockNumber(ctx)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
 	storedFilter.PollBlock = *curr.Add(1)
-	err = (*e.DbHandler).StoreFilter(filterId, storedFilter)
+	err = (*e.DbHandler).StoreFilter(ctx, filterId, storedFilter)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
@@ -380,8 +399,8 @@ func (e *Eth) GetFilterLogs(_ context.Context, filterId utils.Uint256) (*[]inter
 // GetUncleCountByBlockHash
 //
 // 	TODO: implement
-func (e *Eth) GetUncleCountByBlockHash(_ context.Context, hash utils.H256) (*utils.Uint256, error) {
-	_, err := (*e.DbHandler).GetBlockByHash(hash)
+func (e *Eth) GetUncleCountByBlockHash(ctx context.Context, hash utils.H256) (*utils.Uint256, error) {
+	_, err := (*e.DbHandler).GetBlockByHash(ctx, hash)
 	if err != nil {
 		return nil, nil
 	}
@@ -391,25 +410,25 @@ func (e *Eth) GetUncleCountByBlockHash(_ context.Context, hash utils.H256) (*uti
 // GetUncleCountByBlockNumber
 //
 //	TODO: implement
-func (e *Eth) GetUncleCountByBlockNumber(_ context.Context, number utils.Uint256) (*utils.Uint256, error) {
-	_, err := (*e.DbHandler).GetBlockByNumber(number)
+func (e *Eth) GetUncleCountByBlockNumber(ctx context.Context, number utils.Uint256) (*utils.Uint256, error) {
+	_, err := (*e.DbHandler).GetBlockByNumber(ctx, number)
 	if err != nil {
 		return nil, nil
 	}
 	return &zero, nil
 }
 
-func (e *Eth) formatFilterOptions(filterOptions *utils.FilterOptions) (*utils.LogFilter, error) {
+func (e *Eth) formatFilterOptions(ctx context.Context, filterOptions *utils.FilterOptions) (*utils.LogFilter, error) {
 	result := &utils.LogFilter{}
 	if filterOptions.BlockHash != nil {
-		blockNum, err := (*e.DbHandler).BlockHashToNumber(*filterOptions.BlockHash)
+		blockNum, err := (*e.DbHandler).BlockHashToNumber(ctx, *filterOptions.BlockHash)
 		if err != nil {
 			return nil, err
 		}
 		result.FromBlock, result.ToBlock = blockNum, blockNum
 	} else {
 		var err error
-		result.FromBlock, result.ToBlock, err = e.parseFromAndTo(filterOptions)
+		result.FromBlock, result.ToBlock, err = e.parseFromAndTo(ctx, filterOptions)
 		if err != nil {
 			return nil, err
 		}
@@ -429,7 +448,7 @@ func (e *Eth) formatFilterOptions(filterOptions *utils.FilterOptions) (*utils.Lo
 	return result, nil
 }
 
-func (e *Eth) parseFromAndTo(filter *utils.FilterOptions) (from, to *utils.Uint256, err error) {
+func (e *Eth) parseFromAndTo(ctx context.Context, filter *utils.FilterOptions) (from, to *utils.Uint256, err error) {
 	from, err = parseBlock(filter.FromBlock)
 	if err != nil {
 		return nil, nil, err
@@ -443,7 +462,7 @@ func (e *Eth) parseFromAndTo(filter *utils.FilterOptions) (from, to *utils.Uint2
 		return
 	}
 
-	latest, err := (*e.DbHandler).BlockNumber()
+	latest, err := (*e.DbHandler).BlockNumber(ctx)
 	if err != nil || latest == nil {
 		return
 	}

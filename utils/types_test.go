@@ -73,15 +73,15 @@ func TestBlockCbor(t *testing.T) {
 				R:               randomUint256(),
 				S:               randomUint256(),
 				NearTransaction: utils.NearTransaction{
-					Hash:        randomHash().String(),
-					ReceiptHash: randomHash().String(),
+					Hash:        randomHash(),
+					ReceiptHash: randomHash(),
 				},
 			},
 		},
 		NearBlock: map[interface{}]interface{}{"foo": "bar"},
 		StateRoot: randomHash().String(),
 		Size:      randomUint256(),
-		Sequence:  randomUint256(),
+		Sequence:  randomUint256().Uint64(),
 	}
 	bs, err := cbor.Marshal(&before)
 	assert.Nil(t, err)
@@ -123,8 +123,8 @@ func TestTransactionCbor(t *testing.T) {
 		R:                    randomUint256(),
 		S:                    randomUint256(),
 		NearTransaction: utils.NearTransaction{
-			Hash:        randomHash().String(),
-			ReceiptHash: randomHash().String(),
+			Hash:        randomHash(),
+			ReceiptHash: randomHash(),
 		},
 	}
 	bs, err := cbor.Marshal(&before)
