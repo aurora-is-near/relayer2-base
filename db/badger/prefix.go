@@ -10,6 +10,7 @@ type TablePrefix string
 
 const (
 	prefixCurrentBlockId                   TablePrefix = "/current-block-id"
+	prefixCurrentBlockSequence             TablePrefix = "/current-block-sequence"
 	prefixBlockByHash                      TablePrefix = "/block/hash/"
 	prefixBlockByNumber                    TablePrefix = "/block/number/"
 	prefixTransactionCountByBlockHash      TablePrefix = "/transaction-count/hash/"

@@ -40,7 +40,7 @@ type Block struct {
 	NearBlock        any            `cbor:"near_metadata"`
 	StateRoot        string         `cbor:"state_root"`
 	Size             Uint256        `cbor:"size"`
-	Sequence         Uint256        `cbor:"sequence"`
+	Sequence         uint64         `cbor:"sequence"`
 }
 
 type Transaction struct {
@@ -120,8 +120,8 @@ type StoredFilter struct {
 
 type NearTransaction struct {
 	_           struct{} `cbor:",toarray"`
-	Hash        string   `cbor:"hash"`
-	ReceiptHash string   `cbor:"receipt_hash"`
+	Hash        H256     `cbor:"hash"`
+	ReceiptHash H256     `cbor:"receipt_hash"`
 }
 
 type BlockResponse struct {
@@ -214,13 +214,13 @@ func (bl *Block) ToResponse(fullTx bool) *BlockResponse {
 		}
 	}
 	return &BlockResponse{
-		Number:           bl.Sequence,
+		Number:           UintToUint256(bl.Height),
 		Difficulty:       IntToUint256(0),
 		ExtraData:        Bytea("0"),
-		GasLimit:         IntToUint256(0),
-		GasUsed:          IntToUint256(0),
+		GasLimit:         bl.GasLimit,
+		GasUsed:          bl.GasUsed,
 		Hash:             bl.Hash,
-		LogsBloom:        []byte(fmt.Sprintf("%0x", 0)),
+		LogsBloom:        Bytea(bl.LogsBloom),
 		Miner:            bl.Miner,
 		Nonce:            []byte(fmt.Sprintf("%016x", 0)),
 		ParentHash:       bl.ParentHash,
@@ -281,8 +281,8 @@ func (tx *Transaction) ToReceiptResponse() *TransactionReceiptResponse {
 		TransactionHash:   tx.Hash,
 		TransactionIndex:  UintToUint256(tx.TransactionIndex),
 		Type:              IntToUint256(0),
-		NearHash:          HexStringToHash(tx.NearTransaction.Hash),
-		NearReceiptHash:   HexStringToHash(tx.NearTransaction.ReceiptHash),
+		NearHash:          tx.NearTransaction.Hash,
+		NearReceiptHash:   tx.NearTransaction.ReceiptHash,
 	}
 }
 
@@ -357,6 +357,13 @@ func (i Uint256) Add(x int64) *Uint256 {
 	return &Uint256{n}
 }
 
+func (i Uint256) Bytes() []byte {
+	if i.Int == nil {
+		return []byte{}
+	}
+	return i.Int.Bytes()
+}
+
 func (i *Uint256) FromHexString(s string) error {
 	s = strings.TrimPrefix(s, "0x")
 	if val, success := big.NewInt(0).SetString(s, 16); !success {
@@ -398,6 +405,13 @@ func (i *Uint256) UnmarshalJSON(b []byte) error {
 	s := string(b)
 	s = strings.Trim(s, `"`)
 	return i.FromHexString(s)
+}
+
+func (i *Uint256) SetBytes(b []byte) {
+	if i.Int == nil {
+		i.Int = big.NewInt(0)
+	}
+	i.Int.SetBytes(b)
 }
 
 func (i Uint256) ToUint32Key() (*Int32Key, error) {

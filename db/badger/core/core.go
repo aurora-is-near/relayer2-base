@@ -43,6 +43,7 @@ func Open(options badger.Options, gcIntervalSeconds int) (*badger.DB, error) {
 			}
 		}
 	}
+
 	return bdb, err
 }
 
@@ -59,70 +60,70 @@ func Close() error {
 	return nil
 }
 
-func Fetch(key []byte) (*[]byte, error) {
-	res := new([]byte)
-	err := bdb.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(key)
-		if err != nil {
+func Fetch(key []byte, txn *badger.Txn) (*[]byte, error) {
+	if txn != nil {
+		return fetch(key, txn)
+	} else {
+		var res *[]byte
+		var err error
+		err = bdb.View(func(txn *badger.Txn) error {
+			res, err = fetch(key, txn)
 			return err
-		}
-		valueCopy, err := item.ValueCopy(nil)
-		if err != nil {
-			return err
-		}
-		res = &valueCopy
-		return nil
-	})
+		})
+		return res, err
+	}
+}
+func fetch(key []byte, txn *badger.Txn) (*[]byte, error) {
+	item, err := txn.Get(key)
 	if err != nil {
 		return nil, err
 	}
-	return res, nil
+	valueCopy, err := item.ValueCopy(nil)
+	if err != nil {
+		return nil, err
+	}
+	return &valueCopy, nil
 }
 
-func FetchPrefixed(prefix []byte) ([][]byte, error) {
-	res := make([][]byte, 0)
-	err := bdb.View(func(txn *badger.Txn) error {
-		it := txn.NewIterator(badger.DefaultIteratorOptions)
-		defer it.Close()
-		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
-			item := it.Item()
-			valueCopy, err := item.ValueCopy(nil)
-			if err != nil {
-				return err
-			}
-			res = append(res, valueCopy)
-		}
-		return nil
-	})
-	return res, err
+func FetchPrefixedWithLimitAndTimeout(limit uint, timeout uint, prefix []byte, txn *badger.Txn) ([][]byte, error) {
+	if txn != nil {
+		return fetchPrefixedWithLimitAndTimeout(limit, timeout, prefix, txn)
+	} else {
+		var res [][]byte
+		var err error
+		err = bdb.View(func(txn *badger.Txn) error {
+			res, err = fetchPrefixedWithLimitAndTimeout(limit, timeout, prefix, txn)
+			return err
+		})
+		return res, err
+	}
 }
 
-func FetchPrefixedWithLimitAndTimeout(limit uint, timeout uint, prefix []byte) ([][]byte, error) {
-	res := make([][]byte, 0)
+func fetchPrefixedWithLimitAndTimeout(limit uint, timeout uint, prefix []byte, txn *badger.Txn) ([][]byte, error) {
 	to := time.NewTimer(time.Duration(time.Second * time.Duration(timeout)))
 	defer to.Stop()
-	err := bdb.View(func(txn *badger.Txn) error {
-		it := txn.NewIterator(badger.DefaultIteratorOptions)
-		defer it.Close()
-		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
-			item := it.Item()
-			valueCopy, err := item.ValueCopy(nil)
-			if err != nil {
-				return err
-			}
-			res = append(res, valueCopy)
-			if uint(len(res)) >= limit {
-				return nil
-			}
-			select {
-			case <-to.C:
-				return nil
-			default:
-			}
+
+	it := txn.NewIterator(badger.DefaultIteratorOptions)
+	defer it.Close()
+
+	res := make([][]byte, 0)
+	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+		item := it.Item()
+		valueCopy, err := item.ValueCopy(nil)
+		if err != nil {
+			return res, err
 		}
-		return nil
-	})
-	return res, err
+		res = append(res, valueCopy)
+		if uint(len(res)) >= limit {
+			return res, nil
+		}
+		select {
+		case <-to.C:
+			return res, nil
+		default:
+		}
+	}
+	return res, nil
 }
 
 func Insert(key []byte, value []byte) error {
@@ -130,6 +131,10 @@ func Insert(key []byte, value []byte) error {
 		e := badger.NewEntry(key, value)
 		return txn.SetEntry(e)
 	})
+}
+
+func InsertBatch(writer *badger.WriteBatch, key []byte, value []byte) error {
+	return writer.Set(key, value)
 }
 
 func Delete(key []byte) error {

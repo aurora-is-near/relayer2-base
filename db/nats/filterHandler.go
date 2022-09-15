@@ -2,18 +2,24 @@ package nats
 
 import (
 	"aurora-relayer-go-common/db"
+	"aurora-relayer-go-common/db/codec"
 	"aurora-relayer-go-common/db/nats/core"
 	"aurora-relayer-go-common/utils"
+	"context"
 	"github.com/nats-io/nats.go"
 )
 
 type FilterHandler struct {
 	kv     *nats.KeyValue
-	codec  db.Codec
+	codec  codec.Codec
 	config *Config
 }
 
 func NewFilterHandler() (db.FilterHandler, error) {
+	return NewFilterHandlerWithCodec(codec.NewCborCodec())
+}
+
+func NewFilterHandlerWithCodec(codec codec.Codec) (db.FilterHandler, error) {
 	config := GetConfig()
 	conn, err := core.Open(config.NatsConfig)
 	if err != nil {
@@ -32,12 +38,12 @@ func NewFilterHandler() (db.FilterHandler, error) {
 
 	return &FilterHandler{
 		kv:     &kv,
-		codec:  db.NewCborCodec(),
+		codec:  codec,
 		config: config,
 	}, nil
 }
 
-func (h *FilterHandler) StoreFilter(id utils.Uint256, filter *utils.StoredFilter) error {
+func (h *FilterHandler) StoreFilter(ctx context.Context, id utils.Uint256, filter *utils.StoredFilter) error {
 	buf, err := h.codec.Marshal(filter)
 	if err != nil {
 		return err
@@ -45,7 +51,7 @@ func (h *FilterHandler) StoreFilter(id utils.Uint256, filter *utils.StoredFilter
 	return h.put(id.String(), buf)
 }
 
-func (h *FilterHandler) GetFilter(id utils.Uint256) (*utils.StoredFilter, error) {
+func (h *FilterHandler) GetFilter(ctx context.Context, id utils.Uint256) (*utils.StoredFilter, error) {
 	buf, err := h.get(id.String())
 	if err != nil {
 		return nil, err
@@ -55,7 +61,7 @@ func (h *FilterHandler) GetFilter(id utils.Uint256) (*utils.StoredFilter, error)
 	return &storedFilter, err
 }
 
-func (h *FilterHandler) DeleteFilter(id utils.Uint256) error {
+func (h *FilterHandler) DeleteFilter(ctx context.Context, id utils.Uint256) error {
 	return h.del(id.String())
 }
 
