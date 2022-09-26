@@ -27,25 +27,25 @@ func (e *Eth) Accounts(_ context.Context) (*[]string, error) {
 	return &accounts, nil
 }
 
-// Coinbase returns constant 0x0
+// Coinbase returns constant 0x0, see relayer.yml to configure coinBase
 //
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 func (e *Eth) Coinbase(_ context.Context) (*string, error) {
-	return &e.Config.EthConfig.zeroAddress, nil
+	return &e.Config.EthConfig.ZeroAddress, nil
 }
 
-// ProtocolVersion returns constant 0x41
+// ProtocolVersion returns constant 0x41, see relayer.yml to configure ProtocolVersion
 //
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 func (e *Eth) ProtocolVersion(_ context.Context) (*utils.Uint256, error) {
-	return &e.Config.EthConfig.protocolVersion, nil
+	return &e.Config.EthConfig.ProtocolVersion, nil
 }
 
-// Hashrate returns constant 0x0
+// Hashrate returns constant 0x0, see relayer.yml to configure Hashrate
 //
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 func (e *Eth) Hashrate(_ context.Context) (*utils.Uint256, error) {
-	return &e.Config.EthConfig.hashrate, nil
+	return &e.Config.EthConfig.Hashrate, nil
 }
 
 // Mining returns constant false
@@ -60,6 +60,13 @@ func (e *Eth) Mining(_ context.Context) (*bool, error) {
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 func (e *Eth) Syncing(_ context.Context) (*bool, error) {
 	return &syncing, nil
+}
+
+// EstimateGas returns constant 6_721_975, see relayer.yml to configure default Gas
+//
+//	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
+func (e *Eth) EstimateGas(_ context.Context, _ []utils.EstimateGasRequest) (*utils.Uint256, error) {
+	return &e.Config.EthConfig.Gas, nil
 }
 
 // BlockNumber returns the latest block number from DB if API is enabled by configuration.

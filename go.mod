@@ -9,6 +9,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/jinzhu/copier v0.3.5
+	github.com/mailru/easyjson v0.7.7
 	github.com/nats-io/nats.go v1.18.0
 	github.com/near/borsh-go v0.3.1
 	github.com/rs/zerolog v1.28.0
@@ -68,6 +69,7 @@ require (
 	github.com/google/flatbuffers v22.9.29+incompatible // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.15.11 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/nats-io/nats-server/v2 v2.8.4 // indirect

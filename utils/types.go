@@ -24,7 +24,6 @@ type Int32Key struct{ key [4]byte }
 type TxnData string
 
 type Block struct {
-	_                struct{}       `cbor:",toarray"`
 	ChainId          uint64         `cbor:"chain_id"`
 	Hash             H256           `cbor:"hash"`
 	ParentHash       H256           `cbor:"parent_hash"`
@@ -44,7 +43,6 @@ type Block struct {
 }
 
 type Transaction struct {
-	_                    struct{}        `cbor:",toarray"`
 	Hash                 H256            `cbor:"hash"`
 	BlockHash            H256            `cbor:"block_hash"`
 	BlockHeight          uint64          `cbor:"block_height"`
@@ -73,16 +71,14 @@ type Transaction struct {
 }
 
 type AccessList struct {
-	_           struct{} `cbor:",toarray"`
-	Address     Address  `json:"address"`
-	StorageKeys []H256   `json:"storageKeys"`
+	Address     Address `json:"address"`
+	StorageKeys []H256  `json:"storageKeys"`
 }
 
 type Log struct {
-	_       struct{} `cbor:",toarray"`
-	Address Address  `cbor:"Address"`
-	Topics  []Bytea  `cbor:"Topics"`
-	Data    Bytea    `cbor:"data"`
+	Address Address `cbor:"Address"`
+	Topics  []Bytea `cbor:"Topics"`
+	Data    Bytea   `cbor:"data"`
 }
 
 type LogSubscriptionOptions struct {
@@ -107,7 +103,6 @@ type LogFilter struct {
 }
 
 type StoredFilter struct {
-	_         struct{} `cbor:",toarray"`
 	Type      string
 	CreatedBy string
 	PollBlock Uint256
@@ -119,11 +114,11 @@ type StoredFilter struct {
 }
 
 type NearTransaction struct {
-	_           struct{} `cbor:",toarray"`
-	Hash        H256     `cbor:"hash"`
-	ReceiptHash H256     `cbor:"receipt_hash"`
+	Hash        H256 `cbor:"hash"`
+	ReceiptHash H256 `cbor:"receipt_hash"`
 }
 
+//easyjson:json
 type BlockResponse struct {
 	Difficulty       Uint256       `json:"difficulty"`
 	ExtraData        Bytea         `json:"extraData"`
@@ -147,6 +142,7 @@ type BlockResponse struct {
 	Uncles           []H256        `json:"uncles"`
 }
 
+//easyjson:json
 type TransactionResponse struct {
 	BlockHash        H256     `json:"blockHash"`
 	BlockNumber      Uint256  `json:"blockNumber"`
@@ -167,6 +163,7 @@ type TransactionResponse struct {
 	// Type             Uint256               `json:"type"`              // not in original relayer
 }
 
+//easyjson:json
 type TransactionReceiptResponse struct {
 	BlockHash         H256           `json:"blockHash"`         // 32 Bytes - hash of the block including this transaction.
 	BlockNumber       Uint256        `json:"blockNumber"`       // block number including this transaction.
@@ -188,17 +185,17 @@ type TransactionReceiptResponse struct {
 
 type AccessListResponse struct{}
 
+//easyjson:json
 type LogResponse struct {
-	_                struct{} `cbor:",toarray"`
-	Removed          bool     `json:"removed"`          // true when the log was removed, due to a chain reorganization. false if it's a valid log.
-	LogIndex         Uint256  `json:"logIndex"`         // hexadecimal of the log index position in the block. null when its pending log.
-	TransactionIndex Uint256  `json:"transactionIndex"` // hexadecimal of the transactions index position log was created from. null when its pending log.
-	TransactionHash  H256     `json:"transactionHash"`  // 32 Bytes - hash of the transactions this log was created from. null when its pending log.
-	BlockHash        H256     `json:"blockHash"`        // 32 Bytes - hash of the block where this log was in. null when it's pending. null when its pending log.
-	BlockNumber      Uint256  `json:"blockNumber"`      // the block number where this log was in. null when it's pending. null when its pending log.
-	Address          Address  `json:"address"`          // 20 Bytes - address from which this log originated.
-	Data             Bytea    `json:"data"`             // contains one or more 32 Bytes non-indexed arguments of the log.
-	Topics           []Bytea  `json:"topics"`           // Array of 0 to 4 32 Bytes of indexed log arguments. (In solidity: The first topic is the hash of the signature of the event (e.g. Deposit(address,bytes32,uint256)), except you declared the event with the anonymous specifier.)
+	Removed          bool    `json:"removed"`          // true when the log was removed, due to a chain reorganization. false if it's a valid log.
+	LogIndex         Uint256 `json:"logIndex"`         // hexadecimal of the log index position in the block. null when its pending log.
+	TransactionIndex Uint256 `json:"transactionIndex"` // hexadecimal of the transactions index position log was created from. null when its pending log.
+	TransactionHash  H256    `json:"transactionHash"`  // 32 Bytes - hash of the transactions this log was created from. null when its pending log.
+	BlockHash        H256    `json:"blockHash"`        // 32 Bytes - hash of the block where this log was in. null when its pending. null when its pending log.
+	BlockNumber      Uint256 `json:"blockNumber"`      // the block number where this log was in. null when its pending. null when its pending log.
+	Address          Address `json:"address"`          // 20 Bytes - address from which this log originated.
+	Data             Bytea   `json:"data"`             // contains one or more 32 Bytes non-indexed arguments of the log.
+	Topics           []Bytea `json:"topics"`           // Array of 0 to 4 32 Bytes of indexed log arguments. (In solidity: The first topic is the hash of the signature of the event (e.g. Deposit(address,bytes32,uint256)), except you declared the event with the anonymous specifier.)
 }
 
 func (bl *Block) TxCount() int64 {
@@ -286,6 +283,17 @@ func (tx *Transaction) ToReceiptResponse() *TransactionReceiptResponse {
 		NearHash:          tx.NearTransaction.Hash,
 		NearReceiptHash:   tx.NearTransaction.ReceiptHash,
 	}
+}
+
+type EstimateGasRequest struct {
+	From                 string `json:"from"`
+	To                   string `json:"to"`
+	Gas                  string `json:"gas"`
+	GasPrice             string `json:"gasPrice"`
+	MaxPriorityFeePerGas int64  `json:"maxPriorityFeePerGas"`
+	MaxFeePerGas         int64  `json:"maxFeePerGas"`
+	Value                string `json:"value"`
+	Data                 string `json:"data"`
 }
 
 func (a *Address) IsZero() bool {
