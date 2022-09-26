@@ -1,6 +1,8 @@
 package utils
 
 import (
+	dbp "aurora-relayer-go-common/db/badger2/core/dbprimitives"
+	"aurora-relayer-go-common/db/badger2/core/dbtypes"
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
@@ -24,65 +26,73 @@ type Int32Key struct{ key [4]byte }
 type TxnData string
 
 type Block struct {
-	_                struct{}       `cbor:",toarray"`
-	ChainId          uint64         `cbor:"chain_id"`
-	Hash             H256           `cbor:"hash"`
-	ParentHash       H256           `cbor:"parent_hash"`
-	Height           uint64         `cbor:"height"`
-	Miner            Address        `cbor:"miner"`
-	Timestamp        int64          `cbor:"timestamp"`
-	GasLimit         Uint256        `cbor:"gas_limit"`
-	GasUsed          Uint256        `cbor:"gas_used"`
-	LogsBloom        string         `cbor:"logs_bloom"`
-	TransactionsRoot H256           `cbor:"transactions_root"`
-	ReceiptsRoot     H256           `cbor:"receipts_root"`
-	Transactions     []*Transaction `cbor:"transactions"`
-	NearBlock        any            `cbor:"near_metadata"`
-	StateRoot        string         `cbor:"state_root"`
-	Size             Uint256        `cbor:"size"`
-	Sequence         uint64         `cbor:"sequence"`
+	ChainId          uint64         `cbor:"chain_id" json:"chain_id"`
+	Hash             H256           `cbor:"hash" json:"hash"`
+	ParentHash       H256           `cbor:"parent_hash" json:"parent_hash"`
+	Height           uint64         `cbor:"height" json:"height"`
+	Miner            Address        `cbor:"miner" json:"miner"`
+	Timestamp        int64          `cbor:"timestamp" json:"timestamp"`
+	GasLimit         Uint256        `cbor:"gas_limit" json:"gas_limit"`
+	GasUsed          Uint256        `cbor:"gas_used" json:"gas_used"`
+	LogsBloom        string         `cbor:"logs_bloom" json:"logs_bloom"`
+	TransactionsRoot H256           `cbor:"transactions_root" json:"transactions_root"`
+	ReceiptsRoot     H256           `cbor:"receipts_root" json:"receipts_root"`
+	Transactions     []*Transaction `cbor:"transactions" json:"transactions"`
+	NearBlock        any            `cbor:"near_metadata" json:"near_block"`
+	StateRoot        string         `cbor:"state_root" json:"state_root"`
+	Size             Uint256        `cbor:"size" json:"size"`
+	Sequence         uint64         `cbor:"sequence" json:"sequence"`
+}
+
+type BlockStore struct {
+	Hash             dbp.Data32
+	Block            dbtypes.Block
+	TransactionStore []*TransactionStore
+}
+
+type TransactionStore struct {
+	Index       uint64
+	Transaction dbtypes.Transaction
 }
 
 type Transaction struct {
-	_                    struct{}        `cbor:",toarray"`
-	Hash                 H256            `cbor:"hash"`
-	BlockHash            H256            `cbor:"block_hash"`
-	BlockHeight          uint64          `cbor:"block_height"`
-	ChainId              uint64          `cbor:"chain_id"`
-	TransactionIndex     uint32          `cbor:"transaction_index"`
-	From                 Address         `cbor:"from"`
-	To                   *Address        `cbor:"to"`
-	Nonce                Uint256         `cbor:"nonce"`
-	GasPrice             Uint256         `cbor:"gas_price"`
-	GasLimit             Uint256         `cbor:"gas_limit"`
-	GasUsed              Uint256         `cbor:"gas_used"`
-	MaxPriorityFeePerGas Uint256         `cbor:"max_priority_fee_per_gas"`
-	MaxFeePerGas         Uint256         `cbor:"max_fee_per_gas"`
-	Value                Uint256         `cbor:"value"`
-	Input                Bytea           `cbor:"input"`
-	Output               Bytea           `cbor:"output"`
-	AccessList           []AccessList    `cbor:"access_list"`
-	TxType               uint8           `cbor:"tx_type"`
-	Status               bool            `cbor:"status"`
-	Logs                 []*Log          `cbor:"logs"`
-	ContractAddress      Address         `cbor:"contract_address"`
-	V                    uint64          `cbor:"v"`
-	R                    Uint256         `cbor:"r"`
-	S                    Uint256         `cbor:"s"`
-	NearTransaction      NearTransaction `cbor:"near_metadata"`
+	Hash                 H256            `cbor:"hash" json:"hash"`
+	BlockHash            H256            `cbor:"block_hash" json:"block_hash"`
+	BlockHeight          uint64          `cbor:"block_height" json:"block_height"`
+	ChainId              uint64          `cbor:"chain_id" json:"chain_id"`
+	TransactionIndex     uint32          `cbor:"transaction_index" json:"transaction_index"`
+	From                 Address         `cbor:"from" json:"from"`
+	To                   *Address        `cbor:"to" json:"to"`
+	Nonce                Uint256         `cbor:"nonce" json:"nonce"`
+	GasPrice             Uint256         `cbor:"gas_price" json:"gas_price"`
+	GasLimit             Uint256         `cbor:"gas_limit" json:"gas_limit"`
+	GasUsed              Uint256         `cbor:"gas_used" json:"gas_used"`
+	MaxPriorityFeePerGas Uint256         `cbor:"max_priority_fee_per_gas" json:"max_priority_fee_per_gas"`
+	MaxFeePerGas         Uint256         `cbor:"max_fee_per_gas" json:"max_fee_per_gas"`
+	Value                Uint256         `cbor:"value" json:"value"`
+	Input                Bytea           `cbor:"input" json:"input"`
+	Output               Bytea           `cbor:"output" json:"output"`
+	AccessList           []AccessList    `cbor:"access_list" json:"access_list"`
+	TxType               uint8           `cbor:"tx_type" json:"tx_type"`
+	Status               bool            `cbor:"status" json:"status"`
+	Logs                 []*Log          `cbor:"logs" json:"logs"`
+	ContractAddress      *Address        `cbor:"contract_address" json:"contract_address"`
+	LogsBloom            string          `cbor:"logs_bloom" json:"logs_bloom"`
+	V                    uint64          `cbor:"v" json:"v"`
+	R                    Uint256         `cbor:"r" json:"r"`
+	S                    Uint256         `cbor:"s" json:"s"`
+	NearTransaction      NearTransaction `cbor:"near_metadata" json:"near_transaction"`
 }
 
 type AccessList struct {
-	_           struct{} `cbor:",toarray"`
-	Address     Address  `json:"address"`
-	StorageKeys []H256   `json:"storageKeys"`
+	Address     Address `json:"address"`
+	StorageKeys []H256  `json:"storageKeys"`
 }
 
 type Log struct {
-	_       struct{} `cbor:",toarray"`
-	Address Address  `cbor:"Address"`
-	Topics  []Bytea  `cbor:"Topics"`
-	Data    Bytea    `cbor:"data"`
+	Address Address `cbor:"Address" json:"address"`
+	Topics  []Bytea `cbor:"Topics" json:"topics"`
+	Data    Bytea   `cbor:"data" json:"data"`
 }
 
 type LogSubscriptionOptions struct {
@@ -99,19 +109,16 @@ type FilterOptions struct {
 }
 
 type LogFilter struct {
-	Address   [][]byte `json:"address"`
-	FromBlock *Uint256 `json:"fromBlock"`
-	ToBlock   *Uint256 `json:"toBlock"`
-	// Blockhash *H256      `json:"blockhash"` // Blockhash is converted to FromBlock = ToBlock on eth_getLogs call
-	Topics [][][]byte `json:"topics"`
+	Address   [][]byte   `json:"address"`
+	FromBlock *Uint256   `json:"fromBlock"`
+	ToBlock   *Uint256   `json:"toBlock"`
+	Topics    [][][]byte `json:"topics"`
 }
 
 type StoredFilter struct {
-	_         struct{} `cbor:",toarray"`
 	Type      string
 	CreatedBy string
 	PollBlock Uint256
-	// BlockHash *H256
 	FromBlock *Uint256
 	ToBlock   *Uint256
 	Addresses [][]byte
@@ -119,11 +126,11 @@ type StoredFilter struct {
 }
 
 type NearTransaction struct {
-	_           struct{} `cbor:",toarray"`
-	Hash        H256     `cbor:"hash"`
-	ReceiptHash H256     `cbor:"receipt_hash"`
+	Hash        H256 `cbor:"hash" json:"hash"`
+	ReceiptHash H256 `cbor:"receipt_hash" json:"receipt_hash"`
 }
 
+//easyjson:json
 type BlockResponse struct {
 	Difficulty       Uint256       `json:"difficulty"`
 	ExtraData        Bytea         `json:"extraData"`
@@ -147,6 +154,7 @@ type BlockResponse struct {
 	Uncles           []H256        `json:"uncles"`
 }
 
+//easyjson:json
 type TransactionResponse struct {
 	BlockHash        H256     `json:"blockHash"`
 	BlockNumber      Uint256  `json:"blockNumber"`
@@ -167,6 +175,7 @@ type TransactionResponse struct {
 	// Type             Uint256               `json:"type"`              // not in original relayer
 }
 
+//easyjson:json
 type TransactionReceiptResponse struct {
 	BlockHash         H256           `json:"blockHash"`         // 32 Bytes - hash of the block including this transaction.
 	BlockNumber       Uint256        `json:"blockNumber"`       // block number including this transaction.
@@ -188,17 +197,17 @@ type TransactionReceiptResponse struct {
 
 type AccessListResponse struct{}
 
+//easyjson:json
 type LogResponse struct {
-	_                struct{} `cbor:",toarray"`
-	Removed          bool     `json:"removed"`          // true when the log was removed, due to a chain reorganization. false if it's a valid log.
-	LogIndex         Uint256  `json:"logIndex"`         // hexadecimal of the log index position in the block. null when its pending log.
-	TransactionIndex Uint256  `json:"transactionIndex"` // hexadecimal of the transactions index position log was created from. null when its pending log.
-	TransactionHash  H256     `json:"transactionHash"`  // 32 Bytes - hash of the transactions this log was created from. null when its pending log.
-	BlockHash        H256     `json:"blockHash"`        // 32 Bytes - hash of the block where this log was in. null when it's pending. null when its pending log.
-	BlockNumber      Uint256  `json:"blockNumber"`      // the block number where this log was in. null when it's pending. null when its pending log.
-	Address          Address  `json:"address"`          // 20 Bytes - address from which this log originated.
-	Data             Bytea    `json:"data"`             // contains one or more 32 Bytes non-indexed arguments of the log.
-	Topics           []Bytea  `json:"topics"`           // Array of 0 to 4 32 Bytes of indexed log arguments. (In solidity: The first topic is the hash of the signature of the event (e.g. Deposit(address,bytes32,uint256)), except you declared the event with the anonymous specifier.)
+	Removed          bool    `json:"removed"`          // true when the log was removed, due to a chain reorganization. false if it's a valid log.
+	LogIndex         Uint256 `json:"logIndex"`         // hexadecimal of the log index position in the block. null when its pending log.
+	TransactionIndex Uint256 `json:"transactionIndex"` // hexadecimal of the transactions index position log was created from. null when its pending log.
+	TransactionHash  H256    `json:"transactionHash"`  // 32 Bytes - hash of the transactions this log was created from. null when its pending log.
+	BlockHash        H256    `json:"blockHash"`        // 32 Bytes - hash of the block where this log was in. null when its pending. null when its pending log.
+	BlockNumber      Uint256 `json:"blockNumber"`      // the block number where this log was in. null when its pending. null when its pending log.
+	Address          Address `json:"address"`          // 20 Bytes - address from which this log originated.
+	Data             Bytea   `json:"data"`             // contains one or more 32 Bytes non-indexed arguments of the log.
+	Topics           []Bytea `json:"topics"`           // Array of 0 to 4 32 Bytes of indexed log arguments. (In solidity: The first topic is the hash of the signature of the event (e.g. Deposit(address,bytes32,uint256)), except you declared the event with the anonymous specifier.)
 }
 
 func (bl *Block) TxCount() int64 {
@@ -262,17 +271,12 @@ func (tx *Transaction) ToReceiptResponse() *TransactionReceiptResponse {
 		status = IntToUint256(0)
 	}
 
-	var contractAddress *Address
-	if !tx.ContractAddress.IsZero() {
-		contractAddress = &tx.ContractAddress
-	}
-
 	var logsBloom = Bytea(fmt.Sprintf("%0256x", 0))
 
 	return &TransactionReceiptResponse{
 		BlockHash:         tx.BlockHash,
 		BlockNumber:       UintToUint256(tx.BlockHeight),
-		ContractAddress:   contractAddress,
+		ContractAddress:   tx.ContractAddress,
 		CumulativeGasUsed: IntToUint256(0),
 		EffectiveGasPrice: tx.GasPrice,
 		From:              tx.From,
@@ -286,6 +290,17 @@ func (tx *Transaction) ToReceiptResponse() *TransactionReceiptResponse {
 		NearHash:          tx.NearTransaction.Hash,
 		NearReceiptHash:   tx.NearTransaction.ReceiptHash,
 	}
+}
+
+type EstimateGasRequest struct {
+	From                 string `json:"from"`
+	To                   string `json:"to"`
+	Gas                  string `json:"gas"`
+	GasPrice             string `json:"gasPrice"`
+	MaxPriorityFeePerGas int64  `json:"maxPriorityFeePerGas"`
+	MaxFeePerGas         int64  `json:"maxFeePerGas"`
+	Value                string `json:"value"`
+	Data                 string `json:"data"`
 }
 
 func (a *Address) IsZero() bool {

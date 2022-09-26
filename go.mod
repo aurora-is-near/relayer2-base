@@ -4,11 +4,13 @@ go 1.18
 
 require (
 	capnproto.org/go/capnp/v3 v3.0.0-alpha.7
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/ethereum/go-ethereum v1.10.25
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/jinzhu/copier v0.3.5
+	github.com/mailru/easyjson v0.7.7
 	github.com/nats-io/nats.go v1.18.0
 	github.com/near/borsh-go v0.3.1
 	github.com/rs/zerolog v1.28.0
@@ -56,7 +58,6 @@ require (
 require (
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgraph-io/ristretto v0.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
@@ -68,6 +69,7 @@ require (
 	github.com/google/flatbuffers v22.9.29+incompatible // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.15.11 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/nats-io/nats-server/v2 v2.8.4 // indirect

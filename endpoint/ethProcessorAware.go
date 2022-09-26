@@ -49,6 +49,12 @@ func (e *EthProcessorAware) Syncing(ctx context.Context) (*bool, error) {
 	})
 }
 
+func (e *EthProcessorAware) EstimateGas(ctx context.Context, estimateGasRequest []utils.EstimateGasRequest) (*utils.Uint256, error) {
+	return Process(ctx, "eth_estimateGas", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
+		return e.Eth.EstimateGas(ctx, estimateGasRequest)
+	})
+}
+
 func (e *EthProcessorAware) BlockNumber(ctx context.Context) (*utils.Uint256, error) {
 	return Process(ctx, "eth_blockNumber", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
 		return e.Eth.BlockNumber(ctx)
