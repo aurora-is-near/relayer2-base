@@ -8,10 +8,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-const (
-	ConfigPath = "endpoint"
-)
-
 func Process[T any](ctx context.Context, name string, endpoint *Endpoint, handler func(ctx context.Context) (T, error), args ...any) (T, error) {
 
 	var zeroVal T

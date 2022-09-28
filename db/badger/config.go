@@ -23,9 +23,11 @@ const (
 
 type Config struct {
 	GcIntervalSeconds       int            `mapstructure:"gcIntervalSeconds"`
+	LogFilterTtlMinutes     int            `mapstructure:"logFilterTtlMinutes"`
 	IterationTimeoutSeconds uint           `mapstructure:"iterationTimeoutSeconds"`
 	IterationMaxItems       uint           `mapstructure:"iterationMaxItems"`
-	LogFilterTtlMinutes     int            `mapstructure:"logFilterTtlMinutes"`
+	ExcludeTxn              []string       `mapstructure:"excludeTxn"`
+	UpdateTxn               []string       `mapstructure:"updateTxn"`
 	ScanConfig              core.ScanOpts  `mapstructure:"index"`
 	BadgerConfig            badger.Options `mapstructure:"options"`
 }
@@ -38,6 +40,22 @@ func defaultConfig() *Config {
 		LogFilterTtlMinutes:     defaultLogFilterTtlMinutes,
 		IterationTimeoutSeconds: defaultIterationTimeoutSeconds,
 		IterationMaxItems:       defaultIterationMaxItems,
+		ExcludeTxn: []string{
+			"eth_accounts",
+			"eth_coinbase",
+			"eth_chainId",
+			"eth_protocolVersion",
+			"eth_hashrate",
+			"eth_mining",
+			"eth_syncing",
+			"web3_clientVersion",
+			"web3_sha3",
+		},
+		UpdateTxn: []string{
+			"eth_newFilter",
+			"eth_newBlockFilter",
+			"eth_uninstallFilter",
+		},
 		ScanConfig: core.ScanOpts{
 			MaxJumps:         defaultMaxJumps,
 			MaxRangeScanners: defaultRangeScanners,
