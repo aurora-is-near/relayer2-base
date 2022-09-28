@@ -109,7 +109,7 @@ func (e *EthProcessorAware) GetTransactionReceipt(ctx context.Context, hash util
 	}, hash)
 }
 
-func (e *EthProcessorAware) GetLogs(ctx context.Context, rawFilter utils.FilterOptions) (*[]utils.LogResponse, error) {
+func (e *EthProcessorAware) GetLogs(ctx context.Context, rawFilter *utils.FilterOptions) (*[]utils.LogResponse, error) {
 	return Process(ctx, "eth_getLogs", e.Endpoint, func(ctx context.Context) (*[]utils.LogResponse, error) {
 		return e.Eth.GetLogs(ctx, rawFilter)
 	}, rawFilter)
@@ -122,31 +122,31 @@ func (e *EthProcessorAware) GetFilterLogs(ctx context.Context, filterId utils.Ui
 }
 
 func (e *EthProcessorAware) GetUncleCountByBlockHash(ctx context.Context, hash utils.H256) (*utils.Uint256, error) {
-	return Process(ctx, "eth_GetUncleCountByBlockHash", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
+	return Process(ctx, "eth_getUncleCountByBlockHash", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
 		return e.Eth.GetUncleCountByBlockHash(ctx, hash)
 	}, hash)
 }
 
 func (e *EthProcessorAware) GetUncleCountByBlockNumber(ctx context.Context, number utils.Uint256) (*utils.Uint256, error) {
-	return Process(ctx, "eth_GetUncleCountByBlockNumber", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
+	return Process(ctx, "eth_getUncleCountByBlockNumber", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
 		return e.Eth.GetUncleCountByBlockNumber(ctx, number)
 	}, number)
 }
 
-func (e *EthProcessorAware) NewFilter(ctx context.Context, filterOptions utils.FilterOptions) (*utils.Uint256, error) {
-	return Process(ctx, "eth_NewFilter", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
+func (e *EthProcessorAware) NewFilter(ctx context.Context, filterOptions *utils.FilterOptions) (*utils.Uint256, error) {
+	return Process(ctx, "eth_newFilter", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
 		return e.Eth.NewFilter(ctx, filterOptions)
 	}, filterOptions)
 }
 
 func (e *EthProcessorAware) NewBlockFilter(ctx context.Context) (*utils.Uint256, error) {
-	return Process(ctx, "eth_NewBlockFilter", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
+	return Process(ctx, "eth_newBlockFilter", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
 		return e.Eth.NewBlockFilter(ctx)
 	})
 }
 
 func (e *EthProcessorAware) UninstallFilter(ctx context.Context, filterId utils.Uint256) (bool, error) {
-	return Process(ctx, "eth_UninstallFilter", e.Endpoint, func(ctx context.Context) (bool, error) {
+	return Process(ctx, "eth_uninstallFilter", e.Endpoint, func(ctx context.Context) (bool, error) {
 		return e.Eth.UninstallFilter(ctx, filterId)
 	}, filterId)
 }

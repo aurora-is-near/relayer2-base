@@ -197,8 +197,8 @@ func (e *Eth) GetTransactionReceipt(ctx context.Context, hash utils.H256) (*util
 //
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On DB failure or number not found, returns error code '-32000' with custom message.
-func (e *Eth) GetLogs(ctx context.Context, rawFilter utils.FilterOptions) (*[]utils.LogResponse, error) {
-	filter, err := e.formatFilterOptions(ctx, &rawFilter)
+func (e *Eth) GetLogs(ctx context.Context, rawFilter *utils.FilterOptions) (*[]utils.LogResponse, error) {
+	filter, err := e.formatFilterOptions(ctx, rawFilter)
 	if err != nil {
 		return nil, &utils.GenericError{Err: err}
 	}
@@ -211,7 +211,7 @@ func (e *Eth) GetLogs(ctx context.Context, rawFilter utils.FilterOptions) (*[]ut
 
 // NewFilter creates a new filter based on the filter options and returns newly created filter ID on success.
 //
-// FilterOptions object is mandatory but all keys are optional
+//	FilterOptions are optional
 // 	- fromBlock: QUANTITY|TAG - Integer block number, or "latest" for the last mined block or "pending", "earliest" for not yet mined transactions.
 // 	- toBlock: QUANTITY|TAG - Integer block number, or "latest" for the last mined block or "pending", "earliest" for not yet mined transactions.
 // 	- address: DATA|Array - Contract address or a list of addresses from which logs should originate.
@@ -220,8 +220,8 @@ func (e *Eth) GetLogs(ctx context.Context, rawFilter utils.FilterOptions) (*[]ut
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On filter option parsing failure, returns error code '32602' with custom message.
 //	On DB failure, returns error code '-32000' with custom message.
-func (e *Eth) NewFilter(ctx context.Context, filterOptions utils.FilterOptions) (*utils.Uint256, error) {
-	parsedFilter, err := e.formatFilterOptions(ctx, &filterOptions)
+func (e *Eth) NewFilter(ctx context.Context, filterOptions *utils.FilterOptions) (*utils.Uint256, error) {
+	parsedFilter, err := e.formatFilterOptions(ctx, filterOptions)
 	if err != nil {
 		return nil, &utils.InvalidParamsError{Message: err.Error()}
 	}
@@ -419,6 +419,9 @@ func (e *Eth) GetUncleCountByBlockNumber(ctx context.Context, number utils.Uint2
 }
 
 func (e *Eth) formatFilterOptions(ctx context.Context, filterOptions *utils.FilterOptions) (*utils.LogFilter, error) {
+	if filterOptions == nil {
+		filterOptions = &utils.FilterOptions{}
+	}
 	result := &utils.LogFilter{}
 	if filterOptions.BlockHash != nil {
 		blockNum, err := (*e.DbHandler).BlockHashToNumber(ctx, *filterOptions.BlockHash)

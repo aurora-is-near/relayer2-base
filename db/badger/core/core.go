@@ -126,21 +126,37 @@ func fetchPrefixedWithLimitAndTimeout(limit uint, timeout uint, prefix []byte, t
 	return res, nil
 }
 
-func Insert(key []byte, value []byte) error {
-	return bdb.Update(func(txn *badger.Txn) error {
-		e := badger.NewEntry(key, value)
-		return txn.SetEntry(e)
-	})
+func Insert(key []byte, value []byte, txn *badger.Txn) error {
+	if txn != nil {
+		return insert(key, value, txn)
+	} else {
+		return bdb.Update(func(txn *badger.Txn) error {
+			return insert(key, value, txn)
+		})
+	}
+}
+
+func insert(key []byte, value []byte, txn *badger.Txn) error {
+	e := badger.NewEntry(key, value)
+	return txn.SetEntry(e)
 }
 
 func InsertBatch(writer *badger.WriteBatch, key []byte, value []byte) error {
 	return writer.Set(key, value)
 }
 
-func Delete(key []byte) error {
-	return bdb.Update(func(txn *badger.Txn) error {
-		return txn.Delete(key)
-	})
+func Delete(key []byte, txn *badger.Txn) error {
+	if txn != nil {
+		return delete(key, txn)
+	} else {
+		return bdb.Update(func(txn *badger.Txn) error {
+			return delete(key, txn)
+		})
+	}
+}
+
+func delete(key []byte, txn *badger.Txn) error {
+	return txn.Delete(key)
 }
 
 func open(options badger.Options) (*badger.DB, error) {

@@ -50,12 +50,12 @@ func fetchPrefixedWithLimitAndTimeout[T any](ctx context.Context, codec codec.Co
 	return res, nil
 }
 
-func insert[T any](codec codec.Codec, key []byte, value T) error {
+func insert[T any](ctx context.Context, codec codec.Codec, key []byte, value T) error {
 	buf, err := codec.Marshal(value)
 	if err != nil {
 		return err
 	}
-	return core.Insert(key, buf)
+	return core.Insert(key, buf, GetTxn(ctx))
 }
 
 func insertBatch[T any](writer *badger.WriteBatch, codec codec.Codec, key []byte, value T) error {
@@ -66,6 +66,6 @@ func insertBatch[T any](writer *badger.WriteBatch, codec codec.Codec, key []byte
 	return core.InsertBatch(writer, key, buf)
 }
 
-func dlt(key []byte) error {
-	return core.Delete(key)
+func dlt(ctx context.Context, key []byte) error {
+	return core.Delete(key, GetTxn(ctx))
 }

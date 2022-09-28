@@ -33,7 +33,7 @@ func NewFilterHandlerWithCodec(codec codec.Codec) (db.FilterHandler, error) {
 
 func (h *FilterHandler) StoreFilter(ctx context.Context, id utils.Uint256, filter *utils.StoredFilter) error {
 	// TODO store with TTL
-	return insert(h.codec, filterByIdKey(id), filter)
+	return insert(ctx, h.codec, filterByIdKey(id), filter)
 }
 
 func (h *FilterHandler) GetFilter(ctx context.Context, id utils.Uint256) (*utils.StoredFilter, error) {
@@ -41,7 +41,7 @@ func (h *FilterHandler) GetFilter(ctx context.Context, id utils.Uint256) (*utils
 }
 
 func (h *FilterHandler) DeleteFilter(ctx context.Context, id utils.Uint256) error {
-	return dlt(filterByIdKey(id))
+	return dlt(ctx, filterByIdKey(id))
 }
 
 func (h *FilterHandler) Close() error {
