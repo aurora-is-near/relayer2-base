@@ -13,8 +13,8 @@ func NewEthProcessorAware(eth *Eth) *EthProcessorAware {
 	return &EthProcessorAware{eth}
 }
 
-func (e *EthProcessorAware) Accounts(ctx context.Context) ([]string, error) {
-	return Process(ctx, "eth_account", e.Endpoint, func(ctx context.Context) ([]string, error) {
+func (e *EthProcessorAware) Accounts(ctx context.Context) (*[]string, error) {
+	return Process(ctx, "eth_account", e.Endpoint, func(ctx context.Context) (*[]string, error) {
 		return e.Eth.Accounts(ctx)
 	})
 }
@@ -43,14 +43,14 @@ func (e *EthProcessorAware) Hashrate(ctx context.Context) (*utils.Uint256, error
 	})
 }
 
-func (e *EthProcessorAware) Mining(ctx context.Context) (bool, error) {
-	return Process(ctx, "eth_mining", e.Endpoint, func(ctx context.Context) (bool, error) {
+func (e *EthProcessorAware) Mining(ctx context.Context) (*bool, error) {
+	return Process(ctx, "eth_mining", e.Endpoint, func(ctx context.Context) (*bool, error) {
 		return e.Eth.Mining(ctx)
 	})
 }
 
-func (e *EthProcessorAware) Syncing(ctx context.Context) (bool, error) {
-	return Process(ctx, "eth_syncing", e.Endpoint, func(ctx context.Context) (bool, error) {
+func (e *EthProcessorAware) Syncing(ctx context.Context) (*bool, error) {
+	return Process(ctx, "eth_syncing", e.Endpoint, func(ctx context.Context) (*bool, error) {
 		return e.Eth.Syncing(ctx)
 	})
 }
@@ -73,20 +73,20 @@ func (e *EthProcessorAware) GetBlockByNumber(ctx context.Context, number utils.U
 	}, number, isFull)
 }
 
-func (e *EthProcessorAware) GetBlockTransactionCountByHash(ctx context.Context, hash utils.H256) (utils.Uint256, error) {
-	return Process(ctx, "eth_getBlockTransactionCountByHash", e.Endpoint, func(ctx context.Context) (utils.Uint256, error) {
+func (e *EthProcessorAware) GetBlockTransactionCountByHash(ctx context.Context, hash utils.H256) (*utils.Uint256, error) {
+	return Process(ctx, "eth_getBlockTransactionCountByHash", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
 		return e.Eth.GetBlockTransactionCountByHash(ctx, hash)
 	}, hash)
 }
 
-func (e *EthProcessorAware) GetBlockTransactionCountByNumber(ctx context.Context, number utils.Uint256) (utils.Uint256, error) {
-	return Process(ctx, "eth_getBlockTransactionCountByNumber", e.Endpoint, func(ctx context.Context) (utils.Uint256, error) {
+func (e *EthProcessorAware) GetBlockTransactionCountByNumber(ctx context.Context, number utils.Uint256) (*utils.Uint256, error) {
+	return Process(ctx, "eth_getBlockTransactionCountByNumber", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
 		return e.Eth.GetBlockTransactionCountByNumber(ctx, number)
 	}, number)
 }
 
 func (e *EthProcessorAware) GetTransactionByHash(ctx context.Context, hash utils.H256) (*utils.TransactionResponse, error) {
-	return Process(ctx, "eth_GetTransactionByHash", e.Endpoint, func(ctx context.Context) (*utils.TransactionResponse, error) {
+	return Process(ctx, "eth_getTransactionByHash", e.Endpoint, func(ctx context.Context) (*utils.TransactionResponse, error) {
 		return e.Eth.GetTransactionByHash(ctx, hash)
 	}, hash)
 }
@@ -145,14 +145,14 @@ func (e *EthProcessorAware) NewBlockFilter(ctx context.Context) (*utils.Uint256,
 	})
 }
 
-func (e *EthProcessorAware) UninstallFilter(ctx context.Context, filterId utils.Uint256) (bool, error) {
-	return Process(ctx, "eth_uninstallFilter", e.Endpoint, func(ctx context.Context) (bool, error) {
+func (e *EthProcessorAware) UninstallFilter(ctx context.Context, filterId utils.Uint256) (*bool, error) {
+	return Process(ctx, "eth_uninstallFilter", e.Endpoint, func(ctx context.Context) (*bool, error) {
 		return e.Eth.UninstallFilter(ctx, filterId)
 	}, filterId)
 }
 
 func (e *EthProcessorAware) GetFilterChanges(ctx context.Context, filterId utils.Uint256) (*[]interface{}, error) {
-	return Process(ctx, "eth_GetFilterChanges", e.Endpoint, func(ctx context.Context) (*[]interface{}, error) {
+	return Process(ctx, "eth_getFilterChanges", e.Endpoint, func(ctx context.Context) (*[]interface{}, error) {
 		return e.Eth.GetFilterChanges(ctx, filterId)
 	}, filterId)
 }

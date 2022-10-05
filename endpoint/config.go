@@ -18,6 +18,13 @@ type EthConfig struct {
 	zeroAddress     string        `mapstructure:"zeroAddress"`
 }
 
+type Config struct {
+	ProxyUrl          string
+	ProxyEndpoints    map[string]bool `mapstructure:"proxyEndpoints"`
+	DisabledEndpoints map[string]bool `mapstructure:"disabledEndpoints"`
+	EthConfig         EthConfig       `mapstructure:"eth"`
+}
+
 type ethConfig struct {
 	protocolVersion int `mapstructure:"protocolVersion"`
 	hashrate        int `mapstructure:"hashrate"`
@@ -25,21 +32,23 @@ type ethConfig struct {
 	zeroAddress     int `mapstructure:"zeroAddress"`
 }
 
-type Config struct {
-	ProxyEndpoints    map[string]bool `mapstructure:"ProxyEndpoints"`
-	DisabledEndpoints map[string]bool `mapstructure:"DisabledEndpoints"`
-	EthConfig         EthConfig       `mapstructure:"eth"`
+type proxyConfig struct {
+	Url       string   `mapstructure:"url"`
+	Endpoints []string `mapstructure:"endpoints"`
 }
 
 type config struct {
-	ProxyEndpoints    []string  `mapstructure:"ProxyEndpoints"`
-	DisabledEndpoints []string  `mapstructure:"DisabledEndpoints"`
-	EthConfig         ethConfig `mapstructure:"eth"`
+	ProxyConfig       proxyConfig `mapstructure:"proxyEndpoints"`
+	DisabledEndpoints []string    `mapstructure:"disabledEndpoints"`
+	EthConfig         ethConfig   `mapstructure:"eth"`
 }
 
 func defaultConfig() *config {
 	return &config{
-		ProxyEndpoints:    []string{},
+		ProxyConfig: proxyConfig{
+			Url:       "https://testnet.aurora.dev:443",
+			Endpoints: []string{},
+		},
 		DisabledEndpoints: []string{},
 		EthConfig: ethConfig{
 			protocolVersion: 0x41,
@@ -68,14 +77,15 @@ func GetConfig() *Config {
 			zeroAddress:     fmt.Sprintf("0x%040x", c.EthConfig.zeroAddress),
 		},
 		DisabledEndpoints: make(map[string]bool, len(c.DisabledEndpoints)),
-		ProxyEndpoints:    make(map[string]bool, len(c.ProxyEndpoints)),
+		ProxyEndpoints:    make(map[string]bool, len(c.ProxyConfig.Endpoints)),
+		ProxyUrl:          c.ProxyConfig.Url,
 	}
 
 	for _, de := range c.DisabledEndpoints {
 		config.DisabledEndpoints[de] = true
 	}
 
-	for _, pe := range c.ProxyEndpoints {
+	for _, pe := range c.ProxyConfig.Endpoints {
 		config.ProxyEndpoints[pe] = true
 	}
 

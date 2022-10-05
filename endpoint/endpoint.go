@@ -3,37 +3,54 @@ package endpoint
 import (
 	"aurora-relayer-go-common/db"
 	"aurora-relayer-go-common/log"
+	"encoding/json"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 )
 
-func Process[T any](ctx context.Context, name string, endpoint *Endpoint, handler func(ctx context.Context) (T, error), args ...any) (T, error) {
+func Process[T any](ctx context.Context, name string, endpoint *Endpoint, handler func(ctx context.Context) (*T, error), args ...any) (*T, error) {
 
-	var zeroVal T
 	var resp any
 	var err error
 	var stop bool
 	var childCtx context.Context
 
 	for _, p := range endpoint.Processors {
-		childCtx, stop, resp, err = p.Pre(ctx, name, endpoint, args)
+		childCtx, stop, err = p.Pre(ctx, name, endpoint, &resp, args...)
 		defer p.Post(childCtx, name, &resp, &err)
 		if stop {
 			if err != nil {
-				return zeroVal, err
+				return nil, err
 			} else {
-				return resp.(T), nil
+				if r, ok := resp.(T); ok {
+					return &r, nil
+				} else {
+					var buff []byte
+					buff, err = json.Marshal(resp)
+					if err != nil {
+						return nil, err
+					}
+					err = json.Unmarshal(buff, &r)
+					if err != nil {
+						return nil, err
+					}
+					return &r, nil
+				}
 			}
 		}
 	}
 
-	resp, err = handler(childCtx)
+	// we could just 'return handler(childCtx)' but in that case 'resp' would not be passed to 'defer' correctly
+	var tmpResp *T
+	tmpResp, err = handler(childCtx)
 	if err != nil {
-		return zeroVal, err
+		resp = nil
+		return nil, err
 	}
+	resp = tmpResp
 
-	return resp.(T), nil
+	return resp.(*T), err
 }
 
 type Endpoint struct {

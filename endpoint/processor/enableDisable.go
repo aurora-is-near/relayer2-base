@@ -12,13 +12,13 @@ func NewEnableDisable() endpoint.Processor {
 	return &EnableDisable{}
 }
 
-func (p *EnableDisable) Pre(ctx context.Context, name string, endpoint *endpoint.Endpoint, _ ...any) (context.Context, bool, *any, error) {
+func (p *EnableDisable) Pre(ctx context.Context, name string, endpoint *endpoint.Endpoint, _ *any, _ ...any) (context.Context, bool, error) {
 	if endpoint.Config.DisabledEndpoints[name] {
-		return ctx, true, nil, &utils.MethodNotFoundError{Method: name}
+		return ctx, true, &utils.MethodNotFoundError{Method: name}
 	}
-	return ctx, false, nil, nil
+	return ctx, false, nil
 }
 
-func (p *EnableDisable) Post(ctx context.Context, _ string, r *any, err *error) (context.Context, *any, *error) {
-	return ctx, r, err
+func (p *EnableDisable) Post(ctx context.Context, _ string, _ *any, _ *error) context.Context {
+	return ctx
 }

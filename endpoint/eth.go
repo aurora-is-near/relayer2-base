@@ -6,7 +6,10 @@ import (
 )
 
 var (
-	zero = utils.IntToUint256(0)
+	zero     = utils.IntToUint256(0)
+	syncing  = false
+	mining   = false
+	accounts = []string{}
 )
 
 type Eth struct {
@@ -20,8 +23,8 @@ func NewEth(endpoint *Endpoint) *Eth {
 // Accounts returns empty array
 //
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-func (e *Eth) Accounts(_ context.Context) ([]string, error) {
-	return []string{}, nil
+func (e *Eth) Accounts(_ context.Context) (*[]string, error) {
+	return &accounts, nil
 }
 
 // Coinbase returns constant 0x0
@@ -55,15 +58,15 @@ func (e *Eth) Hashrate(_ context.Context) (*utils.Uint256, error) {
 // Mining returns constant false
 //
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-func (e *Eth) Mining(_ context.Context) (bool, error) {
-	return false, nil
+func (e *Eth) Mining(_ context.Context) (*bool, error) {
+	return &mining, nil
 }
 
 // Syncing returns constant false
 //
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-func (e *Eth) Syncing(_ context.Context) (bool, error) {
-	return false, nil
+func (e *Eth) Syncing(_ context.Context) (*bool, error) {
+	return &syncing, nil
 }
 
 // BlockNumber returns the latest block number from DB if API is enabled by configuration.
@@ -113,14 +116,14 @@ func (e *Eth) GetBlockByNumber(ctx context.Context, number utils.Uint256, isFull
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 //	On DB failure or hash not found, returns error code '-32000' with custom message.
 //	On missing or invalid param returns error code '-32602' with custom message.
-func (e *Eth) GetBlockTransactionCountByHash(ctx context.Context, hash utils.H256) (utils.Uint256, error) {
+func (e *Eth) GetBlockTransactionCountByHash(ctx context.Context, hash utils.H256) (*utils.Uint256, error) {
 	var count utils.Uint256
 	cnt, err := (*e.DbHandler).GetBlockTransactionCountByHash(ctx, hash)
 	if err != nil {
-		return count, &utils.GenericError{Err: err}
+		return &count, &utils.GenericError{Err: err}
 	}
 	count = utils.IntToUint256(cnt)
-	return count, nil
+	return &count, nil
 }
 
 // GetBlockTransactionCountByNumber returns the number of transactions within the given block number.
@@ -128,14 +131,14 @@ func (e *Eth) GetBlockTransactionCountByHash(ctx context.Context, hash utils.H25
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On DB failure or number not found, returns error code '-32000' with custom message.
 // 	On missing or invalid param returns error code '-32602' with custom message.
-func (e *Eth) GetBlockTransactionCountByNumber(ctx context.Context, number utils.Uint256) (utils.Uint256, error) {
+func (e *Eth) GetBlockTransactionCountByNumber(ctx context.Context, number utils.Uint256) (*utils.Uint256, error) {
 	var count utils.Uint256
 	cnt, err := (*e.DbHandler).GetBlockTransactionCountByNumber(ctx, number)
 	if err != nil {
-		return count, &utils.GenericError{Err: err}
+		return &count, &utils.GenericError{Err: err}
 	}
 	count = utils.IntToUint256(cnt)
-	return count, nil
+	return &count, nil
 }
 
 // GetTransactionByHash returns the transaction information of the given transaction hash.
@@ -281,13 +284,14 @@ func (e *Eth) NewBlockFilter(ctx context.Context) (*utils.Uint256, error) {
 //
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On failure returns false
-func (e *Eth) UninstallFilter(ctx context.Context, filterId utils.Uint256) (bool, error) {
+func (e *Eth) UninstallFilter(ctx context.Context, filterId utils.Uint256) (*bool, error) {
+	resp := true
 	err := (*e.DbHandler).DeleteFilter(ctx, filterId)
 	if err != nil {
 		e.Logger.Err(err).Msgf("failed to uninstall filter [%d]", filterId)
-		return false, nil
+		resp = false
 	}
-	return true, nil
+	return &resp, nil
 }
 
 // GetFilterChanges polls method for a filter, on success returns an array of logs which occurred since last poll.
