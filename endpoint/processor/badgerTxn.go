@@ -44,22 +44,22 @@ func (p *BadgerTxn) openTxn(update bool) *badger.Txn {
 	return p.db.NewTransaction(update)
 }
 
-func (p *BadgerTxn) Pre(ctx context.Context, name string, _ *endpoint.Endpoint, _ ...any) (context.Context, bool, *any, error) {
+func (p *BadgerTxn) Pre(ctx context.Context, name string, _ *endpoint.Endpoint, _ *any, _ ...any) (context.Context, bool, error) {
 	if p.excludeTxn[name] == true {
-		return ctx, false, nil, nil
+		return ctx, false, nil
 	}
 	txn := p.openTxn(p.updateTxn[name])
 	childCtx := b.PutTxn(ctx, txn)
-	return childCtx, false, nil, nil
+	return childCtx, false, nil
 }
 
-func (p *BadgerTxn) Post(ctx context.Context, name string, r *any, err *error) (context.Context, *any, *error) {
+func (p *BadgerTxn) Post(ctx context.Context, name string, _ *any, error *error) context.Context {
 	if p.excludeTxn[name] == true {
-		return ctx, r, err
+		return ctx
 	}
 	txn := b.GetTxn(ctx)
 	if txn != nil {
-		if err != nil {
+		if error != nil {
 			err := txn.Commit()
 			if err != nil {
 				log.Log().Err(err).Msgf("failed to commit transaction, endpoint: [%s]", name)
@@ -69,5 +69,5 @@ func (p *BadgerTxn) Post(ctx context.Context, name string, r *any, err *error) (
 			txn.Discard()
 		}
 	}
-	return ctx, r, err
+	return ctx
 }

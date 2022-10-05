@@ -10,6 +10,10 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+var (
+	clientVersion = "Aurora Relayer"
+)
+
 type Web3 struct {
 	*Endpoint
 }
@@ -22,24 +26,25 @@ func NewWeb3(endpoint *Endpoint) *Web3 {
 //
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	TODO: implement
-func (e *Web3) ClientVersion(_ context.Context) (string, error) {
-	return "Aurora Relayer", nil
+func (e *Web3) ClientVersion(_ context.Context) (*string, error) {
+	return &clientVersion, nil
 }
 
 // Sha3 returns Keccak-256 hash of the given data.
 //
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On failure, returns error code '-32000' with custom message.
-func (e *Web3) Sha3(_ context.Context, in string) (string, error) {
+func (e *Web3) Sha3(_ context.Context, in string) (*string, error) {
 	in = strings.TrimPrefix(in, "0x")
 	dec := make([]byte, hex.DecodedLen(len(in)))
 	_, err := hex.Decode(dec, []byte(in))
 	if err != nil {
 		e.Logger.Err(err).Msgf("could hex decode [%s]", in)
-		return "", &utils.GenericError{Err: err}
+		return nil, &utils.GenericError{Err: err}
 	}
-	hash := crypto.Keccak256(dec)
-	return "0x" + hex.EncodeToString(hash), nil
+	keccak256 := crypto.Keccak256(dec)
+	hash := fmt.Sprintf("0x%s", hex.EncodeToString(keccak256))
+	return &hash, nil
 }
 
 // A sample method to show the usage of single optional parameter

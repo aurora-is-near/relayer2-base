@@ -135,6 +135,7 @@ type BlockResponse struct {
 	Nonce            Bytea         `json:"nonce"`
 	Number           Uint256       `json:"number"`
 	ParentHash       H256          `json:"parentHash"`
+	MixHash          H256          `json:"mixHash"`
 	ReceiptsRoot     H256          `json:"receiptsRoot"`
 	Sha3Uncles       H256          `json:"sha3Uncles"`
 	Size             Uint256       `json:"size"`
@@ -224,6 +225,7 @@ func (bl *Block) ToResponse(fullTx bool) *BlockResponse {
 		Miner:            bl.Miner,
 		Nonce:            []byte(fmt.Sprintf("%016x", 0)),
 		ParentHash:       bl.ParentHash,
+		MixHash:          HexStringToHash("0"),
 		ReceiptsRoot:     bl.ReceiptsRoot,
 		Sha3Uncles:       HexStringToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"),
 		Size:             bl.Size,
@@ -345,6 +347,15 @@ func (b Bytea) MarshalJSON() ([]byte, error) {
 		return []byte(`"0x0"`), nil
 	}
 	return []byte(fmt.Sprintf(`"0x%s"`, b)), nil
+}
+
+func (b *Bytea) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	*b = Bytea(s[2:len(s)])
+	return nil
 }
 
 func (h H256) KeyBytes() []byte {
