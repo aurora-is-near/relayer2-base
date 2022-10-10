@@ -34,13 +34,6 @@ func (e *Eth) Coinbase(_ context.Context) (*string, error) {
 	return &e.Config.EthConfig.zeroAddress, nil
 }
 
-// ChainId returns chainId configuration value, see relayer.yml to configure chainId
-//
-//	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-func (e *Eth) ChainId(_ context.Context) (*utils.Uint256, error) {
-	return &e.Config.EthConfig.chainId, nil
-}
-
 // ProtocolVersion returns constant 0x41
 //
 //	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
@@ -456,11 +449,11 @@ func (e *Eth) formatFilterOptions(ctx context.Context, filterOptions *utils.Filt
 }
 
 func (e *Eth) parseFromAndTo(ctx context.Context, filter *utils.FilterOptions) (from, to *utils.Uint256, err error) {
-	from, err = parseBlock(filter.FromBlock)
+	from, err = utils.ParseBlockArgument(filter.FromBlock)
 	if err != nil {
 		return nil, nil, err
 	}
-	to, err = parseBlock(filter.ToBlock)
+	to, err = utils.ParseBlockArgument(filter.ToBlock)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -480,21 +473,4 @@ func (e *Eth) parseFromAndTo(ctx context.Context, filter *utils.FilterOptions) (
 		to = latest
 	}
 	return
-}
-
-func parseBlock(block string) (*utils.Uint256, error) {
-	switch block {
-	case "", "pending", "latest":
-		return nil, nil
-	case "earliest":
-		zero := utils.IntToUint256(0)
-		return &zero, nil
-	default:
-		val := utils.IntToUint256(0)
-		err := val.FromHexString(block)
-		if err != nil {
-			return nil, err
-		}
-		return &val, nil
-	}
 }
