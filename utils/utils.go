@@ -54,3 +54,23 @@ func RandomUint256() (*Uint256, error) {
 	n := big.NewInt(0).SetBytes(b)
 	return &Uint256{n}, nil
 }
+
+// Parses the block argument and returns
+//   - nil for pending and latest block or zero address for earliest block
+//   - validated block number or the error thrown
+func ParseBlockArgument(block string) (*Uint256, error) {
+	switch block {
+	case "", "pending", "latest":
+		return nil, nil
+	case "earliest":
+		zero := IntToUint256(0)
+		return &zero, nil // TODO - genesis or zero?
+	default:
+		val := IntToUint256(0)
+		err := val.FromHexString(block)
+		if err != nil {
+			return nil, err
+		}
+		return &val, nil
+	}
+}

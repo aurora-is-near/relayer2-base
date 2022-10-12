@@ -13,7 +13,7 @@ require (
 	github.com/rs/zerolog v1.27.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.8.0
 	go.neonxp.dev/jsonrpc2 v1.2.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
@@ -72,6 +72,7 @@ require (
 	github.com/nats-io/nats-server/v2 v2.8.4 // indirect
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
+	github.com/near/borsh-go v0.3.1 // indirect
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

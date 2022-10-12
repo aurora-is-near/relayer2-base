@@ -25,12 +25,6 @@ func (e *EthProcessorAware) Coinbase(ctx context.Context) (*string, error) {
 	})
 }
 
-func (e *EthProcessorAware) ChainId(ctx context.Context) (*utils.Uint256, error) {
-	return Process(ctx, "eth_chainId", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
-		return e.Eth.ChainId(ctx)
-	})
-}
-
 func (e *EthProcessorAware) ProtocolVersion(ctx context.Context) (*utils.Uint256, error) {
 	return Process(ctx, "eth_protocolVersion", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
 		return e.Eth.ProtocolVersion(ctx)
