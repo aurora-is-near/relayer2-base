@@ -22,54 +22,56 @@ type Bytea []byte
 type Topics [][][]byte
 type Int32Key struct{ key [4]byte }
 type TxnData string
+type NearHash string
 
 type Block struct {
 	_                struct{}       `cbor:",toarray"`
-	ChainId          uint64         `cbor:"chain_id"`
-	Hash             H256           `cbor:"hash"`
-	ParentHash       H256           `cbor:"parent_hash"`
-	Height           uint64         `cbor:"height"`
-	Miner            Address        `cbor:"miner"`
-	Timestamp        int64          `cbor:"timestamp"`
-	GasLimit         Uint256        `cbor:"gas_limit"`
-	GasUsed          Uint256        `cbor:"gas_used"`
-	LogsBloom        string         `cbor:"logs_bloom"`
-	TransactionsRoot H256           `cbor:"transactions_root"`
-	ReceiptsRoot     H256           `cbor:"receipts_root"`
-	Transactions     []*Transaction `cbor:"transactions"`
-	NearBlock        any            `cbor:"near_metadata"`
-	StateRoot        string         `cbor:"state_root"`
-	Size             Uint256        `cbor:"size"`
-	Sequence         uint64         `cbor:"sequence"`
+	ChainId          uint64         `cbor:"chain_id" json:"chain_id"`
+	Hash             H256           `cbor:"hash" json:"hash"`
+	ParentHash       H256           `cbor:"parent_hash" json:"parent_hash"`
+	Height           uint64         `cbor:"height" json:"height"`
+	Miner            Address        `cbor:"miner" json:"miner"`
+	Timestamp        int64          `cbor:"timestamp" json:"timestamp"`
+	GasLimit         Uint256        `cbor:"gas_limit" json:"gas_limit"`
+	GasUsed          Uint256        `cbor:"gas_used" json:"gas_used"`
+	LogsBloom        string         `cbor:"logs_bloom" json:"logs_bloom"`
+	TransactionsRoot H256           `cbor:"transactions_root" json:"transactions_root"`
+	ReceiptsRoot     H256           `cbor:"receipts_root" json:"receipts_root"`
+	Transactions     []*Transaction `cbor:"transactions" json:"transactions"`
+	NearBlock        any            `cbor:"near_metadata" json:"near_metadata"`
+	StateRoot        string         `cbor:"state_root" json:"state_root"`
+	Size             Uint256        `cbor:"size" json:"size"`
+	Sequence         uint64         `cbor:"sequence" json:"sequence"`
 }
 
 type Transaction struct {
 	_                    struct{}        `cbor:",toarray"`
-	Hash                 H256            `cbor:"hash"`
-	BlockHash            H256            `cbor:"block_hash"`
-	BlockHeight          uint64          `cbor:"block_height"`
-	ChainId              uint64          `cbor:"chain_id"`
-	TransactionIndex     uint32          `cbor:"transaction_index"`
-	From                 Address         `cbor:"from"`
-	To                   *Address        `cbor:"to"`
-	Nonce                Uint256         `cbor:"nonce"`
-	GasPrice             Uint256         `cbor:"gas_price"`
-	GasLimit             Uint256         `cbor:"gas_limit"`
-	GasUsed              Uint256         `cbor:"gas_used"`
-	MaxPriorityFeePerGas Uint256         `cbor:"max_priority_fee_per_gas"`
-	MaxFeePerGas         Uint256         `cbor:"max_fee_per_gas"`
-	Value                Uint256         `cbor:"value"`
-	Input                Bytea           `cbor:"input"`
-	Output               Bytea           `cbor:"output"`
-	AccessList           []AccessList    `cbor:"access_list"`
-	TxType               uint8           `cbor:"tx_type"`
-	Status               bool            `cbor:"status"`
-	Logs                 []*Log          `cbor:"logs"`
-	ContractAddress      Address         `cbor:"contract_address"`
-	V                    uint64          `cbor:"v"`
-	R                    Uint256         `cbor:"r"`
-	S                    Uint256         `cbor:"s"`
-	NearTransaction      NearTransaction `cbor:"near_metadata"`
+	Hash                 H256            `cbor:"hash" json:"hash"`
+	BlockHash            H256            `cbor:"block_hash" json:"block_hash"`
+	BlockHeight          uint64          `cbor:"block_height" json:"block_height"`
+	ChainId              uint64          `cbor:"chain_id" json:"chain_id"`
+	TransactionIndex     uint32          `cbor:"transaction_index" json:"transaction_index"`
+	From                 Address         `cbor:"from" json:"from"`
+	To                   *Address        `cbor:"to" json:"to"`
+	Nonce                Uint256         `cbor:"nonce" json:"nonce"`
+	GasPrice             Uint256         `cbor:"gas_price" json:"gas_price"`
+	GasLimit             Uint256         `cbor:"gas_limit" json:"gas_limit"`
+	GasUsed              Uint256         `cbor:"gas_used" json:"gas_used"`
+	MaxPriorityFeePerGas Uint256         `cbor:"max_priority_fee_per_gas" json:"max_priority_fee_per_gas"`
+	MaxFeePerGas         Uint256         `cbor:"max_fee_per_gas" json:"max_fee_per_gas"`
+	Value                Uint256         `cbor:"value" json:"value"`
+	Input                Bytea           `cbor:"input" json:"input"`
+	Output               Bytea           `cbor:"output" json:"output"`
+	AccessList           []AccessList    `cbor:"access_list" json:"access_list"`
+	TxType               uint8           `cbor:"tx_type" json:"tx_type"`
+	Status               bool            `cbor:"status" json:"status"`
+	Logs                 []*Log          `cbor:"logs" json:"logs"`
+	LogsBloom            string          `cbor:"logs_bloom" json:"logs_bloom"`
+	ContractAddress      *Address        `cbor:"contract_address" json:"contract_address"`
+	V                    uint64          `cbor:"v" json:"v"`
+	R                    Uint256         `cbor:"r" json:"r"`
+	S                    Uint256         `cbor:"s" json:"s"`
+	NearTransaction      NearTransaction `cbor:"near_metadata" json:"near_metadata"`
 }
 
 type AccessList struct {
@@ -99,11 +101,10 @@ type FilterOptions struct {
 }
 
 type LogFilter struct {
-	Address   [][]byte `json:"address"`
-	FromBlock *Uint256 `json:"fromBlock"`
-	ToBlock   *Uint256 `json:"toBlock"`
-	// Blockhash *H256      `json:"blockhash"` // Blockhash is converted to FromBlock = ToBlock on eth_getLogs call
-	Topics [][][]byte `json:"topics"`
+	Address   [][]byte   `json:"address"`
+	FromBlock *Uint256   `json:"fromBlock"`
+	ToBlock   *Uint256   `json:"toBlock"`
+	Topics    [][][]byte `json:"topics"`
 }
 
 type StoredFilter struct {
@@ -111,7 +112,6 @@ type StoredFilter struct {
 	Type      string
 	CreatedBy string
 	PollBlock Uint256
-	// BlockHash *H256
 	FromBlock *Uint256
 	ToBlock   *Uint256
 	Addresses [][]byte
@@ -120,8 +120,8 @@ type StoredFilter struct {
 
 type NearTransaction struct {
 	_           struct{} `cbor:",toarray"`
-	Hash        H256     `cbor:"hash"`
-	ReceiptHash H256     `cbor:"receipt_hash"`
+	Hash        NearHash `cbor:"hash" json:"hash"`
+	ReceiptHash NearHash `cbor:"receipt_hash" json:"receipt_hash"`
 }
 
 type BlockResponse struct {
@@ -130,9 +130,9 @@ type BlockResponse struct {
 	GasLimit         Uint256       `json:"gasLimit"`
 	GasUsed          Uint256       `json:"gasUsed"`
 	Hash             H256          `json:"hash"`
-	LogsBloom        Bytea         `json:"logsBloom"`
+	LogsBloom        string        `json:"logsBloom"`
 	Miner            Address       `json:"miner"`
-	Nonce            Bytea         `json:"nonce"`
+	Nonce            string        `json:"nonce"`
 	Number           Uint256       `json:"number"`
 	ParentHash       H256          `json:"parentHash"`
 	MixHash          H256          `json:"mixHash"`
@@ -160,11 +160,8 @@ type TransactionResponse struct {
 	Nonce            Uint256  `json:"nonce"`
 	TransactionIndex Uint256  `json:"transactionIndex"`
 	V                Uint256  `json:"v"`
-	R                Bytea    `json:"r"`
-	S                Bytea    `json:"s"`
-	// AccessList       *[]AccessListResponse `json:"accessList"`        // not in original relayer
-	// ChainID          Uint256               `json:"chainID,omitempty"` // not in original relayer
-	// Type             Uint256               `json:"type"`              // not in original relayer
+	R                Uint256  `json:"r"`
+	S                Uint256  `json:"s"`
 }
 
 type TransactionReceiptResponse struct {
@@ -172,7 +169,6 @@ type TransactionReceiptResponse struct {
 	BlockNumber       Uint256        `json:"blockNumber"`       // block number including this transaction.
 	ContractAddress   *Address       `json:"contractAddress"`   // 20 Bytes - the contract address created, if the transaction was a contract creation, otherwise null.
 	CumulativeGasUsed Uint256        `json:"cumulativeGasUsed"` // the total amount of gas used when this transaction was executed in the block.
-	EffectiveGasPrice Uint256        `json:"effectiveGasPrice"` // the actual value per gas deducted from the sender's account. Before EIP-1559, equal to the gas price.
 	From              Address        `json:"from"`              // 20 Bytes - address of the sender.
 	To                *Address       `json:"to"`                // 20 Bytes - address of the receiver. null when the transaction is a contract creation transaction.
 	GasUsed           Uint256        `json:"gasUsed"`           // the amount of gas used by this specific transaction alone.
@@ -181,9 +177,8 @@ type TransactionReceiptResponse struct {
 	Status            Uint256        `json:"status"`            // either 1 (success) or 0 (failure)
 	TransactionHash   H256           `json:"transactionHash"`   // 32 Bytes - hash of the transaction.
 	TransactionIndex  Uint256        `json:"transactionIndex"`  // hexadecimal of the transaction's index position in the block.
-	Type              Uint256        `json:"type"`              // the transaction type.
-	NearHash          H256           `json:"nearTransactionHash"`
-	NearReceiptHash   H256           `json:"nearReceiptHash"`
+	NearHash          NearHash       `json:"nearTransactionHash"`
+	NearReceiptHash   NearHash       `json:"nearReceiptHash"`
 }
 
 type AccessListResponse struct{}
@@ -217,13 +212,14 @@ func (bl *Block) ToResponse(fullTx bool) *BlockResponse {
 	return &BlockResponse{
 		Number:           UintToUint256(bl.Height),
 		Difficulty:       IntToUint256(0),
-		ExtraData:        Bytea("0"),
+		TotalDifficulty:  IntToUint256(0),
+		ExtraData:        Bytea(""),
 		GasLimit:         bl.GasLimit,
 		GasUsed:          bl.GasUsed,
 		Hash:             bl.Hash,
-		LogsBloom:        Bytea(bl.LogsBloom),
-		Miner:            bl.Miner,
-		Nonce:            []byte(fmt.Sprintf("%016x", 0)),
+		LogsBloom:        bl.LogsBloom,
+		Miner:            Address{common.HexToAddress("0x0")},
+		Nonce:            fmt.Sprintf("%016d", 0),
 		ParentHash:       bl.ParentHash,
 		MixHash:          HexStringToHash("0"),
 		ReceiptsRoot:     bl.ReceiptsRoot,
@@ -239,6 +235,7 @@ func (bl *Block) ToResponse(fullTx bool) *BlockResponse {
 
 func (tx *Transaction) ToResponse() *TransactionResponse {
 	return &TransactionResponse{
+		BlockNumber:      UintToUint256(tx.BlockHeight),
 		Hash:             tx.Hash,
 		BlockHash:        tx.BlockHash,
 		From:             tx.From,
@@ -247,10 +244,11 @@ func (tx *Transaction) ToResponse() *TransactionResponse {
 		GasPrice:         tx.GasPrice,
 		Value:            tx.Value,
 		Nonce:            tx.Nonce,
+		Input:            tx.Input,
 		TransactionIndex: UintToUint256(tx.TransactionIndex),
 		V:                UintToUint256(tx.V),
-		R:                common.Hex2Bytes(tx.R.String()),
-		S:                common.Hex2Bytes(tx.S.String()),
+		R:                tx.R,
+		S:                tx.S,
 	}
 }
 
@@ -262,27 +260,18 @@ func (tx *Transaction) ToReceiptResponse() *TransactionReceiptResponse {
 		status = IntToUint256(0)
 	}
 
-	var contractAddress *Address
-	if !tx.ContractAddress.IsZero() {
-		contractAddress = &tx.ContractAddress
-	}
-
-	var logsBloom = Bytea(fmt.Sprintf("%0256x", 0))
-
 	return &TransactionReceiptResponse{
 		BlockHash:         tx.BlockHash,
 		BlockNumber:       UintToUint256(tx.BlockHeight),
-		ContractAddress:   contractAddress,
+		ContractAddress:   tx.ContractAddress,
 		CumulativeGasUsed: IntToUint256(0),
-		EffectiveGasPrice: tx.GasPrice,
 		From:              tx.From,
 		To:                tx.To,
 		GasUsed:           tx.GasUsed,
-		LogsBloom:         logsBloom,
+		LogsBloom:         Bytea(tx.LogsBloom),
 		Status:            status,
 		TransactionHash:   tx.Hash,
 		TransactionIndex:  UintToUint256(tx.TransactionIndex),
-		Type:              IntToUint256(0),
 		NearHash:          tx.NearTransaction.Hash,
 		NearReceiptHash:   tx.NearTransaction.ReceiptHash,
 	}
@@ -306,12 +295,12 @@ func (a *Addresses) UnmarshalJSON(b []byte) error {
 		}
 		*a = Addresses{addr}
 	case '[':
-		addrs := make([]Address, 0)
-		err := json.Unmarshal(b, &addrs)
+		addresses := make([]Address, 0)
+		err := json.Unmarshal(b, &addresses)
 		if err != nil {
 			return nil
 		}
-		*a = Addresses(addrs)
+		*a = addresses
 	}
 
 	return nil
@@ -346,15 +335,17 @@ func (b Bytea) MarshalJSON() ([]byte, error) {
 	if b == nil || len(b) == 0 {
 		return []byte(`"0x0"`), nil
 	}
-	return []byte(fmt.Sprintf(`"0x%s"`, b)), nil
+	return []byte(fmt.Sprintf(`"0x%x"`, b)), nil
 }
 
 func (b *Bytea) UnmarshalJSON(data []byte) error {
 	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return err
+	err := json.Unmarshal(data, &s)
+	if err == nil && len(s) >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X') {
+		*b = Bytea(s[2:])
+	} else {
+		*b = data
 	}
-	*b = Bytea(s[2:len(s)])
 	return nil
 }
 
@@ -383,6 +374,10 @@ func (i *Uint256) FromHexString(s string) error {
 		*i = Uint256{val}
 	}
 	return nil
+}
+
+func (i *Uint256) ToHexString() string {
+	return fmt.Sprintf("0x%s", i.Text(16))
 }
 
 func (i Uint256) KeyBytes() []byte {
@@ -437,4 +432,12 @@ func (i Uint256) ToUint32Key() (*Int32Key, error) {
 
 func (i Int32Key) KeyBytes() []byte {
 	return i.key[:]
+}
+
+func (nh NearHash) Bytes() []byte {
+	return nh.Bytes()
+}
+
+func (nh *NearHash) SetBytes(b []byte) {
+	nh.SetBytes(b)
 }
