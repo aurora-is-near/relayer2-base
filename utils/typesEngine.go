@@ -84,12 +84,12 @@ func (gse ArgsForGetStorageAtEngine) Serialize() ([]byte, error) {
 
 // TransactionForCall is the type used to serialize eth_call input
 type TransactionForCall struct {
-	From     *Address
-	To       *Address // mandatory field
-	Gas      *Uint256
-	GasPrice *Uint256
-	Value    *Uint256
-	Data     *Uint256
+	From     *Address `json:"from,omitempty"`
+	To       *Address `json:"to"`
+	Gas      *Uint256 `json:"gas,omitempty"`
+	GasPrice *Uint256 `json:"gasPrice,omitempty"`
+	Value    *Uint256 `json:"value,omitempty"`
+	Data     *Uint256 `json:"data,omitempty"`
 }
 
 // NewTransactionForCall allocates and returns a new empty TransactionForCall
@@ -121,7 +121,6 @@ func (tc *TransactionForCall) UnmarshalJSON(data []byte) error {
 // Serialize transforms TransactionForCall to TransactionForCallEngine, calls its Serialize method
 // and returns the received buffer
 func (tc TransactionForCall) Serialize() ([]byte, error) {
-
 	to := *tc.To
 	from := HexStringToAddress("0x0")
 	if tc.From != nil {
@@ -134,7 +133,9 @@ func (tc TransactionForCall) Serialize() ([]byte, error) {
 	}
 	var data []uint8
 	if tc.Data != nil {
-		copy(data[:], tc.Data.Bytes())
+		tmp := tc.Data.Bytes()
+		data = make([]uint8, len(tmp))
+		copy(data, tmp)
 	}
 
 	tmpObj := NewTransactionForCallEngine().SetFields(to.Address, from.Address, value, data)
@@ -163,7 +164,8 @@ func (tce *TransactionForCallEngine) SetFields(to, from [common.AddressLength]ui
 	copy(tce.To[:], to[:])
 	copy(tce.From[:], from[:])
 	copy(tce.Value[:], value[:])
-	copy(tce.Data[:], data[:])
+	tce.Data = make([]uint8, len(data))
+	copy(tce.Data, data)
 	return tce
 }
 
@@ -181,7 +183,7 @@ type QueryResult struct {
 	Result []interface{}
 }
 
-// ToResponse processes the engine query response, retrieves the `result` map and converts it to Uint256 response
+// NewQueryResult allocates and returns a new QueryResult object
 func NewQueryResult(resp interface{}) (*QueryResult, error) {
 	result, ok := resp.((map[string]interface{}))["result"].([]interface{})
 	if !ok {
@@ -192,7 +194,7 @@ func NewQueryResult(resp interface{}) (*QueryResult, error) {
 }
 
 // ToResponse processes the engine query response, retrieves the `result` map and converts it to Uint256 response
-func (r *QueryResult) ToResponse() *Uint256 {
+func (r *QueryResult) ToResponse() (*Uint256, error) {
 	len := len(r.Result)
 	buf := make([]byte, len)
 	for i, b := range r.Result {
@@ -203,13 +205,13 @@ func (r *QueryResult) ToResponse() *Uint256 {
 	}
 	ui256 := IntToUint256(0)
 	ui256.SetBytes(buf)
-	return &ui256
+	return &ui256, nil
 }
 
 // SubmitResultV2 is the type used to handle engine response for sendRawTransactionSync endpoint
 type SubmitResultV2 struct {
 	Version uint8
-	Status  SendRawTxsStatus
+	Status  TransactionStatus
 	GasUsed uint64                `borsh_skip:"true"`
 	logs    []LogEventWithAddress `borsh_skip:"true"`
 }
@@ -221,26 +223,8 @@ func (sr *SubmitResultV2) Deserialize(buf []byte) error {
 
 // Validate checks `SubmitResultV2.Status` to return the success or error
 func (sr *SubmitResultV2) Validate() error {
-	switch sr.Status.Enum {
-	case 0: //SuccessStatus case
-		return nil
-	case 1: //RevertStatus case
-		if len(sr.Status.Revert.Output) > 0 {
-			return &InvalidParamsError{Message: fmt.Sprintf("execution error:TXS Revert with status %v", sr.Status.Revert.Output)}
-		} else {
-			return &InvalidParamsError{Message: "execution error: TXS Revert without any status"}
-		}
-	case 2: //OutOfGas case
-		return &InvalidParamsError{Message: "execution error: Out Of Gas"}
-	case 3: //OutOfFund case
-		return &InvalidParamsError{Message: "execution error: Out Of Fund"}
-	case 4: //OutOfOffset case
-		return &InvalidParamsError{Message: "execution error: Out Of Offset"}
-	case 5: //CallTooDeep case
-		return &InvalidParamsError{Message: "execution error: Call Too Deep"}
-	}
-	log.Log().Debug().Msgf("unhandled SubmitResultV2 status: %d", sr.Status.Enum)
-	return errors.New("execution error: unhandled SubmitResultV2 status")
+	_, err := sr.Status.Validate()
+	return err
 }
 
 // LogEventWithAddress is the type used to handle engine's SubmitResultV2 response
@@ -255,25 +239,98 @@ type RawU256 struct {
 	Value [32]uint8
 }
 
-// SendRawTxsStatus is the type used to handle engine's SubmitResultV2 response
-type SendRawTxsStatus struct {
+// TransactionStatus is the type used to handle engine's SubmitResultV2 response
+type TransactionStatus struct {
 	Enum        borsh.Enum `borsh_enum:"true"` // treat struct as complex enum when serializing/deserializing
-	Success     SendRawTxsSuccessStatus
-	Revert      SendRawTxsRevertStatus
+	Success     TransactionSuccessStatus
+	Revert      TransactionRevertStatus
 	OutOfGas    borsh.Enum
 	OutOfFund   borsh.Enum
 	OutOfOffset borsh.Enum
 	CallTooDeep borsh.Enum
 }
 
-// SendRawTxsSuccessStatus is the type used to handle engine's SendRawTxsStatus response
-type SendRawTxsSuccessStatus struct {
+// TransactionSuccessStatus is the type used to handle engine's TransactionStatus response
+type TransactionSuccessStatus struct {
 	Output []uint8
 }
 
-// SendRawTxsRevertStatus is the type used to handle engine's SendRawTxsStatus response
-type SendRawTxsRevertStatus struct {
+// TransactionRevertStatus is the type used to handle engine's TransactionStatus response
+type TransactionRevertStatus struct {
 	Output []uint8
+}
+
+// NewTransactionStatus allocates and returns a new TransactionStatus object
+func NewTransactionStatus(respArg interface{}) (*TransactionStatus, error) {
+	resp, ok := respArg.((map[string]interface{}))["result"].([]interface{})
+	if !ok {
+		log.Log().Error().Msgf("call response is not in correct format: %s", resp)
+		return nil, errors.New("call response is not in correct format")
+	}
+	lenResp := len(resp)
+	buf := make([]byte, lenResp)
+	for i, b := range resp {
+		if b, ok := b.(json.Number); ok {
+			t, _ := b.Int64()
+			buf[i] = byte(t)
+		}
+	}
+
+	ts := &TransactionStatus{}
+	// TODO -- Should be recovered before release
+	if len(buf) == 1 && buf[0] > 1 && buf[0] < 8 {
+		tmp := make([]byte, 1)
+		tmp[0] = 1 << buf[0]
+		buf = append(buf, tmp[0])
+	}
+
+	err := borsh.Deserialize(ts, buf)
+	if err != nil {
+		return nil, err
+	}
+	return ts, nil
+}
+
+// Validate checks `TransactionStatus` to return the success or error
+func (ts *TransactionStatus) Validate() ([]uint8, error) {
+	switch ts.Enum {
+	case 0: //SuccessStatus case
+		if len(ts.Success.Output) > 0 {
+			return ts.Success.Output, nil
+		} else {
+			return []uint8{}, nil
+		}
+	case 1: //RevertStatus case
+		if len(ts.Revert.Output) > 0 {
+			return ts.Revert.Output, &InvalidParamsError{Message: fmt.Sprintf("execution error: transaction revert with status %v", ts.Revert.Output)}
+		} else {
+			return []uint8{}, &InvalidParamsError{Message: "execution error: transaction revert without any status"}
+		}
+	case 2: //OutOfGas case
+		return nil, &InvalidParamsError{Message: "execution error: Out Of Gas"}
+	case 3: //OutOfFund case
+		return nil, &InvalidParamsError{Message: "execution error: Out Of Fund"}
+	case 4: //OutOfOffset case
+		return nil, &InvalidParamsError{Message: "execution error: Out Of Offset"}
+	case 5: //CallTooDeep case
+		return nil, &InvalidParamsError{Message: "execution error: Call Too Deep"}
+	}
+	log.Log().Debug().Msgf("unhandled transaction status: %d", ts.Enum)
+	return nil, errors.New("execution error: unhandled transaction status")
+}
+
+// ToResponse processes the engine query response (`TransactionStatus`) and returns output buffer or error
+func (ts *TransactionStatus) ToResponse() (*string, error) {
+	buf, err := ts.Validate()
+	if buf != nil {
+		str := "0x"
+		for _, b := range buf {
+			tmp := fmt.Sprint(int(b))
+			str = str + tmp
+		}
+		return &str, nil
+	}
+	return nil, err
 }
 
 // SubmitStatus is the type received from engine for submit (eg: sendRawTransactionSync) calls
@@ -283,7 +340,7 @@ type SubmitStatus struct {
 	ResponseHash string
 }
 
-// NewSubmitStatus allocates and returns a new NewSubmitStatus object
+// NewSubmitStatus allocates and returns a new SubmitStatus object
 func NewSubmitStatus(respArg interface{}, txsHash string) (*SubmitStatus, error) {
 	resp, ok := respArg.((map[string]interface{}))
 	if !ok {
@@ -380,7 +437,17 @@ func (ss *SubmitStatus) Validate() error {
 }
 
 // ToResponse processes the engine query response, retrieves the `result` map and converts it to Uint256 response
-func (ss *SubmitStatus) ToResponse() *H256 {
+func (ss *SubmitStatus) ToResponse() (*H256, error) {
+	err := ss.Validate()
+	// Validate can generate either `utils.InvalidParams` or `errors.New` error
+	if err != nil {
+		_, ok := err.(*InvalidParamsError)
+		if ok {
+			return nil, err
+		} else {
+			return nil, &GenericError{Err: err}
+		}
+	}
 	h256Hash := HexStringToHash(ss.ResponseHash)
-	return &h256Hash
+	return &h256Hash, nil
 }
