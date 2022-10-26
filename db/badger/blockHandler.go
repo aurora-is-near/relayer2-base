@@ -1,7 +1,6 @@
 package badger
 
 import (
-	"aurora-relayer-go-common/db"
 	"aurora-relayer-go-common/db/badger/core"
 	"aurora-relayer-go-common/db/codec"
 	"aurora-relayer-go-common/log"
@@ -21,6 +20,7 @@ type BlockHandler struct {
 	config *Config
 }
 
+/*
 func NewBlockHandler() (db.BlockHandler, error) {
 	return NewBlockHandlerWithCodec(codec.NewCborCodec())
 }
@@ -37,6 +37,7 @@ func NewBlockHandlerWithCodec(codec codec.Codec) (db.BlockHandler, error) {
 		config: config,
 	}, nil
 }
+*/
 
 func (h *BlockHandler) Close() error {
 	return core.Close()
