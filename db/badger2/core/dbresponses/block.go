@@ -2,8 +2,6 @@ package dbresponses
 
 import (
 	dbp "aurora-relayer-go-common/db/badger2/core/dbprimitives"
-	"github.com/mailru/easyjson"
-	"github.com/mailru/easyjson/jwriter"
 )
 
 // https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_getblockbyhash
@@ -29,12 +27,4 @@ type Block struct {
 	Timestamp        dbp.HexUint  `json:"timestamp"`
 	Transactions     []any        `json:"transactions"`
 	Uncles           []dbp.Data32 `json:"uncles"`
-}
-
-func (b Block) MarshalJSON() ([]byte, error) {
-	return easyjson.Marshal(b)
-}
-
-func (b Block) MarshalEasyJSON(w *jwriter.Writer) {
-	w.String("amk")
 }

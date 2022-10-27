@@ -2,8 +2,8 @@ package dbprimitives
 
 import (
 	tp "aurora-relayer-go-common/tinypack"
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/mailru/easyjson/jwriter"
 )
 
 type Data[LD tp.LengthDescriptor] struct {
@@ -19,8 +19,8 @@ func (d Data[LD]) Hex() string {
 }
 
 // Can (and must) be dramatically optimized
-func (d Data[LD]) MarshalEasyJSON(w *jwriter.Writer) {
-	w.String(d.Hex())
+func (d Data[LD]) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"%v"`, d.Hex())), nil
 }
 
 func DataFromBytes[LD tp.LengthDescriptor](b []byte) Data[LD] {
