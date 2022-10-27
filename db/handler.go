@@ -47,13 +47,14 @@ type BlockHandler interface {
 	GetTransactionByBlockHashAndIndex(ctx context.Context, hash utils.H256, index utils.Uint256) (*dbresponses.Transaction, error)
 	GetTransactionByBlockNumberAndIndex(ctx context.Context, number utils.Uint256, index utils.Uint256) (*dbresponses.Transaction, error)
 	GetLogs(ctx context.Context, filter utils.LogFilter) ([]*dbresponses.Log, error)
-	GetBlockHashesSinceNumber(ctx context.Context, number utils.Uint256) ([]*dbp.Data32, error)
-	GetLogsForTransaction(ctx context.Context, tx *utils.Transaction) ([]*dbresponses.Log, error)
-	GetTransactionsForBlock(ctx context.Context, block *utils.Block) ([]*dbresponses.Transaction, error)
 
-	BlockHashToNumber(ctx context.Context, hash utils.H256) (*dbp.HexUint, error)
-	BlockNumberToHash(ctx context.Context, number utils.Uint256) (*dbp.Data32, error)
-	CurrentBlockSequence(ctx context.Context) uint64
+	// GetBlockHashesSinceNumber(ctx context.Context, number utils.Uint256) ([]*dbp.Data32, error)
+	// GetLogsForTransaction(ctx context.Context, tx *utils.Transaction) ([]*dbresponses.Log, error)
+	// GetTransactionsForBlock(ctx context.Context, block *utils.Block) ([]*dbresponses.Transaction, error)
+
+	// BlockHashToNumber(ctx context.Context, hash utils.H256) (*dbp.HexUint, error)
+	// BlockNumberToHash(ctx context.Context, number utils.Uint256) (*dbp.Data32, error)
+	// CurrentBlockSequence(ctx context.Context) uint64
 
 	InsertBlock(block *utils.Block) error
 

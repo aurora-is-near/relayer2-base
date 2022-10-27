@@ -69,7 +69,7 @@ func (txn *ViewTxn) ReadLatestBlockKey(chainId uint64) (*dbtypes.BlockKey, error
 		Prefix:  dbkey.Blocks.Get(chainId),
 	})
 	defer it.Close()
-	it.Seek(dbkey.Block.Get(chainId, 0xffffffff))
+	it.Seek(dbkey.Block.Get(chainId, uint64(0xffffffff)))
 	if !it.Valid() {
 		return nil, nil
 	}

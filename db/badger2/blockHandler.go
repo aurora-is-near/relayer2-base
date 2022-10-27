@@ -13,10 +13,14 @@ import (
 	"aurora-relayer-go-common/tinypack"
 	"aurora-relayer-go-common/utils"
 	"context"
-	"fmt"
+	"github.com/pkg/errors"
 )
 
-var logIndex = core.NewIndex(5, false)
+var (
+	logIndex         = core.NewIndex(5, false)
+	keyNotFoundError = errors.New("key not found")
+	txnParseError    = errors.New("failed to parse transaction")
+)
 
 const (
 	chainID        = 1313161555
@@ -65,91 +69,173 @@ func (h *BlockHandler) Close() error {
 }
 
 func (h *BlockHandler) BlockNumber(ctx context.Context) (*dbp.HexUint, error) {
-	a := dbp.HexUint(76500507)
-	return &a, nil
+	var bn dbp.HexUint
+	err := h.db.View(func(txn *cc.ViewTxn) error {
+		key, err := txn.ReadLatestBlockKey(chainID)
+		if err != nil {
+			return err
+		}
+		if key == nil {
+			return keyNotFoundError
+		}
+		bn = dbp.HexUint(key.Height)
+		return nil
+	})
+	return &bn, err
 }
 
 func (h *BlockHandler) GetBlockByHash(ctx context.Context, hash utils.H256) (*dbresponses.Block, error) {
-
-	bh := dbp.DataFromHex[dbp.Len32](hash.String())
-
 	var resp *dbresponses.Block
-
-	h.db.View(func(txn *cc.ViewTxn) error {
-		dbKey, err := txn.ReadBlockKey(chainID, bh)
-		if err == nil {
-			resp, err = txn.ReadBlock(chainID, *dbKey, false)
-			if err != nil {
-				return err
-			}
-			return nil
+	var err error
+	bh := dbp.DataFromHex[dbp.Len32](hash.String())
+	err = h.db.View(func(txn *cc.ViewTxn) error {
+		key, err := txn.ReadBlockKey(chainID, bh)
+		if err != nil {
+			return err
 		}
+		if key == nil {
+			return keyNotFoundError
+		}
+		resp, err = txn.ReadBlock(chainID, *key, true) // TODO fix fullTransaction flag
 		return err
 	})
-
-	fmt.Println(resp.ParentHash)
-
-	return nil, nil
+	return resp, err
 }
 
 func (h *BlockHandler) GetBlockByNumber(ctx context.Context, number utils.Uint256) (*dbresponses.Block, error) {
-	return nil, nil
+	var resp *dbresponses.Block
+	var err error
+	err = h.db.View(func(txn *cc.ViewTxn) error {
+		key := dbtypes.BlockKey{Height: number.Uint64()}
+		resp, err = txn.ReadBlock(chainID, key, true) // TODO fix fullTransaction flag
+		return err
+	})
+	return resp, err
 }
 
 func (h *BlockHandler) GetBlockTransactionCountByHash(ctx context.Context, hash utils.H256) (*dbp.HexUint, error) {
-	return nil, nil
+	var resp dbp.HexUint
+	var err error
+	bh := dbp.DataFromHex[dbp.Len32](hash.String())
+	err = h.db.View(func(txn *cc.ViewTxn) error {
+		key, err := txn.ReadBlockKey(chainID, bh)
+		if err != nil {
+			return err
+		}
+		if key == nil {
+			return keyNotFoundError
+		}
+		resp, err = txn.ReadBlockTxCount(chainID, *key)
+		return err
+	})
+	return &resp, err
 }
 
 func (h *BlockHandler) GetBlockTransactionCountByNumber(ctx context.Context, number utils.Uint256) (*dbp.HexUint, error) {
-	return nil, nil
+	var resp dbp.HexUint
+	var err error
+	err = h.db.View(func(txn *cc.ViewTxn) error {
+		key := dbtypes.BlockKey{Height: number.Uint64()}
+		resp, err = txn.ReadBlockTxCount(chainID, key)
+		return err
+	})
+	return &resp, err
 }
 
 func (h *BlockHandler) GetTransactionByHash(ctx context.Context, hash utils.H256) (*dbresponses.Transaction, error) {
-	th := dbp.DataFromHex[dbp.Len32](hash.String())
-
 	var resp *dbresponses.Transaction
-
-	h.db.View(func(txn *cc.ViewTxn) error {
-		txKey, err := txn.ReadTxKey(chainID, th)
-		if err == nil && txKey != nil {
-			resp, err = txn.ReadTx(chainID, *txKey)
-			if err != nil {
-				return err
-			}
-			return nil
+	var err error
+	th := dbp.DataFromHex[dbp.Len32](hash.String())
+	err = h.db.View(func(txn *cc.ViewTxn) error {
+		key, err := txn.ReadTxKey(chainID, th)
+		if err != nil {
+			return err
 		}
+		if key == nil {
+			return keyNotFoundError
+		}
+		resp, err = txn.ReadTx(chainID, *key)
 		return err
 	})
-
-	fmt.Println(resp.Hash)
-
-	return nil, nil
+	return resp, err
 }
 
 func (h *BlockHandler) GetTransactionByBlockHashAndIndex(ctx context.Context, hash utils.H256, index utils.Uint256) (*dbresponses.Transaction, error) {
-	return nil, nil
+	var resp dbresponses.Transaction
+	var err error
+	bh := dbp.DataFromHex[dbp.Len32](hash.String())
+	err = h.db.View(func(txn *cc.ViewTxn) error {
+		key, err := txn.ReadBlockKey(chainID, bh)
+		if err != nil {
+			return err
+		}
+		if key == nil {
+			return keyNotFoundError
+		}
+		block, err := txn.ReadBlock(chainID, *key, true)
+		if err != nil {
+			return err
+		}
+		var ok bool
+		resp, ok = block.Transactions[index.Uint64()].(dbresponses.Transaction)
+		if !ok {
+			return txnParseError
+		}
+		return nil
+	})
+	return &resp, err
 }
 
 func (h *BlockHandler) GetTransactionByBlockNumberAndIndex(ctx context.Context, number utils.Uint256, index utils.Uint256) (*dbresponses.Transaction, error) {
-	return nil, nil
+	var resp dbresponses.Transaction
+	var err error
+	err = h.db.View(func(txn *cc.ViewTxn) error {
+		key := dbtypes.BlockKey{Height: number.Uint64()}
+		block, err := txn.ReadBlock(chainID, key, true)
+		if err != nil {
+			return err
+		}
+		var ok bool
+		resp, ok = block.Transactions[index.Uint64()].(dbresponses.Transaction)
+		if !ok {
+			return txnParseError
+		}
+		return nil
+	})
+	return &resp, err
 }
 
+// TODO implement
 func (h *BlockHandler) GetLogs(ctx context.Context, filter utils.LogFilter) ([]*dbresponses.Log, error) {
 	return nil, nil
 }
 
-func (h *BlockHandler) GetLogsForTransaction(ctx context.Context, tx *utils.Transaction) ([]*dbresponses.Log, error) {
-	return nil, nil
-
-}
-
-func (h *BlockHandler) GetTransactionsForBlock(ctx context.Context, block *utils.Block) ([]*dbresponses.Transaction, error) {
-	return nil, nil
-}
-
-func (h *BlockHandler) GetBlockHashesSinceNumber(ctx context.Context, number utils.Uint256) ([]*dbp.Data32, error) {
-	return nil, nil
-}
+// TODO implement if necessary
+// func (h *BlockHandler) GetLogsForTransaction(ctx context.Context, tx *utils.Transaction) ([]*dbresponses.Log, error) {
+// 	return nil, nil
+//
+// }
+//
+// func (h *BlockHandler) GetTransactionsForBlock(ctx context.Context, block *utils.Block) ([]*dbresponses.Transaction, error) {
+//
+// 	return nil, nil
+// }
+//
+// func (h *BlockHandler) GetBlockHashesSinceNumber(ctx context.Context, number utils.Uint256) ([]*dbp.Data32, error) {
+// 	return nil, nil
+// }
+//
+// func (h *BlockHandler) BlockHashToNumber(ctx context.Context, hash utils.H256) (*dbp.HexUint, error) {
+// 	return nil, nil
+// }
+//
+// func (h *BlockHandler) BlockNumberToHash(ctx context.Context, number utils.Uint256) (*dbp.Data32, error) {
+// 	return nil, nil
+// }
+//
+// func (h *BlockHandler) CurrentBlockSequence(ctx context.Context) uint64 {
+// 	return 0
+// }
 
 func (h *BlockHandler) InsertBlock(block *utils.Block) error {
 
@@ -181,29 +267,17 @@ func (h *BlockHandler) InsertBlock(block *utils.Block) error {
 	return nil
 }
 
-func (h *BlockHandler) BlockHashToNumber(ctx context.Context, hash utils.H256) (*dbp.HexUint, error) {
-	return nil, nil
-}
-
-func (h *BlockHandler) BlockNumberToHash(ctx context.Context, number utils.Uint256) (*dbp.Data32, error) {
-	return nil, nil
-}
-
-func (h *BlockHandler) CurrentBlockSequence(ctx context.Context) uint64 {
-	return 0
-}
-
 func toBlockStore(block *utils.Block) *dbtypes.Block {
 	b := dbtypes.Block{
-		ParentHash:       dbp.DataFromHex[dbp.Len32](block.ParentHash.String()),
-		Miner:            dbp.DataFromBytes[dbp.Len20](block.Miner.Bytes()),
+		ParentHash:       dbp.Data32FromHex(block.ParentHash.String()),
+		Miner:            dbp.Data20FromBytes(block.Miner.Bytes()),
 		Timestamp:        uint64(block.Timestamp),
-		GasLimit:         dbp.Quantity(dbp.DataFromBytes[dbp.Len32](block.GasLimit.Bytes())),
-		GasUsed:          dbp.Quantity(dbp.DataFromBytes[dbp.Len32](block.GasUsed.Bytes())),
-		LogsBloom:        dbp.DataFromBytes[dbp.Len256]([]byte(block.LogsBloom)),
-		TransactionsRoot: dbp.DataFromBytes[dbp.Len32](block.TransactionsRoot.Bytes()),
-		StateRoot:        dbp.DataFromBytes[dbp.Len32]([]byte(block.StateRoot)),
-		ReceiptsRoot:     dbp.DataFromBytes[dbp.Len32](block.ReceiptsRoot.Bytes()),
+		GasLimit:         dbp.QuantityFromBytes(block.GasLimit.Bytes()),
+		GasUsed:          dbp.QuantityFromBytes(block.GasUsed.Bytes()),
+		LogsBloom:        dbp.Data256FromBytes([]byte(block.LogsBloom)),
+		TransactionsRoot: dbp.Data32FromBytes(block.TransactionsRoot.Bytes()),
+		StateRoot:        dbp.Data32FromBytes([]byte(block.StateRoot)),
+		ReceiptsRoot:     dbp.Data32FromBytes(block.ReceiptsRoot.Bytes()),
 		Size:             block.Size.Uint64(),
 	}
 	return &b
@@ -211,7 +285,7 @@ func toBlockStore(block *utils.Block) *dbtypes.Block {
 
 func toTxnStore(txn *utils.Transaction) *dbtypes.Transaction {
 
-	toOrContract := dbp.DataFromHex[dbp.Len20]("0x0") // TODO: corrupted block both contract address and to address is null, what should we do?
+	toOrContract := dbp.Data20FromHex("0x0") // TODO: temporarily assigning zero addr for corrupted blocks; both contract address and to address is null, what should we do?
 	isContractDeployment := false
 	if txn.ContractAddress != nil {
 		if txn.To != nil {
@@ -219,9 +293,9 @@ func toTxnStore(txn *utils.Transaction) *dbtypes.Transaction {
 				txn.Hash, txn.To.String(), txn.ContractAddress.String())
 		}
 		isContractDeployment = true
-		toOrContract = dbp.DataFromBytes[dbp.Len20](txn.ContractAddress.Bytes())
+		toOrContract = dbp.Data20FromBytes(txn.ContractAddress.Bytes())
 	} else if txn.To != nil {
-		toOrContract = dbp.DataFromBytes[dbp.Len20](txn.To.Bytes())
+		toOrContract = dbp.Data20FromBytes(txn.To.Bytes())
 	} else {
 		log.Log().Warn().Msgf("both contract address and to address is null for txn: [%v]", txn.Hash)
 	}
@@ -230,12 +304,12 @@ func toTxnStore(txn *utils.Transaction) *dbtypes.Transaction {
 	for _, al := range txn.AccessList {
 		var storageKeys []dbp.Data32
 		for _, sk := range al.StorageKeys {
-			storageKey := dbp.DataFromBytes[dbp.Len32](sk.Bytes())
+			storageKey := dbp.Data32FromBytes(sk.Bytes())
 			storageKeys = append(storageKeys, storageKey)
 		}
 		sk := tinypack.CreateList[dbp.VarLen, dbp.Data32](storageKeys...)
 		accessListEntry := dbtypes.AccessListEntry{
-			Address:     dbp.DataFromBytes[dbp.Len20](al.Address.Bytes()),
+			Address:     dbp.Data20FromBytes(al.Address.Bytes()),
 			StorageKeys: tinypack.VarList[dbp.Data32]{sk},
 		}
 		accessListEntries = append(accessListEntries, accessListEntry)
@@ -244,25 +318,25 @@ func toTxnStore(txn *utils.Transaction) *dbtypes.Transaction {
 
 	t := dbtypes.Transaction{
 		Type:                 uint64(txn.TxType),
-		From:                 dbp.DataFromBytes[dbp.Len20](txn.From.Bytes()),
+		From:                 dbp.Data20FromBytes(txn.From.Bytes()),
 		IsContractDeployment: isContractDeployment,
 		ToOrContract:         toOrContract,
-		Nonce:                dbp.Quantity(dbp.DataFromBytes[dbp.Len32](txn.Nonce.Bytes())),
-		GasPrice:             dbp.Quantity(dbp.DataFromBytes[dbp.Len32](txn.GasPrice.Bytes())),
-		GasLimit:             dbp.Quantity(dbp.DataFromBytes[dbp.Len32](txn.GasLimit.Bytes())),
+		Nonce:                dbp.QuantityFromBytes(txn.Nonce.Bytes()),
+		GasPrice:             dbp.QuantityFromBytes(txn.GasPrice.Bytes()),
+		GasLimit:             dbp.QuantityFromBytes(txn.GasLimit.Bytes()),
 		GasUsed:              txn.GasUsed.Uint64(),
-		Value:                dbp.Quantity(dbp.DataFromBytes[dbp.Len32](txn.Value.Bytes())),
-		Input:                dbp.DataFromBytes[dbp.VarLen](txn.Input),
-		NearHash:             dbp.DataFromBytes[dbp.Len32](txn.NearTransaction.Hash.Bytes()),
-		NearReceiptHash:      dbp.DataFromBytes[dbp.Len32](txn.NearTransaction.ReceiptHash.Bytes()),
+		Value:                dbp.QuantityFromBytes(txn.Value.Bytes()),
+		Input:                dbp.VarDataFromBytes(txn.Input),
+		NearHash:             dbp.Data32FromBytes(txn.NearTransaction.Hash.Bytes()),
+		NearReceiptHash:      dbp.Data32FromBytes(txn.NearTransaction.ReceiptHash.Bytes()),
 		Status:               txn.Status,
 		V:                    txn.V,
-		R:                    dbp.Quantity(dbp.DataFromBytes[dbp.Len32](txn.R.Bytes())),
-		S:                    dbp.Quantity(dbp.DataFromBytes[dbp.Len32](txn.S.Bytes())),
-		LogsBloom:            dbp.DataFromHex[dbp.Len256](txn.LogsBloom),
+		R:                    dbp.QuantityFromBytes(txn.R.Bytes()),
+		S:                    dbp.QuantityFromBytes(txn.S.Bytes()),
+		LogsBloom:            dbp.Data256FromHex(txn.LogsBloom),
 		AccessList:           tinypack.VarList[dbtypes.AccessListEntry]{ake},
-		MaxPriorityFeePerGas: dbp.Quantity(dbp.DataFromBytes[dbp.Len32](txn.MaxPriorityFeePerGas.Bytes())),
-		MaxFeePerGas:         dbp.Quantity(dbp.DataFromBytes[dbp.Len32](txn.MaxFeePerGas.Bytes())),
+		MaxPriorityFeePerGas: dbp.QuantityFromBytes(txn.MaxPriorityFeePerGas.Bytes()),
+		MaxFeePerGas:         dbp.QuantityFromBytes(txn.MaxFeePerGas.Bytes()),
 	}
 	return &t
 }
@@ -271,14 +345,14 @@ func toLogStore(log *utils.Log) *dbtypes.Log {
 
 	var topics []dbp.Data32
 	for _, t := range log.Topics {
-		topic := dbp.DataFromBytes[dbp.Len32](t)
+		topic := dbp.Data32FromBytes(t)
 		topics = append(topics, topic)
 	}
 	t := tinypack.CreateList[dbp.VarLen, dbp.Data32](topics...)
 
 	l := dbtypes.Log{
-		Address: dbp.DataFromBytes[dbp.Len20](log.Address.Bytes()),
-		Data:    dbp.DataFromBytes[dbp.VarLen](log.Data),
+		Address: dbp.Data20FromBytes(log.Address.Bytes()),
+		Data:    dbp.VarDataFromBytes(log.Data),
 		Topics:  tinypack.VarList[dbp.Data32]{t},
 	}
 	return &l
