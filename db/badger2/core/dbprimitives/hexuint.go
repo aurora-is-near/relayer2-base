@@ -1,8 +1,8 @@
 package dbprimitives
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/mailru/easyjson/jwriter"
 )
 
 // Special type for convenient uint64-to-hex conversion
@@ -14,6 +14,6 @@ func (h HexUint) Hex() string {
 }
 
 // Can (and must) be dramatically optimized
-func (h HexUint) MarshalEasyJSON(w *jwriter.Writer) {
-	w.String(h.Hex())
+func (h HexUint) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"%v"`, h.Hex())), nil
 }

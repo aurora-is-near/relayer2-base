@@ -361,15 +361,17 @@ func (b Bytea) MarshalJSON() ([]byte, error) {
 	if b == nil || len(b) == 0 {
 		return []byte(`"0x0"`), nil
 	}
-	return []byte(fmt.Sprintf(`"0x%s"`, b)), nil
+	return []byte(fmt.Sprintf(`"0x%x"`, b)), nil
 }
 
 func (b *Bytea) UnmarshalJSON(data []byte) error {
 	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return err
+	err := json.Unmarshal(data, &s)
+	if err == nil && len(s) >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X') {
+		*b = Bytea(s[2:])
+	} else {
+		*b = data
 	}
-	*b = Bytea(s[2:len(s)])
 	return nil
 }
 
