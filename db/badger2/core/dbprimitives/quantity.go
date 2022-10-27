@@ -2,11 +2,11 @@ package dbprimitives
 
 import (
 	"encoding/binary"
+	"fmt"
 	"math/big"
 
 	tp "aurora-relayer-go-common/tinypack"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/mailru/easyjson/jwriter"
 )
 
 type Quantity struct {
@@ -41,8 +41,8 @@ func (q Quantity) Uint64() uint64 {
 }
 
 // Can (and must) be dramatically optimized
-func (q Quantity) MarshalEasyJSON(w *jwriter.Writer) {
-	w.String(q.Hex())
+func (q Quantity) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"%v"`, q.Hex())), nil
 }
 
 func QuantityFromBytes(b []byte) Quantity {
