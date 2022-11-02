@@ -1,7 +1,7 @@
 package github_neonxp_jsonrpc2
 
 import (
-	"aurora-relayer-go-common/utils"
+	error2 "aurora-relayer-go-common/types/errors"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -13,10 +13,10 @@ func CreateNoParamHandler[RS any](handler func(context.Context) (RS, error)) rpc
 	return func(ctx context.Context, in json.RawMessage) (json.RawMessage, error) {
 		params := make([]json.RawMessage, 0)
 		if err := json.Unmarshal(in, &params); err != nil {
-			return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("error while parsing the rpc: %s", err.Error()))
+			return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("errors while parsing the rpc: %s", err.Error()))
 		}
 		if len(params) != 0 {
-			return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("two many arguments, want at most 0, got %d", len(params)))
+			return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("two many arguments, want at most 0, got %d", len(params)))
 		}
 		resp, err := handler(ctx)
 		if err != nil {
@@ -30,17 +30,17 @@ func CreateOneParamHandler[RQ, RS any](handler func(context.Context, RQ) (RS, er
 	return func(ctx context.Context, in json.RawMessage) (json.RawMessage, error) {
 		params := make([]json.RawMessage, 0, 1)
 		if err := json.Unmarshal(in, &params); err != nil {
-			return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("error while parsing the rpc: %s", err.Error()))
+			return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("errors while parsing the rpc: %s", err.Error()))
 		}
 		lenParams := len(params)
 		if lenParams > 1 {
-			return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("two many arguments, want at most 1, got %d", len(params)))
+			return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("two many arguments, want at most 1, got %d", len(params)))
 		} else if lenParams < 1 {
-			return nil, createRpcError(utils.InvalidParams, "missing value for required argument 0")
+			return nil, createRpcError(error2.InvalidParams, "missing value for required argument 0")
 		}
 		one := new(RQ)
 		if err := json.Unmarshal(params[0], one); err != nil {
-			return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("invalid argument 0: %s", err.Error()))
+			return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("invalid argument 0: %s", err.Error()))
 		}
 
 		resp, err := handler(ctx, *one)
@@ -55,12 +55,12 @@ func CreateOneParamHandlerOptional[RQ, RS any](handler func(context.Context, *RQ
 	return func(ctx context.Context, in json.RawMessage) (json.RawMessage, error) {
 		params := make([]json.RawMessage, 0, 1)
 		if err := json.Unmarshal(in, &params); err != nil {
-			return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("error while parsing the rpc: %s", err.Error()))
+			return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("errors while parsing the rpc: %s", err.Error()))
 		}
 
 		lenParams := len(params)
 		if lenParams > 1 {
-			return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("two many arguments, want at most 1, got %d", len(params)))
+			return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("two many arguments, want at most 1, got %d", len(params)))
 		}
 		one := new(RQ)
 		switch lenParams {
@@ -68,7 +68,7 @@ func CreateOneParamHandlerOptional[RQ, RS any](handler func(context.Context, *RQ
 			one = nil
 		case 1:
 			if err := json.Unmarshal(params[0], one); err != nil {
-				return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("invalid argument 0: %s", err.Error()))
+				return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("invalid argument 0: %s", err.Error()))
 			}
 		}
 
@@ -84,22 +84,22 @@ func CreateTwoParamHandler[RQone, RQtwo, RS any](handler func(context.Context, R
 	return func(ctx context.Context, in json.RawMessage) (json.RawMessage, error) {
 		params := make([]json.RawMessage, 0, 2)
 		if err := json.Unmarshal(in, &params); err != nil {
-			return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("error while parsing the rpc: %s", err.Error()))
+			return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("errors while parsing the rpc: %s", err.Error()))
 		}
 
 		lenParams := len(params)
 		if lenParams > 2 {
-			return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("two many arguments, want at most 2, got %d", len(params)))
+			return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("two many arguments, want at most 2, got %d", len(params)))
 		} else if lenParams < 2 {
-			return nil, createRpcError(utils.InvalidParams, "missing value for required argument")
+			return nil, createRpcError(error2.InvalidParams, "missing value for required argument")
 		}
 		one := new(RQone)
 		two := new(RQtwo)
 		if err := json.Unmarshal(params[0], one); err != nil {
-			return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("invalid argument 0: %s", err.Error()))
+			return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("invalid argument 0: %s", err.Error()))
 		}
 		if err := json.Unmarshal(params[1], two); err != nil {
-			return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("invalid argument 1: %s", err.Error()))
+			return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("invalid argument 1: %s", err.Error()))
 		}
 
 		resp, err := handler(ctx, *one, *two)
@@ -114,29 +114,29 @@ func CreateTwoParamHandlerOneOptional[RQone, RQtwo, RS any](handler func(context
 	return func(ctx context.Context, in json.RawMessage) (json.RawMessage, error) {
 		params := make([]json.RawMessage, 0, 2)
 		if err := json.Unmarshal(in, &params); err != nil {
-			return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("error while parsing the rpc: %s", err.Error()))
+			return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("errors while parsing the rpc: %s", err.Error()))
 		}
 
 		lenParams := len(params)
 		if lenParams > 2 {
-			return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("two many arguments, want at most 2, got %d", len(params)))
+			return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("two many arguments, want at most 2, got %d", len(params)))
 		} else if lenParams == 0 {
-			return nil, createRpcError(utils.InvalidParams, "missing value for required argument 0")
+			return nil, createRpcError(error2.InvalidParams, "missing value for required argument 0")
 		}
 		one := new(RQone)
 		two := new(RQtwo)
 		switch lenParams {
 		case 1:
 			if err := json.Unmarshal(params[0], one); err != nil {
-				return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("invalid argument 0: %s", err.Error()))
+				return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("invalid argument 0: %s", err.Error()))
 			}
 			two = nil
 		case 2:
 			if err := json.Unmarshal(params[0], one); err != nil {
-				return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("invalid argument 0: %s", err.Error()))
+				return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("invalid argument 0: %s", err.Error()))
 			}
 			if err := json.Unmarshal(params[1], two); err != nil {
-				return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("invalid argument 1: %s", err.Error()))
+				return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("invalid argument 1: %s", err.Error()))
 			}
 		}
 
@@ -152,12 +152,12 @@ func CreateTwoParamHandlerTwoOptional[RQone, RQtwo, RS any](handler func(context
 	return func(ctx context.Context, in json.RawMessage) (json.RawMessage, error) {
 		params := make([]json.RawMessage, 0, 2)
 		if err := json.Unmarshal(in, &params); err != nil {
-			return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("error while parsing the rpc: %s", err.Error()))
+			return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("errors while parsing the rpc: %s", err.Error()))
 		}
 
 		lenParams := len(params)
 		if lenParams > 2 {
-			return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("two many arguments, want at most 2, got %d", len(params)))
+			return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("two many arguments, want at most 2, got %d", len(params)))
 		}
 		one := new(RQone)
 		two := new(RQtwo)
@@ -167,15 +167,15 @@ func CreateTwoParamHandlerTwoOptional[RQone, RQtwo, RS any](handler func(context
 			two = nil
 		case 1:
 			if err := json.Unmarshal(params[0], one); err != nil {
-				return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("invalid argument 0: %s", err.Error()))
+				return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("invalid argument 0: %s", err.Error()))
 			}
 			two = nil
 		case 2:
 			if err := json.Unmarshal(params[0], one); err != nil {
-				return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("invalid argument 0: %s", err.Error()))
+				return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("invalid argument 0: %s", err.Error()))
 			}
 			if err := json.Unmarshal(params[1], two); err != nil {
-				return nil, createRpcError(utils.InvalidParams, fmt.Sprintf("invalid argument 1: %s", err.Error()))
+				return nil, createRpcError(error2.InvalidParams, fmt.Sprintf("invalid argument 1: %s", err.Error()))
 			}
 		}
 
@@ -195,7 +195,7 @@ func createRpcError(code int, msg string) rpc.Error {
 }
 
 func convertToRpcError(err error) rpc.Error {
-	i, ok := err.(utils.Error)
+	i, ok := err.(error2.Error)
 	if ok {
 		return rpc.Error{
 			Code:    i.ErrorCode(),
@@ -203,7 +203,7 @@ func convertToRpcError(err error) rpc.Error {
 		}
 	} else {
 		return rpc.Error{
-			Code:    utils.Generic,
+			Code:    error2.Generic,
 			Message: err.Error(),
 		}
 	}

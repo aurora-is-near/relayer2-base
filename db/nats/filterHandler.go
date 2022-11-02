@@ -4,7 +4,8 @@ import (
 	"aurora-relayer-go-common/db"
 	"aurora-relayer-go-common/db/codec"
 	"aurora-relayer-go-common/db/nats/core"
-	"aurora-relayer-go-common/utils"
+	dbt "aurora-relayer-go-common/types/db"
+	"aurora-relayer-go-common/types/primitives"
 	"context"
 	"github.com/nats-io/nats.go"
 )
@@ -43,26 +44,49 @@ func NewFilterHandlerWithCodec(codec codec.Codec) (db.FilterHandler, error) {
 	}, nil
 }
 
-func (h *FilterHandler) StoreFilter(ctx context.Context, id utils.Uint256, filter *utils.StoredFilter) error {
-	buf, err := h.codec.Marshal(filter)
-	if err != nil {
-		return err
-	}
-	return h.put(id.String(), buf)
+// TODO: implement
+func (h *FilterHandler) GetFilter(ctx context.Context, filterId primitives.Data32) (any, error) {
+	return nil, nil
 }
 
-func (h *FilterHandler) GetFilter(ctx context.Context, id utils.Uint256) (*utils.StoredFilter, error) {
-	buf, err := h.get(id.String())
-	if err != nil {
-		return nil, err
-	}
-	var storedFilter utils.StoredFilter
-	err = h.codec.Unmarshal(buf, &storedFilter)
-	return &storedFilter, err
+// TODO: implement
+func (h *FilterHandler) GetBlockFilter(ctx context.Context, filterId primitives.Data32) (*dbt.BlockFilter, error) {
+	return nil, nil
 }
 
-func (h *FilterHandler) DeleteFilter(ctx context.Context, id utils.Uint256) error {
-	return h.del(id.String())
+// TODO: implement
+func (h *FilterHandler) GetTransactionFilter(ctx context.Context, filterId primitives.Data32) (*dbt.TransactionFilter, error) {
+	return nil, nil
+}
+
+// TODO: implement
+func (h *FilterHandler) GetLogFilter(ctx context.Context, filterId primitives.Data32) (*dbt.LogFilter, error) {
+	return nil, nil
+}
+
+// TODO: implement
+func (h *FilterHandler) StoreFilter(ctx context.Context, filterId primitives.Data32, filter any) error {
+	return nil
+}
+
+// TODO: implement
+func (h *FilterHandler) StoreBlockFilter(ctx context.Context, filterId primitives.Data32, filter *dbt.BlockFilter) error {
+	return nil
+}
+
+// TODO: implement
+func (h *FilterHandler) StoreTransactionFilter(ctx context.Context, filterId primitives.Data32, filter *dbt.TransactionFilter) error {
+	return nil
+}
+
+// TODO: implement
+func (h *FilterHandler) StoreLogFilter(ctx context.Context, filterId primitives.Data32, filter *dbt.LogFilter) error {
+	return nil
+}
+
+// TODO: implement
+func (h *FilterHandler) DeleteFilter(ctx context.Context, filterId primitives.Data32) error {
+	return nil
 }
 
 func (h *FilterHandler) Close() error {

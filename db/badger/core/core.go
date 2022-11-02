@@ -15,35 +15,13 @@ var gcStop chan bool
 
 func Open(options badger.Options, gcIntervalSeconds int) (*badger.DB, error) {
 	var err error
-	logger := log.Log()
 	if bdb == nil {
 		lock.Lock()
 		defer lock.Unlock()
 		if bdb == nil {
-			if !options.InMemory {
-				logger.Info().Msgf("opening database with path [%s]", options.Dir)
-			} else {
-				options.Dir = ""
-				options.ValueDir = ""
-				logger.Info().Msg("opening database as in-memory")
-			}
-			bdb, err = open(options)
-			if err != nil {
-				snapshotBaseName := path.Base(options.Dir) + "_" + time.Now().Format("2006-01-02T15-04-05.000000000")
-				snapshotPath := path.Join(path.Dir(options.Dir), snapshotBaseName)
-				logger.Warn().Err(err).Msgf("saving old database snapshot at [%s]", snapshotPath)
-				if err := os.Rename(options.Dir, snapshotPath); err != nil {
-					logger.Error().Err(err).Msg("failed to save old snapshot")
-					return nil, err
-				}
-				bdb, err = open(options)
-			}
-			if bdb != nil {
-				go runGC(gcIntervalSeconds)
-			}
+			bdb, err = tryOpen(options, gcIntervalSeconds)
 		}
 	}
-
 	return bdb, err
 }
 
@@ -60,111 +38,36 @@ func Close() error {
 	return nil
 }
 
-func Fetch(key []byte, txn *badger.Txn) (*[]byte, error) {
-	if txn != nil {
-		return fetch(key, txn)
+func tryOpen(options badger.Options, gcIntervalSeconds int) (*badger.DB, error) {
+
+	var err error
+	logger := log.Log()
+
+	if !options.InMemory {
+		logger.Info().Msgf("opening database with path [%s]", options.Dir)
 	} else {
-		var res *[]byte
-		var err error
-		err = bdb.View(func(txn *badger.Txn) error {
-			res, err = fetch(key, txn)
-			return err
-		})
-		return res, err
+		options.Dir = ""
+		options.ValueDir = ""
+		logger.Info().Msg("opening database as in-memory")
 	}
-}
-func fetch(key []byte, txn *badger.Txn) (*[]byte, error) {
-	item, err := txn.Get(key)
+	bdb, err = badger.Open(options)
 	if err != nil {
-		return nil, err
-	}
-	valueCopy, err := item.ValueCopy(nil)
-	if err != nil {
-		return nil, err
-	}
-	return &valueCopy, nil
-}
-
-func FetchPrefixedWithLimitAndTimeout(limit uint, timeout uint, prefix []byte, txn *badger.Txn) ([][]byte, error) {
-	if txn != nil {
-		return fetchPrefixedWithLimitAndTimeout(limit, timeout, prefix, txn)
-	} else {
-		var res [][]byte
-		var err error
-		err = bdb.View(func(txn *badger.Txn) error {
-			res, err = fetchPrefixedWithLimitAndTimeout(limit, timeout, prefix, txn)
-			return err
-		})
-		return res, err
-	}
-}
-
-func fetchPrefixedWithLimitAndTimeout(limit uint, timeout uint, prefix []byte, txn *badger.Txn) ([][]byte, error) {
-	to := time.NewTimer(time.Duration(time.Second * time.Duration(timeout)))
-	defer to.Stop()
-
-	it := txn.NewIterator(badger.DefaultIteratorOptions)
-	defer it.Close()
-
-	res := make([][]byte, 0)
-	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
-		item := it.Item()
-		valueCopy, err := item.ValueCopy(nil)
-		if err != nil {
-			return res, err
+		logger.Error().Err(err).Msg("failed to tryOpen database")
+		snapshotBaseName := path.Base(options.Dir) + "_" + time.Now().Format("2006-01-02T15-04-05.000000000")
+		snapshotPath := path.Join(path.Dir(options.Dir), snapshotBaseName)
+		logger.Warn().Err(err).Msgf("saving old database snapshot at [%s]", snapshotPath)
+		if err := os.Rename(options.Dir, snapshotPath); err != nil {
+			logger.Error().Err(err).Msg("failed to save old snapshot")
+			return nil, err
 		}
-		res = append(res, valueCopy)
-		if uint(len(res)) >= limit {
-			return res, nil
-		}
-		select {
-		case <-to.C:
-			return res, nil
-		default:
-		}
+		logger.Info().Err(err).Msg("creating new database")
+		bdb, err = badger.Open(options)
 	}
-	return res, nil
-}
-
-func Insert(key []byte, value []byte, txn *badger.Txn) error {
-	if txn != nil {
-		return insert(key, value, txn)
-	} else {
-		return bdb.Update(func(txn *badger.Txn) error {
-			return insert(key, value, txn)
-		})
+	if bdb != nil {
+		go runGC(gcIntervalSeconds)
 	}
-}
 
-func insert(key []byte, value []byte, txn *badger.Txn) error {
-	e := badger.NewEntry(key, value)
-	return txn.SetEntry(e)
-}
-
-func InsertBatch(writer *badger.WriteBatch, key []byte, value []byte) error {
-	return writer.Set(key, value)
-}
-
-func Delete(key []byte, txn *badger.Txn) error {
-	if txn != nil {
-		return delete(key, txn)
-	} else {
-		return bdb.Update(func(txn *badger.Txn) error {
-			return delete(key, txn)
-		})
-	}
-}
-
-func delete(key []byte, txn *badger.Txn) error {
-	return txn.Delete(key)
-}
-
-func open(options badger.Options) (*badger.DB, error) {
-	bdb, err := badger.Open(options)
-	if err != nil {
-		return nil, err
-	}
-	return bdb, nil
+	return bdb, err
 }
 
 func runGC(gcIntervalSeconds int) {

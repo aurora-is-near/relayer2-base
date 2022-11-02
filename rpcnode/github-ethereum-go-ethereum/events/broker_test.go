@@ -1,15 +1,16 @@
-package eventbroker_test
+package events_test
 
 import (
 	"aurora-relayer-go-common/broker"
-	eventbroker "aurora-relayer-go-common/rpcnode/github-ethereum-go-ethereum/events"
-	"aurora-relayer-go-common/utils"
+	"aurora-relayer-go-common/rpcnode/github-ethereum-go-ethereum/events"
+	"aurora-relayer-go-common/types/event"
+	"aurora-relayer-go-common/types/primitives"
+	"aurora-relayer-go-common/types/request"
+	"aurora-relayer-go-common/types/response"
 	"crypto/rand"
-	"math/big"
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +21,7 @@ const (
 
 // Test all the flows of the Broker implementation
 func TestBrokerFlows(t *testing.T) {
-	eb := eventbroker.NewEventBroker()
+	eb := events.NewEventBroker()
 	go eb.Start()
 
 	// Handles eventCounter channel to calculate the number of received events (by all clients)
@@ -53,10 +54,10 @@ func TestBrokerFlows(t *testing.T) {
 		sentMsgCounter := 0
 		timeout := time.After(eventTimeoutSeconds * time.Second)
 		for {
-			eb.PublishNewHeads(&utils.BlockResponse{
-				Number: utils.IntToUint256(sentMsgCounter),
+			eb.PublishNewHeads(&response.Block{
+				Number: primitives.HexUint(sentMsgCounter),
 			})
-			tmpLRS := make([]*utils.LogResponse, 1)
+			tmpLRS := make(event.Logs, 1)
 			tmpLRS[0] = GenerateLogResponse()
 			eb.PublishLogs(tmpLRS)
 			sentMsgCounter += 1
@@ -72,10 +73,10 @@ func TestBrokerFlows(t *testing.T) {
 		}
 	}()
 
-	// Syncs the end of event dissemination
+	// Syncs the end of types dissemination
 	sentEventCounter := <-sentNumMsgCh
 
-	// Check if sent and received event counters OK
+	// Check if sent and received types counters OK
 	assert.Equal(t, sentEventCounter*numClients*2, rcvEventCounter)
 
 	// Now unsubscribe
@@ -93,12 +94,12 @@ func TestBrokerFlows(t *testing.T) {
 
 }
 
-func createClientAndSubscribe(eb *eventbroker.EventBroker, eventCounterCh chan int) (broker.Subscription, broker.Subscription) {
-	clientNHCh := make(chan *utils.BlockResponse)
+func createClientAndSubscribe(eb *events.EventBroker, eventCounterCh chan int) (broker.Subscription, broker.Subscription) {
+	clientNHCh := make(chan event.Block)
 	subsNH := eb.SubscribeNewHeads(clientNHCh)
 
-	clientLogCh := make(chan []*utils.LogResponse)
-	subsLog := eb.SubscribeLogs(utils.LogSubscriptionOptions{}, clientLogCh)
+	clientLogCh := make(chan event.Logs)
+	subsLog := eb.SubscribeLogs(request.LogSubscriptionOptions{}, clientLogCh)
 
 	go func() {
 		for {
@@ -114,7 +115,7 @@ func createClientAndSubscribe(eb *eventbroker.EventBroker, eventCounterCh chan i
 	return subsNH, subsLog
 }
 
-func getNumberOfSubscriptions(eb *eventbroker.EventBroker) (int, int) {
+func getNumberOfSubscriptions(eb *events.EventBroker) (int, int) {
 	eb.DebugInfo <- -1
 	numSubsNH := <-eb.DebugInfo
 	eb.DebugInfo <- -2
@@ -123,15 +124,19 @@ func getNumberOfSubscriptions(eb *eventbroker.EventBroker) (int, int) {
 	return numSubsNH, numSubsLog
 }
 
-func GenerateLogResponse() *utils.LogResponse {
-	return &utils.LogResponse{
+func GenerateLogResponse() *response.Log {
+	return &response.Log{
 		Address: randomAddress(),
-		Topics:  []utils.Bytea{randomBytea()},
+		Topics:  randomTopics(),
 	}
 }
 
-func randomAddress() utils.Address {
-	return utils.Address{Address: common.BigToAddress(big.NewInt(0).SetBytes(randomBytes(20)))}
+func randomAddress() primitives.Data20 {
+	return primitives.Data20FromBytes(randomBytes(20))
+}
+
+func randomTopics() []primitives.Data32 {
+	return []primitives.Data32{primitives.Data32FromBytes(randomBytes(10))}
 }
 
 func randomBytes(n int) []byte {
@@ -141,8 +146,4 @@ func randomBytes(n int) []byte {
 		panic(err)
 	}
 	return b
-}
-
-func randomBytea() utils.Bytea {
-	return utils.Bytea(randomBytes(10))
 }

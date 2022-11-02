@@ -1,23 +1,24 @@
 package broker
 
 import (
-	"aurora-relayer-go-common/utils"
+	"aurora-relayer-go-common/types/event"
+	"aurora-relayer-go-common/types/request"
 )
 
 type SubID string
 
 type Subscription interface {
 	GetId() SubID
-	GetNewHeadsCh() chan *utils.BlockResponse
-	GetLogsCh() chan []*utils.LogResponse
-	GetLogsSubOpts() utils.LogSubscriptionOptions
+	GetNewHeadsCh() chan event.Block
+	GetLogsCh() chan event.Logs
+	GetLogsSubOpts() request.LogSubscriptionOptions
 }
 
 type Broker interface {
-	SubscribeNewHeads(chan *utils.BlockResponse) Subscription
-	SubscribeLogs(utils.LogSubscriptionOptions, chan []*utils.LogResponse) Subscription
+	SubscribeNewHeads(chan event.Block) Subscription
+	SubscribeLogs(request.LogSubscriptionOptions, chan event.Logs) Subscription
 	UnsubscribeFromNewHeads(Subscription)
 	UnsubscribeFromLogs(Subscription)
-	PublishNewHeads(*utils.BlockResponse)
-	PublishLogs([]*utils.LogResponse)
+	PublishNewHeads(event.Block)
+	PublishLogs(event.Logs)
 }

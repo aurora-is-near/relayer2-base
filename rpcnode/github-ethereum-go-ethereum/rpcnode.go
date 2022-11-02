@@ -36,7 +36,7 @@ func New() (*GoEthereum, error) {
 	return NewWithConf(conf)
 }
 
-// NewWithConf creates a new node with given config and the event broker if node supports websocket comm
+// NewWithConf creates a new node with given config and the types broker if node supports websocket comm
 func NewWithConf(conf *Config) (*GoEthereum, error) {
 	ethConf := convertConfigurationToEthNode(conf)
 	n, err := node.New(ethConf)

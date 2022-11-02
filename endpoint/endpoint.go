@@ -54,7 +54,7 @@ func Process[T any](ctx context.Context, name string, endpoint *Endpoint, handle
 }
 
 type Endpoint struct {
-	DbHandler     *db.Handler
+	DbHandler     db.Handler
 	Logger        *log.Logger
 	Config        *Config
 	WithProcessor func(Processor)
@@ -66,7 +66,7 @@ func New(dbh db.Handler) *Endpoint {
 		panic("DB Handler should be initialized")
 	}
 	ep := Endpoint{
-		DbHandler:  &dbh,
+		DbHandler:  dbh,
 		Logger:     log.Log(),
 		Config:     GetConfig(),
 		Processors: []Processor{},
