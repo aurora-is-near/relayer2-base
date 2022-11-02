@@ -76,6 +76,7 @@ func (dbc *DBCore) Close() error {
 func (dbc *DBCore) tryOpen() error {
 	opts := badger.DefaultOptions(dbc.opts.Dir)
 	opts = opts.WithInMemory(dbc.opts.InMemory)
+	opts = opts.WithLogger(dbc.logger)
 
 	var err error
 	if dbc.badgerDB, err = badger.Open(opts); err != nil {

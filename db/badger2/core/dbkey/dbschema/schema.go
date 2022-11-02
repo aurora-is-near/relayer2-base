@@ -60,6 +60,8 @@ func (p *SchemaPath) Get(vars ...any) []byte {
 		switch vt := vars[i].(type) {
 		case []byte:
 			copy(result[varDesc.offset:], vt[:varDesc.size])
+		case string:
+			copy(result[varDesc.offset:], vt[:varDesc.size])
 		case uint64:
 			putBigEndian(result[varDesc.offset:][:varDesc.size], vt)
 		default:
