@@ -3,7 +3,11 @@ package endpoint
 import (
 	"aurora-relayer-go-common/db"
 	"aurora-relayer-go-common/db/badger"
-	"aurora-relayer-go-common/utils"
+	"aurora-relayer-go-common/types"
+	"aurora-relayer-go-common/types/common"
+	"aurora-relayer-go-common/types/indexer"
+	"aurora-relayer-go-common/types/primitives"
+	"aurora-relayer-go-common/types/request"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -16,18 +20,15 @@ import (
 const ethTestYaml = `
 db:
   badger:
-      gcIntervalSeconds: 1
-      iterationTimeoutSeconds: 5
-      iterationMaxItems: 10000
-      logFilterTtlMinutes: 15
-      index:
-        maxJumps: 1000
-        maxRangeScanners: 2
-        maxValueFetchers: 2
-        keysOnly: false
+    core:
+      gcIntervalSeconds: 10
+      scanRangeThreshold: 3000
+      maxScanIterators: 10000
+      filterTtlMinutes: 15
       options:
+        Dir: /tmp/relayer/data
         InMemory: true
-        DetectConflicts: true
+        DetectConflicts: false
 `
 
 func TestLogFilterUnmarshalJSON(t *testing.T) {
@@ -38,15 +39,16 @@ func TestLogFilterUnmarshalJSON(t *testing.T) {
 		`"],"fromBlock":"0xb1","toBlock":"0xb2","blockHash":"` +
 		fmt.Sprintf("0x%064x", 0xabcdf) +
 		`"}`
-	wantHash := utils.HexStringToHash("0xabcdf")
-	want := utils.FilterOptions{
-		Address:   utils.Addresses{utils.HexStringToAddress("1"), utils.HexStringToAddress("2")},
-		FromBlock: "0x" + utils.IntToUint256(0xb1).Text(16),
-		ToBlock:   "0x" + utils.IntToUint256(0xb2).Text(16),
+	wantHash := common.HexStringToHash("0xabcdf")
+	wantFromBlock := common.IntToBN64(0xb1)
+	wantToBlock := common.IntToBN64(0xb2)
+	want := request.Filter{
+		Addresses: []common.Address{common.HexStringToAddress("1"), common.HexStringToAddress("2")},
+		FromBlock: &wantFromBlock,
+		ToBlock:   &wantToBlock,
 		BlockHash: &wantHash,
 	}
-
-	var result utils.FilterOptions
+	var result request.Filter
 	err := json.Unmarshal([]byte(data), &result)
 	assert.Nil(t, err)
 	assert.Equal(t, want, result)
@@ -63,75 +65,94 @@ func TestFormatFilterOptions(t *testing.T) {
 		panic(err)
 	}
 
-	var blockData = utils.Block{
-		Height: 1,
-		Hash:   utils.HexStringToHash("a"),
-		Transactions: []*utils.Transaction{
-			{ContractAddress: utils.HexStringToAddress("0x2")},
-			{ContractAddress: utils.HexStringToAddress("0x1")},
-			{ContractAddress: utils.HexStringToAddress("0x2")},
-			{ContractAddress: utils.HexStringToAddress("0x1")},
-			{ContractAddress: utils.HexStringToAddress("0x3")},
-		}}
+	ca1 := common.HexStringToAddress("0x2")
+	ca2 := common.HexStringToAddress("0x1")
+	ca3 := common.HexStringToAddress("0x2")
+	ca4 := common.HexStringToAddress("0x1")
+	ca5 := common.HexStringToAddress("0x3")
+
+	var blockData = indexer.Block{
+		ChainId: common.IntToUint64(1313161554),
+		Height:  common.IntToUint64(1),
+		Hash:    common.HexStringToHash("a"),
+		Transactions: []*indexer.Transaction{
+			{ContractAddress: &ca1},
+			{ContractAddress: &ca2},
+			{ContractAddress: &ca3},
+			{ContractAddress: &ca4},
+			{ContractAddress: &ca5},
+		},
+	}
+
+	reqFrom := common.IntToBN64(10)
+	reqTo := common.IntToBN64(20)
 
 	ttable := []struct {
 		name             string
-		data             utils.FilterOptions
-		wantFrom, wantTo utils.Uint256
-		wantAddress      [][]byte
-		wantTopics       [][][]byte
+		data             request.Filter
+		wantFrom, wantTo *uint64
+		wantAddress      []primitives.Data20
+		wantTopics       [][]primitives.Data32
 		wantErr          string
 	}{
 		{
-			name:     "empty options",
-			data:     utils.FilterOptions{},
-			wantFrom: utils.UintToUint256(blockData.Height),
-			wantTo:   utils.UintToUint256(blockData.Height),
+			name:        "empty options",
+			data:        request.Filter{},
+			wantFrom:    nil,
+			wantTo:      nil,
+			wantAddress: []primitives.Data20{},
+			wantTopics:  [][]primitives.Data32{},
 		},
 		{
 			name: "blockHash is added",
-			data: utils.FilterOptions{
+			data: request.Filter{
 				BlockHash: &blockData.Hash,
 			},
-			wantFrom: utils.UintToUint256(blockData.Height),
-			wantTo:   utils.UintToUint256(blockData.Height),
+			wantFrom:    nil,
+			wantTo:      nil,
+			wantAddress: []primitives.Data20{},
+			wantTopics:  [][]primitives.Data32{},
 		},
 		{
 			name: "block range is not overwritten",
-			data: utils.FilterOptions{
-				FromBlock: utils.IntToHex(10),
-				ToBlock:   utils.IntToHex(20),
+			data: request.Filter{
+				FromBlock: &reqFrom,
+				ToBlock:   &reqTo,
 			},
-			wantFrom: utils.IntToUint256(10),
-			wantTo:   utils.IntToUint256(20),
+			wantFrom:    reqFrom.Uint64(),
+			wantTo:      reqTo.Uint64(),
+			wantAddress: []primitives.Data20{},
+			wantTopics:  [][]primitives.Data32{},
 		},
 		{
 			name: "addresses get added once",
-			data: utils.FilterOptions{
-				Address: utils.Addresses{
-					utils.HexStringToAddress("0x2"),
-					utils.HexStringToAddress("0x1"),
-					utils.HexStringToAddress("0x2"),
-					utils.HexStringToAddress("0x1"),
-					utils.HexStringToAddress("0x3"),
+			data: request.Filter{
+				Addresses: []common.Address{
+					common.BytesToAddress(primitives.Data20FromHex("0x2").Bytes()),
+					common.BytesToAddress(primitives.Data20FromHex("0x1").Bytes()),
+					common.BytesToAddress(primitives.Data20FromHex("0x2").Bytes()),
+					common.BytesToAddress(primitives.Data20FromHex("0x1").Bytes()),
+					common.BytesToAddress(primitives.Data20FromHex("0x3").Bytes()),
 				},
 			},
-			wantFrom: utils.UintToUint256(blockData.Height),
-			wantTo:   utils.UintToUint256(blockData.Height),
-			wantAddress: [][]byte{
-				utils.HexStringToAddress("0x2").Bytes(),
-				utils.HexStringToAddress("0x1").Bytes(),
-				utils.HexStringToAddress("0x3").Bytes(),
+			wantFrom: nil,
+			wantTo:   nil,
+			wantAddress: []primitives.Data20{
+				primitives.Data20FromHex("0x2"),
+				primitives.Data20FromHex("0x1"),
+				primitives.Data20FromHex("0x3"),
 			},
+			wantTopics: [][]primitives.Data32{},
 		},
 		{
 			name: "topics are added as is", // TODO: add stronger topics validation/restrict the type from []byte when unmarshalling?
-			data: utils.FilterOptions{
-				Topics: utils.Topics{{[]byte("foo")}, {[]byte("bar")}, {[]byte("bazz")}},
+			data: request.Filter{
+				Topics: request.Topics{{primitives.Data32FromHex("0x1111").Bytes()}, {primitives.Data32FromHex("0x2222").Bytes()}, {primitives.Data32FromHex("0x3333").Bytes()}},
 			},
-			wantFrom:   utils.UintToUint256(blockData.Height),
-			wantTo:     utils.UintToUint256(blockData.Height),
-			wantTopics: [][][]byte{{[]byte("foo")}, {[]byte("bar")}, {[]byte("bazz")}},
+			wantFrom:    nil,
+			wantTo:      nil,
+			wantAddress: []primitives.Data20{},
+			wantTopics:  [][]primitives.Data32{{primitives.Data32FromHex("0x1111")}, {primitives.Data32FromHex("0x2222")}, {primitives.Data32FromHex("0x3333")}},
 		},
 	}
 	for _, tc := range ttable {
@@ -158,13 +179,14 @@ func TestFormatFilterOptions(t *testing.T) {
 			baseEndpoint := New(handler)
 			eth = NewEth(baseEndpoint)
 
-			want := &utils.LogFilter{
-				Address:   tc.wantAddress,
-				FromBlock: &tc.wantFrom,
-				ToBlock:   &tc.wantTo,
+			want := &types.Filter{
+				FromBlock: tc.wantFrom,
+				ToBlock:   tc.wantTo,
+				Addresses: tc.wantAddress,
 				Topics:    tc.wantTopics,
 			}
-			got, err := eth.formatFilterOptions(ctx, &tc.data)
+
+			got, err := eth.parseRequestFilter(ctx, &tc.data)
 			assert.Nil(t, err)
 			assert.Equal(t, want, got)
 		})
@@ -174,12 +196,12 @@ func TestFormatFilterOptions(t *testing.T) {
 func TestTopicsUnmarshalJSON(t *testing.T) {
 	ttable := []struct {
 		data    string
-		want    utils.Topics
+		want    request.Topics
 		wantErr string
 	}{
 		{
 			data: `["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",null,["0xabc","0x123"]]`,
-			want: utils.Topics{
+			want: request.Topics{
 				{[]byte(`0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef`)},
 				{},
 				{[]byte("0xabc"), []byte("0x123")},
@@ -188,7 +210,7 @@ func TestTopicsUnmarshalJSON(t *testing.T) {
 		},
 		{
 			data: `["0x1","0x2","0x3","0x4","0x5"]`,
-			want: utils.Topics{
+			want: request.Topics{
 				{[]byte("0x1")},
 				{[]byte("0x2")},
 				{[]byte("0x3")},
@@ -203,7 +225,7 @@ func TestTopicsUnmarshalJSON(t *testing.T) {
 	}
 	for _, tc := range ttable {
 		t.Run(tc.data, func(t *testing.T) {
-			var ts utils.Topics
+			var ts request.Topics
 			err := json.Unmarshal([]byte(tc.data), &ts)
 			if tc.wantErr != "" {
 				assert.ErrorContains(t, err, tc.wantErr)

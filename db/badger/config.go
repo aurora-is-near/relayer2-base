@@ -10,61 +10,30 @@ import (
 )
 
 const (
-	defaultGcIntervalSeconds       = 10
-	defaultLogFilterTtlMinutes     = 15
-	defaultMaxJumps                = 1000
-	defaultRangeScanners           = 4
-	defaultValueFetchers           = 4
-	defaultKeysOnly                = false
-	defaultIterationTimeoutSeconds = 5
-	defaultIterationMaxItems       = 10000
-	defaultDataPath                = "/tmp/badger/data"
+	defaultGcIntervalSeconds     = 10
+	defaultLogFilterTtlMinutes   = 15
+	defaultLogScanRangeThreshold = 3000
+	defaultLogMaxScanIterators   = 10000
+	defaultDataPath              = "/tmp/badger/data"
 
 	configPath = "db.badger"
 )
 
 type Config struct {
-	GcIntervalSeconds       int            `mapstructure:"gcIntervalSeconds"`
-	LogFilterTtlMinutes     int            `mapstructure:"logFilterTtlMinutes"`
-	IterationTimeoutSeconds uint           `mapstructure:"iterationTimeoutSeconds"`
-	IterationMaxItems       uint           `mapstructure:"iterationMaxItems"`
-	ExcludeTxn              []string       `mapstructure:"excludeTxn"`
-	UpdateTxn               []string       `mapstructure:"updateTxn"`
-	ScanConfig              core.ScanOpts  `mapstructure:"index"`
-	BadgerConfig            badger.Options `mapstructure:"options"`
+	Core core.Config `mapstructure:"core"`
 }
 
 func defaultConfig() *Config {
 	badgerOptions := badger.DefaultOptions(defaultDataPath)
 	badgerOptions.Logger = NewBadgerLogger(log.Log())
 	return &Config{
-		GcIntervalSeconds:       defaultGcIntervalSeconds,
-		LogFilterTtlMinutes:     defaultLogFilterTtlMinutes,
-		IterationTimeoutSeconds: defaultIterationTimeoutSeconds,
-		IterationMaxItems:       defaultIterationMaxItems,
-		ExcludeTxn: []string{
-			"eth_accounts",
-			"eth_coinbase",
-			"eth_chainId",
-			"eth_protocolVersion",
-			"eth_hashrate",
-			"eth_mining",
-			"eth_syncing",
-			"web3_clientVersion",
-			"web3_sha3",
+		Core: core.Config{
+			MaxScanIterators:   defaultLogMaxScanIterators,
+			ScanRangeThreshold: defaultLogScanRangeThreshold,
+			FilterTtlMinutes:   defaultLogFilterTtlMinutes,
+			GcIntervalSeconds:  defaultGcIntervalSeconds,
+			BadgerConfig:       badgerOptions,
 		},
-		UpdateTxn: []string{
-			"eth_newFilter",
-			"eth_newBlockFilter",
-			"eth_uninstallFilter",
-		},
-		ScanConfig: core.ScanOpts{
-			MaxJumps:         defaultMaxJumps,
-			MaxRangeScanners: defaultRangeScanners,
-			MaxValueFetchers: defaultValueFetchers,
-			KeysOnly:         defaultKeysOnly,
-		},
-		BadgerConfig: badgerOptions,
 	}
 }
 

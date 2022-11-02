@@ -1,9 +1,10 @@
 package endpoint
 
 import (
-	"aurora-relayer-go-common/db/badger2/core/dbprimitives"
-	"aurora-relayer-go-common/db/badger2/core/dbresponses"
-	"aurora-relayer-go-common/utils"
+	"aurora-relayer-go-common/types/common"
+	"aurora-relayer-go-common/types/primitives"
+	"aurora-relayer-go-common/types/request"
+	"aurora-relayer-go-common/types/response"
 	"context"
 )
 
@@ -27,14 +28,14 @@ func (e *EthProcessorAware) Coinbase(ctx context.Context) (*string, error) {
 	})
 }
 
-func (e *EthProcessorAware) ProtocolVersion(ctx context.Context) (*utils.Uint256, error) {
-	return Process(ctx, "eth_protocolVersion", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
+func (e *EthProcessorAware) ProtocolVersion(ctx context.Context) (*common.Uint256, error) {
+	return Process(ctx, "eth_protocolVersion", e.Endpoint, func(ctx context.Context) (*common.Uint256, error) {
 		return e.Eth.ProtocolVersion(ctx)
 	})
 }
 
-func (e *EthProcessorAware) Hashrate(ctx context.Context) (*utils.Uint256, error) {
-	return Process(ctx, "eth_hashrate", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
+func (e *EthProcessorAware) Hashrate(ctx context.Context) (*common.Uint256, error) {
+	return Process(ctx, "eth_hashrate", e.Endpoint, func(ctx context.Context) (*common.Uint256, error) {
 		return e.Eth.Hashrate(ctx)
 	})
 }
@@ -51,103 +52,103 @@ func (e *EthProcessorAware) Syncing(ctx context.Context) (*bool, error) {
 	})
 }
 
-func (e *EthProcessorAware) BlockNumber(ctx context.Context) (*dbprimitives.HexUint, error) {
-	return Process(ctx, "eth_blockNumber", e.Endpoint, func(ctx context.Context) (*dbprimitives.HexUint, error) {
+func (e *EthProcessorAware) BlockNumber(ctx context.Context) (*primitives.HexUint, error) {
+	return Process(ctx, "eth_blockNumber", e.Endpoint, func(ctx context.Context) (*primitives.HexUint, error) {
 		return e.Eth.BlockNumber(ctx)
 	})
 }
 
-func (e *EthProcessorAware) GetBlockByHash(ctx context.Context, hash utils.H256, isFull *bool) (*dbresponses.Block, error) {
-	return Process(ctx, "eth_getBlockByHash", e.Endpoint, func(ctx context.Context) (*dbresponses.Block, error) {
+func (e *EthProcessorAware) GetBlockByHash(ctx context.Context, hash common.H256, isFull *bool) (*response.Block, error) {
+	return Process(ctx, "eth_getBlockByHash", e.Endpoint, func(ctx context.Context) (*response.Block, error) {
 		return e.Eth.GetBlockByHash(ctx, hash, isFull)
 	}, hash, isFull)
 }
 
-func (e *EthProcessorAware) GetBlockByNumber(ctx context.Context, number utils.Uint256, isFull *bool) (*dbresponses.Block, error) {
-	return Process(ctx, "eth_getBlockByNumber", e.Endpoint, func(ctx context.Context) (*dbresponses.Block, error) {
+func (e *EthProcessorAware) GetBlockByNumber(ctx context.Context, number common.BN64, isFull *bool) (*response.Block, error) {
+	return Process(ctx, "eth_getBlockByNumber", e.Endpoint, func(ctx context.Context) (*response.Block, error) {
 		return e.Eth.GetBlockByNumber(ctx, number, isFull)
 	}, number, isFull)
 }
 
-func (e *EthProcessorAware) GetBlockTransactionCountByHash(ctx context.Context, hash utils.H256) (*dbprimitives.HexUint, error) {
-	return Process(ctx, "eth_getBlockTransactionCountByHash", e.Endpoint, func(ctx context.Context) (*dbprimitives.HexUint, error) {
+func (e *EthProcessorAware) GetBlockTransactionCountByHash(ctx context.Context, hash common.H256) (*primitives.HexUint, error) {
+	return Process(ctx, "eth_getBlockTransactionCountByHash", e.Endpoint, func(ctx context.Context) (*primitives.HexUint, error) {
 		return e.Eth.GetBlockTransactionCountByHash(ctx, hash)
 	}, hash)
 }
 
-func (e *EthProcessorAware) GetBlockTransactionCountByNumber(ctx context.Context, number *utils.Uint256) (*dbprimitives.HexUint, error) {
-	return Process(ctx, "eth_getBlockTransactionCountByNumber", e.Endpoint, func(ctx context.Context) (*dbprimitives.HexUint, error) {
+func (e *EthProcessorAware) GetBlockTransactionCountByNumber(ctx context.Context, number *common.BN64) (*primitives.HexUint, error) {
+	return Process(ctx, "eth_getBlockTransactionCountByNumber", e.Endpoint, func(ctx context.Context) (*primitives.HexUint, error) {
 		return e.Eth.GetBlockTransactionCountByNumber(ctx, number)
 	}, number)
 }
 
-func (e *EthProcessorAware) GetTransactionByHash(ctx context.Context, hash utils.H256) (*dbresponses.Transaction, error) {
-	return Process(ctx, "eth_GetTransactionByHash", e.Endpoint, func(ctx context.Context) (*dbresponses.Transaction, error) {
+func (e *EthProcessorAware) GetTransactionByHash(ctx context.Context, hash common.H256) (*response.Transaction, error) {
+	return Process(ctx, "eth_GetTransactionByHash", e.Endpoint, func(ctx context.Context) (*response.Transaction, error) {
 		return e.Eth.GetTransactionByHash(ctx, hash)
 	}, hash)
 }
 
-func (e *EthProcessorAware) GetTransactionByBlockHashAndIndex(ctx context.Context, hash utils.H256, index utils.Uint256) (*dbresponses.Transaction, error) {
-	return Process(ctx, "eth_getTransactionByBlockHashAndIndex", e.Endpoint, func(ctx context.Context) (*dbresponses.Transaction, error) {
+func (e *EthProcessorAware) GetTransactionByBlockHashAndIndex(ctx context.Context, hash common.H256, index common.Uint64) (*response.Transaction, error) {
+	return Process(ctx, "eth_getTransactionByBlockHashAndIndex", e.Endpoint, func(ctx context.Context) (*response.Transaction, error) {
 		return e.Eth.GetTransactionByBlockHashAndIndex(ctx, hash, index)
 	}, hash, index)
 }
 
-func (e *EthProcessorAware) GetTransactionByBlockNumberAndIndex(ctx context.Context, number, index utils.Uint256) (*dbresponses.Transaction, error) {
-	return Process(ctx, "eth_getTransactionByBlockNumberAndIndex", e.Endpoint, func(ctx context.Context) (*dbresponses.Transaction, error) {
+func (e *EthProcessorAware) GetTransactionByBlockNumberAndIndex(ctx context.Context, number common.BN64, index common.Uint64) (*response.Transaction, error) {
+	return Process(ctx, "eth_getTransactionByBlockNumberAndIndex", e.Endpoint, func(ctx context.Context) (*response.Transaction, error) {
 		return e.Eth.GetTransactionByBlockNumberAndIndex(ctx, number, index)
 	}, number, index)
 }
 
-func (e *EthProcessorAware) GetTransactionReceipt(ctx context.Context, hash utils.H256) (*utils.TransactionReceiptResponse, error) {
-	return Process(ctx, "eth_getTransactionReceipt", e.Endpoint, func(ctx context.Context) (*utils.TransactionReceiptResponse, error) {
+func (e *EthProcessorAware) GetTransactionReceipt(ctx context.Context, hash common.H256) (*response.TransactionReceipt, error) {
+	return Process(ctx, "eth_getTransactionReceipt", e.Endpoint, func(ctx context.Context) (*response.TransactionReceipt, error) {
 		return e.Eth.GetTransactionReceipt(ctx, hash)
 	}, hash)
 }
 
-func (e *EthProcessorAware) GetLogs(ctx context.Context, rawFilter utils.FilterOptions) (*[]utils.LogResponse, error) {
-	return Process(ctx, "eth_getLogs", e.Endpoint, func(ctx context.Context) (*[]utils.LogResponse, error) {
+func (e *EthProcessorAware) GetLogs(ctx context.Context, rawFilter request.Filter) (*[]*response.Log, error) {
+	return Process(ctx, "eth_getLogs", e.Endpoint, func(ctx context.Context) (*[]*response.Log, error) {
 		return e.Eth.GetLogs(ctx, rawFilter)
 	}, rawFilter)
 }
 
-func (e *EthProcessorAware) GetFilterLogs(ctx context.Context, filterId utils.Uint256) (*[]interface{}, error) {
-	return Process(ctx, "eth_getFilterLogs", e.Endpoint, func(ctx context.Context) (*[]interface{}, error) {
+func (e *EthProcessorAware) GetFilterLogs(ctx context.Context, filterId common.Uint256) (*[]*response.Log, error) {
+	return Process(ctx, "eth_getFilterLogs", e.Endpoint, func(ctx context.Context) (*[]*response.Log, error) {
 		return e.Eth.GetFilterLogs(ctx, filterId)
 	}, filterId)
 }
 
-func (e *EthProcessorAware) GetUncleCountByBlockHash(ctx context.Context, hash utils.H256) (*utils.Uint256, error) {
-	return Process(ctx, "eth_GetUncleCountByBlockHash", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
+func (e *EthProcessorAware) GetUncleCountByBlockHash(ctx context.Context, hash common.H256) (*common.Uint256, error) {
+	return Process(ctx, "eth_GetUncleCountByBlockHash", e.Endpoint, func(ctx context.Context) (*common.Uint256, error) {
 		return e.Eth.GetUncleCountByBlockHash(ctx, hash)
 	}, hash)
 }
 
-func (e *EthProcessorAware) GetUncleCountByBlockNumber(ctx context.Context, number utils.Uint256) (*utils.Uint256, error) {
-	return Process(ctx, "eth_GetUncleCountByBlockNumber", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
+func (e *EthProcessorAware) GetUncleCountByBlockNumber(ctx context.Context, number common.BN64) (*common.Uint256, error) {
+	return Process(ctx, "eth_GetUncleCountByBlockNumber", e.Endpoint, func(ctx context.Context) (*common.Uint256, error) {
 		return e.Eth.GetUncleCountByBlockNumber(ctx, number)
 	}, number)
 }
 
-func (e *EthProcessorAware) NewFilter(ctx context.Context, filterOptions utils.FilterOptions) (*utils.Uint256, error) {
-	return Process(ctx, "eth_NewFilter", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
-		return e.Eth.NewFilter(ctx, filterOptions)
-	}, filterOptions)
+func (e *EthProcessorAware) NewFilter(ctx context.Context, filter request.Filter) (*common.Uint256, error) {
+	return Process(ctx, "eth_NewFilter", e.Endpoint, func(ctx context.Context) (*common.Uint256, error) {
+		return e.Eth.NewFilter(ctx, filter)
+	}, filter)
 }
 
-func (e *EthProcessorAware) NewBlockFilter(ctx context.Context) (*utils.Uint256, error) {
-	return Process(ctx, "eth_NewBlockFilter", e.Endpoint, func(ctx context.Context) (*utils.Uint256, error) {
+func (e *EthProcessorAware) NewBlockFilter(ctx context.Context) (*common.Uint256, error) {
+	return Process(ctx, "eth_NewBlockFilter", e.Endpoint, func(ctx context.Context) (*common.Uint256, error) {
 		return e.Eth.NewBlockFilter(ctx)
 	})
 }
 
-func (e *EthProcessorAware) UninstallFilter(ctx context.Context, filterId utils.Uint256) (*bool, error) {
+func (e *EthProcessorAware) UninstallFilter(ctx context.Context, filterId common.Uint256) (*bool, error) {
 	return Process(ctx, "eth_UninstallFilter", e.Endpoint, func(ctx context.Context) (*bool, error) {
 		return e.Eth.UninstallFilter(ctx, filterId)
 	}, filterId)
 }
 
-func (e *EthProcessorAware) GetFilterChanges(ctx context.Context, filterId utils.Uint256) (*[]interface{}, error) {
+func (e *EthProcessorAware) GetFilterChanges(ctx context.Context, filterId common.Uint256) (*[]interface{}, error) {
 	return Process(ctx, "eth_GetFilterChanges", e.Endpoint, func(ctx context.Context) (*[]interface{}, error) {
 		return e.Eth.GetFilterChanges(ctx, filterId)
 	}, filterId)

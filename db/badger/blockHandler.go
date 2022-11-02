@@ -1,339 +1,467 @@
 package badger
 
 import (
+	dbh "aurora-relayer-go-common/db"
 	"aurora-relayer-go-common/db/badger/core"
 	"aurora-relayer-go-common/db/codec"
-	"aurora-relayer-go-common/log"
+	"aurora-relayer-go-common/types/common"
+	dbt "aurora-relayer-go-common/types/db"
+	"aurora-relayer-go-common/types/indexer"
+	"aurora-relayer-go-common/types/primitives"
+	"aurora-relayer-go-common/types/response"
 	"aurora-relayer-go-common/utils"
 	"context"
-	"github.com/dgraph-io/badger/v3"
-	"time"
+	"github.com/pkg/errors"
 )
 
-var logIndex = core.NewIndex(5, false)
-
-const maxPendingTxns = 100
+var (
+	keyNotFoundError = errors.New("key not found")
+)
 
 type BlockHandler struct {
-	db     *badger.DB
-	codec  codec.Codec
+	db     *core.DB
 	config *Config
 }
 
-/*
-func NewBlockHandler() (db.BlockHandler, error) {
-	return NewBlockHandlerWithCodec(codec.NewCborCodec())
+func NewBlockHandler() (dbh.BlockHandler, error) {
+	return NewBlockHandlerWithCodec(codec.NewTinypackCodec())
 }
 
-func NewBlockHandlerWithCodec(codec codec.Codec) (db.BlockHandler, error) {
+func NewBlockHandlerWithCodec(codec codec.Codec) (dbh.BlockHandler, error) {
 	config := GetConfig()
-	bdb, err := core.Open(config.BadgerConfig, config.GcIntervalSeconds)
+	db, err := core.NewDB(config.Core, codec)
 	if err != nil {
 		return nil, err
 	}
 	return &BlockHandler{
-		db:     bdb,
-		codec:  codec,
+		db:     db,
 		config: config,
 	}, nil
 }
-*/
 
 func (h *BlockHandler) Close() error {
-	return core.Close()
+	return h.db.Close()
 }
 
-func (h *BlockHandler) BlockNumber(ctx context.Context) (*utils.Uint256, error) {
-	return fetch[utils.Uint256](ctx, h.codec, prefixCurrentBlockId.Key())
-}
-
-func (h *BlockHandler) GetBlockByHash(ctx context.Context, hash utils.H256) (*utils.Block, error) {
-	number, err := h.BlockHashToNumber(ctx, hash)
-	if err != nil {
-		return nil, err
-	}
-	return h.GetBlockByNumber(ctx, *number)
-}
-
-func (h *BlockHandler) GetBlockByNumber(ctx context.Context, number utils.Uint256) (*utils.Block, error) {
-	block, err := fetch[utils.Block](ctx, h.codec, prefixBlockByNumber.Key(number))
-	if err != nil {
-		return nil, err
-	}
-	block.Transactions, err = h.GetTransactionsForBlock(ctx, block)
-	if err != nil {
-		return nil, err
-	}
-	return block, nil
-}
-
-func (h *BlockHandler) GetBlockTransactionCountByHash(ctx context.Context, hash utils.H256) (int64, error) {
-	count, err := fetch[int64](ctx, h.codec, prefixTransactionCountByBlockHash.Key(hash))
-	if count == nil {
-		return 0, err
-	}
-	return *count, err
-}
-
-func (h *BlockHandler) GetBlockTransactionCountByNumber(ctx context.Context, number utils.Uint256) (int64, error) {
-	count, err := fetch[int64](ctx, h.codec, prefixTransactionCountByBlockNumber.Key(number))
-	if count == nil {
-		return 0, err
-	}
-	return *count, err
-}
-
-func (h *BlockHandler) GetTransactionByHash(ctx context.Context, hash utils.H256) (*utils.Transaction, error) {
-	key, err := fetch[[]byte](ctx, h.codec, prefixTransactionByHash.Key(hash))
-	if err != nil {
-		return nil, err
-	}
-	return fetch[utils.Transaction](ctx, h.codec, *key)
-}
-
-func (h *BlockHandler) GetTransactionByBlockHashAndIndex(ctx context.Context, hash utils.H256, index utils.Uint256) (*utils.Transaction, error) {
-	idx, err := index.ToUint32Key()
-	if err != nil {
-		return nil, err
-	}
-	return fetch[utils.Transaction](ctx, h.codec, prefixTransactionByBlockHashAndIndex.Key(hash, idx))
-}
-
-func (h *BlockHandler) GetTransactionByBlockNumberAndIndex(ctx context.Context, number utils.Uint256, index utils.Uint256) (*utils.Transaction, error) {
-	idx, err := index.ToUint32Key()
-	if err != nil {
-		return nil, err
-	}
-	key, err := fetch[[]byte](ctx, h.codec, prefixTransactionByBlockNumberAndIndex.Key(number, idx))
-	if err != nil {
-		return nil, err
-	}
-	return fetch[utils.Transaction](ctx, h.codec, *key)
-}
-
-func (h *BlockHandler) GetLogs(ctx context.Context, filter utils.LogFilter) (*[]utils.LogResponse, error) {
-	logResponses := []utils.LogResponse{}
-	timeout := time.NewTimer(time.Second * time.Duration(h.config.IterationTimeoutSeconds))
-	defer timeout.Stop()
-	err := h.db.View(func(txn *badger.Txn) error {
-		from, to := filter.FromBlock.KeyBytes(), filter.ToBlock.Add(1).KeyBytes()
-		fieldFilters := [][][]byte{filter.Address}
-		fieldFilters = append(fieldFilters, filter.Topics...)
-		scan := logIndex.StartScan(
-			&h.config.ScanConfig,
-			txn,
-			prefixLogTable.Bytes(),
-			prefixLogIndexTable.Bytes(),
-			fieldFilters,
-			from,
-			to,
-		)
-	loop:
-		for {
-			select {
-			case <-timeout.C:
-				break loop
-
-			case itemEnc, hasItem := <-scan.Output():
-				if !hasItem {
-					break loop
-				}
-				var item utils.LogResponse
-				if err := h.codec.Unmarshal(itemEnc.Value, &item); err != nil {
-					return err
-				}
-				logResponses = append(logResponses, item)
-				if uint(len(logResponses)) >= h.config.IterationMaxItems {
-					break loop
-				}
-			}
+func (h *BlockHandler) BlockNumber(ctx context.Context) (*primitives.HexUint, error) {
+	var bn primitives.HexUint
+	err := h.db.View(func(txn *core.ViewTxn) error {
+		key, err := txn.ReadLatestBlockKey(utils.GetChainId(ctx))
+		if err != nil {
+			return err
 		}
-		if err := scan.Stop(); err != nil {
-			log.Log().Err(err).Msg("error during log scan")
+		if key == nil {
+			return keyNotFoundError
 		}
+		bn = primitives.HexUint(key.Height)
 		return nil
 	})
-	return &logResponses, err
+	return &bn, err
 }
 
-func (h *BlockHandler) GetLogsForTransaction(ctx context.Context, tx *utils.Transaction) ([]*utils.LogResponse, error) {
-	blockNum := utils.UintToUint256(tx.BlockHeight)
-	txIdx, err := utils.UintToUint256(tx.TransactionIndex).ToUint32Key()
-	if err != nil {
-		return nil, err
-	}
-	return fetchPrefixedWithLimitAndTimeout[utils.LogResponse](ctx, h.codec, h.config.IterationMaxItems,
-		h.config.IterationTimeoutSeconds, prefixLogTable.Key(blockNum, txIdx))
-
+func (h *BlockHandler) GetBlockByHash(ctx context.Context, hash common.H256, isFull bool) (*response.Block, error) {
+	var resp *response.Block
+	var err error
+	bh := primitives.DataFromHex[primitives.Len32](hash.String())
+	err = h.db.View(func(txn *core.ViewTxn) error {
+		chainId := utils.GetChainId(ctx)
+		key, err := txn.ReadBlockKey(chainId, bh)
+		if err != nil {
+			return err
+		}
+		if key == nil {
+			return keyNotFoundError
+		}
+		resp, err = txn.ReadBlock(chainId, *key, isFull)
+		return err
+	})
+	return resp, err
 }
 
-func (h *BlockHandler) GetTransactionsForBlock(ctx context.Context, block *utils.Block) ([]*utils.Transaction, error) {
-	return fetchPrefixedWithLimitAndTimeout[utils.Transaction](ctx, h.codec, h.config.IterationMaxItems,
-		h.config.IterationTimeoutSeconds, prefixTransactionByBlockHashAndIndex.Key(block.Hash))
-}
-
-func (h *BlockHandler) GetBlockHashesSinceNumber(ctx context.Context, number utils.Uint256) ([]utils.H256, error) {
-	results := make([]utils.H256, 0)
-	err := h.db.View(func(txn *badger.Txn) error {
-		it := txn.NewIterator(badger.DefaultIteratorOptions)
-		defer it.Close()
-
-		var res utils.Block
-		for it.Seek(prefixBlockByNumber.Key(number.Add(1))); it.ValidForPrefix(prefixBlockByNumber.Bytes()); it.Next() {
-			item, err := it.Item().ValueCopy(nil)
+func (h *BlockHandler) GetBlockByNumber(ctx context.Context, number common.BN64, isFull bool) (*response.Block, error) {
+	var resp *response.Block
+	var err error
+	err = h.db.View(func(txn *core.ViewTxn) error {
+		var key *dbt.BlockKey
+		bn := number.Uint64()
+		chainId := utils.GetChainId(ctx)
+		if bn == nil {
+			key, err = txn.ReadLatestBlockKey(chainId)
 			if err != nil {
 				return err
 			}
-			if err := h.codec.Unmarshal(item, &res); err != nil {
+		} else if *bn == 0 {
+			key, err = txn.ReadEarliestBlockKey(chainId)
+			if err != nil {
 				return err
 			}
-			results = append(results, res.Hash)
+		} else {
+			key = &dbt.BlockKey{Height: *bn}
 		}
-		return nil
+		if key != nil {
+			resp, err = txn.ReadBlock(chainId, *key, isFull)
+		}
+		return err
 	})
-	return results, err
+	return resp, err
 }
 
-func (h *BlockHandler) InsertBlock(block *utils.Block) error {
+func (h *BlockHandler) GetBlockTransactionCountByHash(ctx context.Context, hash common.H256) (*primitives.HexUint, error) {
+	var resp primitives.HexUint
+	var err error
+	bh := primitives.DataFromHex[primitives.Len32](hash.String())
+	err = h.db.View(func(txn *core.ViewTxn) error {
+		chainId := utils.GetChainId(ctx)
+		key, err := txn.ReadBlockKey(chainId, bh)
+		if err != nil {
+			return err
+		}
+		if key == nil {
+			return keyNotFoundError
+		}
+		resp, err = txn.ReadBlockTxCount(chainId, *key)
+		return err
+	})
+	return &resp, err
+}
 
-	savedBlock := *block
-	savedBlock.Transactions = nil
-	blockNum := utils.UintToUint256(block.Height)
+func (h *BlockHandler) GetBlockTransactionCountByNumber(ctx context.Context, number common.BN64) (*primitives.HexUint, error) {
+	var resp primitives.HexUint
+	var err error
+	err = h.db.View(func(txn *core.ViewTxn) error {
+		var key *dbt.BlockKey
+		bn := number.Uint64()
+		chainId := utils.GetChainId(ctx)
+		if bn == nil {
+			key, err = txn.ReadLatestBlockKey(chainId)
+			if err != nil {
+				return err
+			}
+		} else {
+			key = &dbt.BlockKey{Height: *bn}
+		}
+		resp, err = txn.ReadBlockTxCount(chainId, *key)
+		return err
+	})
+	return &resp, err
+}
 
-	writer := h.db.NewWriteBatch()
-	writer.SetMaxPendingTxns(maxPendingTxns)
+func (h *BlockHandler) GetTransactionByHash(ctx context.Context, hash common.H256) (*response.Transaction, error) {
+	var resp *response.Transaction
+	var err error
+	th := primitives.DataFromHex[primitives.Len32](hash.String())
+	err = h.db.View(func(txn *core.ViewTxn) error {
+		var key *dbt.TransactionKey
+		chainId := utils.GetChainId(ctx)
+		key, err = txn.ReadTxKey(chainId, th)
+		if err != nil {
+			return err
+		}
+		if key == nil {
+			return keyNotFoundError
+		}
+		resp, err = txn.ReadTx(chainId, *key)
+		return err
+	})
+	return resp, err
+}
+
+func (h *BlockHandler) GetTransactionByBlockHashAndIndex(ctx context.Context, hash common.H256, index common.Uint64) (*response.Transaction, error) {
+	var resp *response.Transaction
+	var err error
+	bh := primitives.DataFromHex[primitives.Len32](hash.String())
+	err = h.db.View(func(txn *core.ViewTxn) error {
+		chainId := utils.GetChainId(ctx)
+		key, err := txn.ReadBlockKey(chainId, bh)
+		if err != nil {
+			return err
+		}
+		if key == nil {
+			return keyNotFoundError
+		}
+		resp, err = txn.ReadTx(chainId, dbt.TransactionKey{
+			BlockHeight:      key.Height,
+			TransactionIndex: index.Uint64(),
+		})
+		return err
+	})
+	return resp, err
+}
+
+func (h *BlockHandler) GetTransactionByBlockNumberAndIndex(ctx context.Context, number common.BN64, index common.Uint64) (*response.Transaction, error) {
+	var resp *response.Transaction
+	var err error
+	err = h.db.View(func(txn *core.ViewTxn) error {
+		var key *dbt.BlockKey
+		bn := number.Uint64()
+		chainId := utils.GetChainId(ctx)
+		if bn == nil {
+			key, err = txn.ReadLatestBlockKey(chainId)
+			if err != nil {
+				return err
+			}
+			bn = &key.Height
+		}
+		resp, err = txn.ReadTx(chainId, dbt.TransactionKey{
+			BlockHeight:      *bn,
+			TransactionIndex: index.Uint64(),
+		})
+		return err
+	})
+	return resp, err
+}
+
+func (h *BlockHandler) GetTransactionReceipt(ctx context.Context, hash common.H256) (*response.TransactionReceipt, error) {
+	var resp *response.TransactionReceipt
+	var err error
+	th := primitives.DataFromHex[primitives.Len32](hash.String())
+	err = h.db.View(func(txn *core.ViewTxn) error {
+		var key *dbt.TransactionKey
+		chainId := utils.GetChainId(ctx)
+		key, err = txn.ReadTxKey(chainId, th)
+		if err != nil {
+			return err
+		}
+		if key == nil {
+			return keyNotFoundError
+		}
+		resp, err = txn.ReadTxReceipt(chainId, *key)
+		return err
+	})
+	return resp, err
+}
+
+func (h *BlockHandler) GetLogs(ctx context.Context, filter *dbt.LogFilter) ([]*response.Log, error) {
+	var resp []*response.Log
+	var err error
+	err = h.db.View(func(txn *core.ViewTxn) error {
+		resp, _, err = h.getLogs(ctx, txn, filter)
+		return err
+	})
+	return resp, err
+}
+
+func (h *BlockHandler) GetFilterLogs(ctx context.Context, filter *dbt.LogFilter) ([]*response.Log, error) {
+	return h.GetLogs(ctx, filter)
+}
+
+func (h *BlockHandler) GetFilterChanges(ctx context.Context, filter any) (*[]interface{}, error) {
+
+	var err error
+	filterChanges := make([]interface{}, 0)
+	if bf, ok := filter.(*dbt.BlockFilter); ok {
+		var blockHashes []primitives.Data32
+		var lastKey *dbt.BlockKey
+		err = h.db.View(func(txn *core.ViewTxn) error {
+			blockHashes, lastKey, err = h.getBlockHashes(ctx, txn, bf)
+			if lastKey != nil && lastKey.CompareTo(&bf.From) > -1 {
+				bf.Next = *lastKey.Next()
+			}
+			return err
+		})
+		for _, log := range blockHashes {
+			filterChanges = append(filterChanges, log)
+		}
+	} else if tf, ok := filter.(*dbt.TransactionFilter); ok {
+		var txnHashes []any
+		var lastKey *dbt.TransactionKey
+		err = h.db.View(func(txn *core.ViewTxn) error {
+			txnHashes, lastKey, err = h.getTransactionHashes(ctx, txn, tf)
+			if lastKey != nil && lastKey.CompareTo(&tf.From) > -1 {
+				tf.Next = *lastKey.Next()
+			}
+			if txnHashes != nil && len(txnHashes) > 0 {
+				filterChanges = txnHashes
+			}
+			return err
+		})
+	} else if lf, ok := filter.(*dbt.LogFilter); ok {
+		var logs []*response.Log
+		var lastKey *dbt.LogKey
+		err = h.db.View(func(txn *core.ViewTxn) error {
+			logs, lastKey, err = h.getLogs(ctx, txn, lf)
+			if lastKey != nil && lastKey.CompareTo(&lf.From) > -1 {
+				lf.Next = *lastKey.Next()
+			}
+			return err
+		})
+		for _, log := range logs {
+			filterChanges = append(filterChanges, log)
+		}
+	}
+
+	return &filterChanges, nil
+}
+
+func (h *BlockHandler) BlockHashToNumber(ctx context.Context, hash common.H256) (*uint64, error) {
+	var resp uint64
+	var err error
+	bh := primitives.DataFromHex[primitives.Len32](hash.String())
+	err = h.db.View(func(txn *core.ViewTxn) error {
+		chainId := utils.GetChainId(ctx)
+		key, err := txn.ReadBlockKey(chainId, bh)
+		if err != nil {
+			return err
+		}
+		if key == nil {
+			return keyNotFoundError
+		}
+		resp = key.Height
+		return err
+	})
+	return &resp, err
+}
+
+func (h *BlockHandler) BlockNumberToHash(ctx context.Context, number common.BN64) (*string, error) {
+	var resp string
+	var err error
+	err = h.db.View(func(txn *core.ViewTxn) error {
+		var b *response.Block
+		chainId := utils.GetChainId(ctx)
+		b, err = txn.ReadBlock(chainId, dbt.BlockKey{
+			Height: *number.Uint64(),
+		}, false)
+		if err != nil {
+			return err
+		}
+		if b == nil {
+			return keyNotFoundError
+		}
+		resp = b.Hash.Hex()
+		return err
+	})
+	return &resp, err
+}
+
+func (h *BlockHandler) InsertBlock(block *indexer.Block) error {
+
+	writer := h.db.NewWriter()
 	defer writer.Cancel()
 
-	if err := insertBatch(writer, h.codec, prefixCurrentBlockSequence.Key(), block.Sequence); err != nil {
-		return err
-	}
-	if err := insertBatch(writer, h.codec, prefixCurrentBlockId.Key(), blockNum); err != nil {
-		return err
-	}
-	if err := insertBatch(writer, h.codec, prefixBlockByNumber.Key(blockNum), savedBlock); err != nil {
-		return err
-	}
-	if err := insertBatch(writer, h.codec, prefixBlockByHash.Key(block.Hash), blockNum); err != nil {
-		return err
-	}
-	if err := insertBatch(writer, h.codec, prefixTransactionCountByBlockHash.Key(block.Hash), block.TxCount()); err != nil {
-		return err
-	}
-	if err := insertBatch(writer, h.codec, prefixTransactionCountByBlockNumber.Key(blockNum), block.TxCount()); err != nil {
+	chainId := block.ChainId.Uint64()
+	height := block.Height.Uint64()
+	hash := primitives.DataFromBytes[primitives.Len32](block.Hash.Bytes())
+	err := writer.InsertBlock(chainId, height, hash, utils.IndexerBlockToDbBlock(block))
+	if err != nil {
 		return err
 	}
 
-	for idx, tx := range block.Transactions {
-		if err := h.insertTransaction(writer, tx, idx, block); err != nil {
+	for i, t := range block.Transactions {
+		txnHash := primitives.DataFromBytes[primitives.Len32](t.Hash.Bytes())
+		txnIndex := uint64(i)
+		err = writer.InsertTransaction(chainId, height, txnIndex, txnHash, utils.IndexerTxnToDbTxn(t))
+		if err != nil {
 			return err
+		}
+		for j, l := range t.Logs {
+			err = writer.InsertLog(chainId, height, txnIndex, uint64(j), utils.IndexerLogToDbLog(l))
+			if err != nil {
+				return err
+			}
 		}
 	}
 
-	if err := writer.Flush(); err != nil {
+	err = writer.Flush()
+	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
-func (h *BlockHandler) BlockHashToNumber(ctx context.Context, hash utils.H256) (*utils.Uint256, error) {
-	return fetch[utils.Uint256](ctx, h.codec, prefixBlockByHash.Key(hash))
-}
+func (h *BlockHandler) getLogs(ctx context.Context, txn *core.ViewTxn, filter *dbt.LogFilter) ([]*response.Log, *dbt.LogKey, error) {
+	var from, to, lastKey *dbt.LogKey
+	var err error
+	var resp []*response.Log
 
-func (h *BlockHandler) BlockNumberToHash(ctx context.Context, number utils.Uint256) (*utils.H256, error) {
-	block, err := h.GetBlockByNumber(ctx, number)
-	if err != nil {
-		return nil, err
-	}
-	return &block.Hash, nil
-}
+	chainId := utils.GetChainId(ctx)
 
-func (h *BlockHandler) CurrentBlockSequence(ctx context.Context) uint64 {
-	i, err := fetch[uint64](ctx, h.codec, prefixCurrentBlockSequence.Key())
-	if err != nil {
-		return 0
-	}
-	return *i
-}
-
-func (h *BlockHandler) insertTransaction(writer *badger.WriteBatch, tx *utils.Transaction, index int, block *utils.Block) error {
-	savedTx := *tx
-	savedTx.Logs = nil
-	idx, err := utils.IntToUint256(index).ToUint32Key()
-	if err != nil {
-		return err
-	}
-	mainKey := prefixTransactionByBlockHashAndIndex.Key(block.Hash, idx)
-	if err := insertBatch(writer, h.codec, mainKey, savedTx); err != nil {
-		return err
-	}
-	if err := insertBatch(writer, h.codec, prefixTransactionByHash.Key(tx.Hash), mainKey); err != nil {
-		return err
-	}
-	if err := insertBatch(writer, h.codec, prefixTransactionByBlockNumberAndIndex.Key(utils.UintToUint256(block.Height), idx), mainKey); err != nil {
-		return err
+	if filter.Next.BlockHeight == 0 && filter.Next.TransactionIndex == 0 && filter.Next.LogIndex == 0 {
+		from = &filter.From
+	} else {
+		from = &filter.Next
 	}
 
-	for lIdx, l := range tx.Logs {
-		if err := h.insertLog(writer, l, lIdx, tx, index, block); err != nil {
-			return err
+	if filter.To.BlockHeight == 0 && filter.Next.TransactionIndex == 0 && filter.Next.BlockHeight == 0 {
+		var bk *dbt.BlockKey
+		bk, err = txn.ReadLatestBlockKey(chainId)
+		if err != nil {
+			return nil, nil, err
 		}
+		to = &dbt.LogKey{BlockHeight: bk.Height, TransactionIndex: 0, LogIndex: 0}
+	} else {
+		to = &filter.To
 	}
-	return nil
+
+	addresses := filter.Addresses.Content
+	var topics [][]primitives.Data32
+	for i, t := range filter.Topics.Content {
+		topics[i] = t.Content
+	}
+	resp, lastKey, err = txn.ReadLogs(ctx, chainId, from, to, addresses, topics, 1000)
+	if err != nil && len(resp) > 0 {
+		return resp, lastKey, nil
+	}
+	return resp, lastKey, err
 }
 
-func (h *BlockHandler) insertLog(writer *badger.WriteBatch, log *utils.Log, idx int, tx *utils.Transaction, txIdx int, block *utils.Block) error {
-	data := utils.LogResponse{
-		Removed:          false,
-		LogIndex:         utils.IntToUint256(idx),
-		TransactionIndex: utils.IntToUint256(txIdx),
-		TransactionHash:  tx.Hash,
-		BlockHash:        block.Hash,
-		BlockNumber:      utils.UintToUint256(block.Height),
-		Address:          log.Address,
-		Data:             log.Data,
-		Topics:           log.Topics,
-	}
-	dataEnc, err := h.codec.Marshal(data)
-	if err != nil {
-		return err
+func (h *BlockHandler) getBlockHashes(ctx context.Context, txn *core.ViewTxn, filter *dbt.BlockFilter) ([]primitives.Data32, *dbt.BlockKey, error) {
+	var resp []primitives.Data32
+	var err error
+	var from, to, lastKey *dbt.BlockKey
+
+	chainId := utils.GetChainId(ctx)
+
+	if filter.Next.Height == 0 {
+		from = &filter.From
+	} else {
+		from = &filter.Next
 	}
 
-	logSmallKey, err := utils.IntToUint256(idx).ToUint32Key()
-	if err != nil {
-		return err
-	}
-	txSmallKey, err := utils.IntToUint256(txIdx).ToUint32Key()
-	if err != nil {
-		return err
-	}
-	key := getLogInsertKey(data.BlockNumber, txSmallKey, logSmallKey)
-	// Populate original table
-	err = writer.Set(
-		prefixLogTable.AppendBytes(key),
-		dataEnc,
-	)
-	if err != nil {
-		return err
+	if filter.To.Height == 0 {
+		var bk *dbt.BlockKey
+		bk, err = txn.ReadLatestBlockKey(chainId)
+		if err != nil {
+			return nil, nil, err
+		}
+		to = &dbt.BlockKey{Height: bk.Height}
+	} else {
+		to = &filter.To
 	}
 
-	topicsB := make([][]byte, 0, len(data.Topics))
-	topicsB = append(topicsB, data.Address.Bytes())
-	for _, t := range data.Topics {
-		topicsB = append(topicsB, t)
+	resp, lastKey, err = txn.ReadBlockHashes(ctx, chainId, from, to, 1000)
+	if err != nil && len(resp) > 0 {
+		return resp, lastKey, nil
+	}
+	return resp, lastKey, err
+}
+
+func (h *BlockHandler) getTransactionHashes(ctx context.Context, txn *core.ViewTxn, filter *dbt.TransactionFilter) ([]any, *dbt.TransactionKey, error) {
+	var resp []any
+	var err error
+	var from, to, lastKey *dbt.TransactionKey
+
+	chainId := utils.GetChainId(ctx)
+
+	if filter.Next.BlockHeight == 0 && filter.Next.TransactionIndex == 0 {
+		from = &filter.From
+	} else {
+		from = &filter.Next
 	}
 
-	// Populate index table
-	err = logIndex.Insert(
-		prefixLogIndexTable.Bytes(),
-		topicsB,
-		key,
-		func(key, value []byte) error {
-			return writer.Set(key, value)
-		},
-	)
-	if err != nil {
-		return err
+	if filter.To.BlockHeight == 0 && filter.To.TransactionIndex == 0 {
+		var bk *dbt.BlockKey
+		bk, err = txn.ReadLatestBlockKey(chainId)
+		if err != nil {
+			return nil, nil, err
+		}
+		to = &dbt.TransactionKey{BlockHeight: bk.Height, TransactionIndex: 0}
+	} else {
+		to = &filter.To
 	}
-	return nil
+
+	resp, lastKey, err = txn.ReadTransactions(ctx, chainId, from, to, false, 1000)
+	if err != nil && len(resp) > 0 {
+		return resp, lastKey, nil
+	}
+	return resp, lastKey, err
 }

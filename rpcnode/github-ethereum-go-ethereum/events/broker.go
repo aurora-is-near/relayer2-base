@@ -1,9 +1,11 @@
-package eventbroker
+package events
 
 import (
 	"aurora-relayer-go-common/broker"
 	"aurora-relayer-go-common/log"
-	"aurora-relayer-go-common/utils"
+	"aurora-relayer-go-common/types/common"
+	"aurora-relayer-go-common/types/event"
+	"aurora-relayer-go-common/types/request"
 	"bytes"
 	"time"
 
@@ -13,9 +15,9 @@ import (
 type Type byte
 
 const (
-	// LogsChSize is the size of channel listening to Logs event.
+	// LogsChSize is the size of channel listening to Logs types.
 	LogsChSize = 5
-	// NewHeadsChSize is the size of channel listening to NewHeads event.
+	// NewHeadsChSize is the size of channel listening to NewHeads types.
 	NewHeadsChSize = 5
 )
 
@@ -32,9 +34,9 @@ type EventSubscription struct {
 	id         rpc.ID
 	typ        Type
 	created    time.Time
-	logOpts    utils.LogSubscriptionOptions
-	newHeadsCh chan *utils.BlockResponse
-	logsCh     chan []*utils.LogResponse
+	logOpts    request.LogSubscriptionOptions
+	newHeadsCh chan event.Block
+	logsCh     chan event.Logs
 }
 
 // GetId returns identifier of the EventSubscription which implements broker.Subscription
@@ -43,27 +45,27 @@ func (es *EventSubscription) GetId() broker.SubID {
 }
 
 // GetLogsSubOpts returns log filters of the EventSubscription which implements broker.Subscription
-func (es *EventSubscription) GetLogsSubOpts() utils.LogSubscriptionOptions {
+func (es *EventSubscription) GetLogsSubOpts() request.LogSubscriptionOptions {
 	return es.logOpts
 }
 
-// GetNewHeadsCh returns the newHeads event channel of the EventSubscription which implements broker.Subscription
-func (es *EventSubscription) GetNewHeadsCh() chan *utils.BlockResponse {
+// GetNewHeadsCh returns the newHeads types channel of the EventSubscription which implements broker.Subscription
+func (es *EventSubscription) GetNewHeadsCh() chan event.Block {
 	return es.newHeadsCh
 }
 
-// GetLogsCh returns the logs event channel of the EventSubscription which implements broker.Subscription
-func (es *EventSubscription) GetLogsCh() chan []*utils.LogResponse {
+// GetLogsCh returns the logs types channel of the EventSubscription which implements broker.Subscription
+func (es *EventSubscription) GetLogsCh() chan event.Logs {
 	return es.logsCh
 }
 
-// EventBroker offers support to manage event subscriptions and broadcast the incoming events to
+// EventBroker offers support to manage types subscriptions and broadcast the incoming events to
 // subscribed objects.
 type EventBroker struct {
 	l                 *log.Logger
 	stopCh            chan bool
-	publishNewHeadsCh chan *utils.BlockResponse
-	publishLogsCh     chan []*utils.LogResponse
+	publishNewHeadsCh chan event.Block
+	publishLogsCh     chan event.Logs
 	subNewHeadsCh     chan broker.Subscription
 	subLogsCh         chan broker.Subscription
 	unsubNewHeadsCh   chan broker.Subscription
@@ -76,8 +78,8 @@ func NewEventBroker() *EventBroker {
 	return &EventBroker{
 		l:                 log.Log(),
 		stopCh:            make(chan bool, 1),
-		publishNewHeadsCh: make(chan *utils.BlockResponse, NewHeadsChSize),
-		publishLogsCh:     make(chan []*utils.LogResponse, LogsChSize),
+		publishNewHeadsCh: make(chan event.Block, NewHeadsChSize),
+		publishLogsCh:     make(chan event.Logs, LogsChSize),
 		subNewHeadsCh:     make(chan broker.Subscription),
 		subLogsCh:         make(chan broker.Subscription),
 		unsubNewHeadsCh:   make(chan broker.Subscription),
@@ -88,13 +90,13 @@ func NewEventBroker() *EventBroker {
 
 // SubscribeNewHeads creates a new subscription and signals the
 // EventBroker subscription channel to handle the subscription map
-func (eb *EventBroker) SubscribeNewHeads(ch chan *utils.BlockResponse) broker.Subscription {
+func (eb *EventBroker) SubscribeNewHeads(ch chan event.Block) broker.Subscription {
 	sub := &EventSubscription{
 		id:         rpc.NewID(),
 		typ:        NewHeadsSubscription,
 		created:    time.Now(),
 		newHeadsCh: ch,
-		logsCh:     make(chan []*utils.LogResponse),
+		logsCh:     make(chan event.Logs),
 	}
 	eb.subNewHeadsCh <- sub
 	eb.l.Info().Msgf("new subscription request to New Heads with Id: [%s]", sub.id)
@@ -103,13 +105,13 @@ func (eb *EventBroker) SubscribeNewHeads(ch chan *utils.BlockResponse) broker.Su
 
 // SubscribeLogs creates a new subscription and signals the
 // EventBroker subscription channel to handle the subscription map
-func (eb *EventBroker) SubscribeLogs(opts utils.LogSubscriptionOptions, ch chan []*utils.LogResponse) broker.Subscription {
+func (eb *EventBroker) SubscribeLogs(opts request.LogSubscriptionOptions, ch chan event.Logs) broker.Subscription {
 	sub := &EventSubscription{
 		id:         rpc.NewID(),
 		typ:        LogsSubscription,
 		created:    time.Now(),
 		logOpts:    opts,
-		newHeadsCh: make(chan *utils.BlockResponse),
+		newHeadsCh: make(chan event.Block),
 		logsCh:     ch,
 	}
 	eb.subLogsCh <- sub
@@ -184,33 +186,33 @@ func (eb *EventBroker) Start() {
 	}
 }
 
-// PublishNewHeads provides publish API for new block head event. Implements broker.Broker interface
-func (eb *EventBroker) PublishNewHeads(br *utils.BlockResponse) {
-	eb.publishNewHeadsCh <- br
+// PublishNewHeads provides publish API for new block head types. Implements broker.Broker interface
+func (eb *EventBroker) PublishNewHeads(b event.Block) {
+	eb.publishNewHeadsCh <- b
 }
 
-// PublishLogs provides publish API for logs event. Implements broker.Broker interface
-func (eb *EventBroker) PublishLogs(lr []*utils.LogResponse) {
-	eb.publishLogsCh <- lr
+// PublishLogs provides publish API for logs types. Implements broker.Broker interface
+func (eb *EventBroker) PublishLogs(l event.Logs) {
+	eb.publishLogsCh <- l
 }
 
 // filterLogs creates a slice of Log Response matching the given criteria.
-func filterLogs(logResponses []*utils.LogResponse, opts utils.LogSubscriptionOptions) []*utils.LogResponse {
-	var ret []*utils.LogResponse
+func filterLogs(logs event.Logs, opts request.LogSubscriptionOptions) event.Logs {
+	var ret event.Logs
 Logs:
-	for _, logResponse := range logResponses {
-		if len(opts.Address) > 0 && !includes(opts.Address, logResponse.Address) {
+	for _, log := range logs {
+		if len(opts.Address) > 0 && !includes(opts.Address, log.Address.Hex()) {
 			continue
 		}
 
 		// If the number of filtered topics provided is greater than the amount of topics in logs, skip.
-		if len(opts.Topics) > len(logResponse.Topics) {
+		if len(opts.Topics) > len(log.Topics) {
 			continue
 		}
 		for i, sub := range opts.Topics {
 			match := len(sub) == 0 // empty rule set == wildcard
 			for _, topic := range sub {
-				if bytes.Equal(logResponse.Topics[i], topic) {
+				if bytes.Equal(log.Topics[i].Bytes(), topic) {
 					match = true
 					break
 				}
@@ -219,14 +221,14 @@ Logs:
 				continue Logs
 			}
 		}
-		ret = append(ret, logResponse)
+		ret = append(ret, log)
 	}
 	return ret
 }
 
-func includes(addresses utils.Addresses, address utils.Address) bool {
+func includes(addresses []common.Address, address string) bool {
 	for _, addr := range addresses {
-		if addr == address {
+		if addr.Hex() == address {
 			return true
 		}
 	}

@@ -1,16 +1,21 @@
 package endpoint
 
 import (
-	"aurora-relayer-go-common/db/badger2/core/dbprimitives"
-	"aurora-relayer-go-common/db/badger2/core/dbresponses"
-	"aurora-relayer-go-common/utils"
+	"aurora-relayer-go-common/types"
+	"aurora-relayer-go-common/types/common"
+	errs "aurora-relayer-go-common/types/errors"
+	"aurora-relayer-go-common/types/primitives"
+	"aurora-relayer-go-common/types/request"
+	"aurora-relayer-go-common/types/response"
 	"context"
+	"github.com/ethereum/go-ethereum/rpc"
 )
 
 var (
-	zero     = utils.IntToUint256(0)
+	zero     = common.IntToUint256(0)
 	syncing  = false
 	mining   = false
+	full     = false
 	accounts = []string{}
 )
 
@@ -24,204 +29,168 @@ func NewEth(endpoint *Endpoint) *Eth {
 
 // Accounts returns empty array
 //
-//	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
+//	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
 func (e *Eth) Accounts(_ context.Context) (*[]string, error) {
 	return &accounts, nil
 }
 
 // Coinbase returns constant 0x0, see relayer.yml to configure coinBase
 //
-//	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
+//	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
 func (e *Eth) Coinbase(_ context.Context) (*string, error) {
 	return &e.Config.EthConfig.zeroAddress, nil
 }
 
 // ProtocolVersion returns constant 0x41, see relayer.yml to configure ProtocolVersion
 //
-//	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-func (e *Eth) ProtocolVersion(_ context.Context) (*utils.Uint256, error) {
+//	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+func (e *Eth) ProtocolVersion(_ context.Context) (*common.Uint256, error) {
 	return &e.Config.EthConfig.protocolVersion, nil
 }
 
 // Hashrate returns constant 0x0, see relayer.yml to configure Hashrate
 //
-//	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-func (e *Eth) Hashrate(_ context.Context) (*utils.Uint256, error) {
+//	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+func (e *Eth) Hashrate(_ context.Context) (*common.Uint256, error) {
 	return &e.Config.EthConfig.hashrate, nil
 }
 
 // Mining returns constant false
 //
-//	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
+//	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
 func (e *Eth) Mining(_ context.Context) (*bool, error) {
 	return &mining, nil
 }
 
 // Syncing returns constant false
 //
-//	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
+//	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
 func (e *Eth) Syncing(_ context.Context) (*bool, error) {
 	return &syncing, nil
 }
 
 // BlockNumber returns the latest block number from DB if API is enabled by configuration.
 //
-// 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-// 	On DB failure, returns error code '-32000' with custom message.
-func (e *Eth) BlockNumber(ctx context.Context) (*dbprimitives.HexUint, error) {
-	bn, err := (*e.DbHandler).BlockNumber(ctx)
+// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+// 	On DB failure, returns errors code '-32000' with custom message.
+func (e *Eth) BlockNumber(ctx context.Context) (*primitives.HexUint, error) {
+	bn, err := e.DbHandler.BlockNumber(ctx)
 	if err != nil {
-		return nil, &utils.GenericError{Err: err}
+		return nil, &errs.GenericError{Err: err}
 	}
 	return bn, nil
 }
 
-// GetBlockByHash returns the block from DB, with the given block hash, both hash and isFull are required.
-// If isFull is true all transactions in the block with all details otherwise returns only the hashes of the
-// transactions are returned.
+// GetBlockByHash returns the block from DB, with the given block hash. `hash` is required but `isFull` is an optional
+// parameter, if not provided default is false. If isFull is true all transactions in the block with all details
+// otherwise returns only the hashes of the transactions are returned.
 //
-// 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-// 	On DB failure or hash not found, returns error code '-32000' with custom message.
-// 	On missing or invalid param returns error code '-32602' with custom message.
-func (e *Eth) GetBlockByHash(ctx context.Context, hash utils.H256, isFull *bool) (*dbresponses.Block, error) {
-	// TODO (*e.DbHandler).GetBlockByHash always returns full transactions.
-	// GetBlockByHash's API need to be changed
-	block, err := (*e.DbHandler).GetBlockByHash(ctx, hash)
-	if err != nil {
-		return nil, &utils.GenericError{Err: err}
+// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+// 	On DB failure or hash not found, returns errors code '-32000' with custom message.
+// 	On missing or invalid param returns errors code '-32602' with custom message.
+func (e *Eth) GetBlockByHash(ctx context.Context, hash common.H256, isFull *bool) (*response.Block, error) {
+	if isFull == nil {
+		isFull = &full
 	}
-
+	block, err := e.DbHandler.GetBlockByHash(ctx, hash, *isFull)
+	if err != nil {
+		return nil, &errs.GenericError{Err: err}
+	}
 	return block, nil
 }
 
-// GetBlockByNumber returns the block from DB, with the given block number, both number and isFull are required.
-// If isFull is true all transactions in the block with all details otherwise returns only the hashes of the
-// transactions are returned.
+// GetBlockByNumber returns the block from DB, with the given block number. `number` is required but `isFull` is an
+// optional parameter, if not provided default is false. If isFull is true all transactions in the block with all details
+// otherwise returns only the hashes of the transactions are returned.
 //
-//	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-// 	On DB failure or number not found, returns error code '-32000' with custom message.
-//	On missing or invalid param returns error code '-32602' with custom message.
-func (e *Eth) GetBlockByNumber(ctx context.Context, number utils.Uint256, isFull *bool) (*dbresponses.Block, error) {
-	// TODO (*e.DbHandler).GetBlockByHash always returns full transactions.
-	// GetBlockByHash's API need to be changed
-	block, err := (*e.DbHandler).GetBlockByNumber(ctx, number)
+//	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+// 	On DB failure or number not found, returns errors code '-32000' with custom message.
+//	On missing or invalid param returns errors code '-32602' with custom message.
+func (e *Eth) GetBlockByNumber(ctx context.Context, number common.BN64, isFull *bool) (*response.Block, error) {
+	if isFull == nil {
+		isFull = &full
+	}
+	block, err := e.DbHandler.GetBlockByNumber(ctx, number, *isFull)
 	if err != nil {
-		return nil, &utils.GenericError{Err: err}
+		return nil, &errs.GenericError{Err: err}
 	}
 	return block, nil
 }
 
 // GetBlockTransactionCountByHash returns the number of transactions withing the given block hash.
 //
-//	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-//	On DB failure or hash not found, returns error code '-32000' with custom message.
-//	On missing or invalid param returns error code '-32602' with custom message.
-func (e *Eth) GetBlockTransactionCountByHash(ctx context.Context, hash utils.H256) (*dbprimitives.HexUint, error) {
-	cnt, err := (*e.DbHandler).GetBlockTransactionCountByHash(ctx, hash)
+//	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+//	On DB failure or hash not found, returns errors code '-32000' with custom message.
+//	On missing or invalid param returns errors code '-32602' with custom message.
+func (e *Eth) GetBlockTransactionCountByHash(ctx context.Context, hash common.H256) (*primitives.HexUint, error) {
+	cnt, err := e.DbHandler.GetBlockTransactionCountByHash(ctx, hash)
 	if err != nil {
-		return nil, &utils.GenericError{Err: err}
+		return nil, &errs.GenericError{Err: err}
 	}
 	return cnt, nil
 }
 
-// GetBlockTransactionCountByNumber returns the number of transactions within the given block number.
+// GetBlockTransactionCountByNumber returns the number of transactions within the given block number. `number` parameter
+// is optional and the latest block is used if `number` parameter is not provided
 //
-// 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-// 	On DB failure or number not found, returns error code '-32000' with custom message.
-// 	On missing or invalid param returns error code '-32602' with custom message.
-func (e *Eth) GetBlockTransactionCountByNumber(ctx context.Context, number *utils.Uint256) (*dbprimitives.HexUint, error) {
-	// the latest block is used if `number` parameter is not provided
+// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+// 	On DB failure or number not found, returns errors code '-32000' with custom message.
+// 	On missing or invalid param returns errors code '-32602' with custom message.
+func (e *Eth) GetBlockTransactionCountByNumber(ctx context.Context, number *common.BN64) (*primitives.HexUint, error) {
+	//
 	if number == nil {
-		blockNum, err := (*e.DbHandler).BlockNumber(ctx)
-		if err != nil {
-			return nil, &utils.GenericError{Err: err}
-		}
-		tmp := utils.UintToUint256[uint64](uint64(*blockNum))
-		*number = tmp
+		number = &common.BN64{BlockNumber: rpc.LatestBlockNumber}
 	}
-	// TODO (*e.DbHandler).GetBlockTransactionCountByNumber's number argument should be converted to a pointer type since it is optional in mainnet
-	cnt, err := (*e.DbHandler).GetBlockTransactionCountByNumber(ctx, *number)
+	cnt, err := e.DbHandler.GetBlockTransactionCountByNumber(ctx, *number)
 	if err != nil {
-		return nil, &utils.GenericError{Err: err}
+		return nil, &errs.GenericError{Err: err}
 	}
 	return cnt, nil
 }
 
 // GetTransactionByHash returns the transaction information of the given transaction hash.
 //
-//	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-// 	On DB failure or hash not found, returns error code '-32000' with custom message.
-// 	On missing or invalid param returns error code '-32602' with custom message.
-func (e *Eth) GetTransactionByHash(ctx context.Context, hash utils.H256) (*dbresponses.Transaction, error) {
-	tx, err := (*e.DbHandler).GetTransactionByHash(ctx, hash)
+//	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+// 	On DB failure or hash not found, returns errors code '-32000' with custom message.
+// 	On missing or invalid param returns errors code '-32602' with custom message.
+func (e *Eth) GetTransactionByHash(ctx context.Context, hash common.H256) (*response.Transaction, error) {
+	tx, err := e.DbHandler.GetTransactionByHash(ctx, hash)
 	if err != nil {
-		return nil, &utils.GenericError{Err: err}
+		return nil, &errs.GenericError{Err: err}
 	}
 	return tx, nil
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction information of the given block hash and transaction index
 //
-// 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-// 	On DB failure or hash not found, returns error code '-32000' with custom message.
-func (e *Eth) GetTransactionByBlockHashAndIndex(ctx context.Context, hash utils.H256, index utils.Uint256) (*dbresponses.Transaction, error) {
-	tx, err := (*e.DbHandler).GetTransactionByBlockHashAndIndex(ctx, hash, index)
+// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+// 	On DB failure or hash not found, returns errors code '-32000' with custom message.
+func (e *Eth) GetTransactionByBlockHashAndIndex(ctx context.Context, hash common.H256, index common.Uint64) (*response.Transaction, error) {
+	tx, err := e.DbHandler.GetTransactionByBlockHashAndIndex(ctx, hash, index)
 	if err != nil {
-		return nil, &utils.GenericError{Err: err}
+		return nil, &errs.GenericError{Err: err}
 	}
 	return tx, nil
 }
 
 // GetTransactionByBlockNumberAndIndex returns the transaction information of the given block number and transaction index.
 //
-// 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-// 	On DB failure or number not found, returns error code '-32000' with custom message.
-func (e *Eth) GetTransactionByBlockNumberAndIndex(ctx context.Context, number, index utils.Uint256) (*dbresponses.Transaction, error) {
-	tx, err := (*e.DbHandler).GetTransactionByBlockNumberAndIndex(ctx, number, index)
+// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+// 	On DB failure or number not found, returns errors code '-32000' with custom message.
+func (e *Eth) GetTransactionByBlockNumberAndIndex(ctx context.Context, number common.BN64, index common.Uint64) (*response.Transaction, error) {
+	tx, err := e.DbHandler.GetTransactionByBlockNumberAndIndex(ctx, number, index)
 	if err != nil {
-		return nil, &utils.GenericError{Err: err}
+		return nil, &errs.GenericError{Err: err}
 	}
 	return tx, nil
 }
 
 // GetTransactionReceipt returns the receipt of a transaction by transaction hash.
 //
-// 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-// 	On DB failure or hash not found, returns error code '-32000' with custom message.
-func (e *Eth) GetTransactionReceipt(ctx context.Context, hash utils.H256) (*utils.TransactionReceiptResponse, error) {
-	// TODO waiting for logs
-	return nil, nil
-
-	// tx, err := (*e.DbHandler).GetTransactionByHash(ctx, hash)
-	// if err != nil {
-	// 	return nil, &utils.GenericError{Err: err}
-	// }
-	// logs, err := (*e.DbHandler).GetLogsForTransaction(ctx, tx)
-	// if err != nil {
-	// 	return nil, &utils.GenericError{Err: err}
-	// }
-	// resp := tx.ToReceiptResponse()
-	// resp.Logs = logs
-	// return resp, nil
-}
-
-// GetLogs returns an array of log objects for the given filter
-//
-//	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-// 	On DB failure or number not found, returns error code '-32000' with custom message.
-func (e *Eth) GetLogs(ctx context.Context, rawFilter utils.FilterOptions) (*[]utils.LogResponse, error) {
-	// TODO waiting for logs
-	return nil, nil
-
-	// filter, err := e.formatFilterOptions(ctx, &rawFilter)
-	// if err != nil {
-	// 	return nil, &utils.GenericError{Err: err}
-	// }
-	// logResponses, err := (*e.DbHandler).GetLogs(ctx, *filter)
-	// if err != nil {
-	// 	return nil, &utils.GenericError{Err: err}
-	// }
-	// return logResponses, nil
+// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+// 	On DB failure or hash not found, returns errors code '-32000' with custom message.
+func (e *Eth) GetTransactionReceipt(ctx context.Context, hash common.H256) (*response.TransactionReceipt, error) {
+	return e.DbHandler.GetTransactionReceipt(ctx, hash)
 }
 
 // NewFilter creates a new filter based on the filter options and returns newly created filter ID on success.
@@ -232,296 +201,189 @@ func (e *Eth) GetLogs(ctx context.Context, rawFilter utils.FilterOptions) (*[]ut
 // 	- address: DATA|Array - Contract address or a list of addresses from which logs should originate.
 //	- topics: Array of DATA - Topics are order-dependent. Each topic can also be an array of DATA with "or" options.
 //
-// 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-// 	On filter option parsing failure, returns error code '32602' with custom message.
-//	On DB failure, returns error code '-32000' with custom message.
-func (e *Eth) NewFilter(ctx context.Context, filterOptions utils.FilterOptions) (*utils.Uint256, error) {
-	// TODO waiting for logs
-	return nil, nil
-
-	// parsedFilter, err := e.formatFilterOptions(ctx, &filterOptions)
-	// if err != nil {
-	// 	return nil, &utils.InvalidParamsError{Message: err.Error()}
-	// }
-	// bn, err := (*e.DbHandler).BlockNumber(ctx)
-	// if err != nil {
-	// 	return nil, &utils.GenericError{Err: err}
-	// }
-	// filterId, err := utils.RandomUint256()
-	// if err != nil {
-	// 	return nil, &utils.GenericError{Err: err}
-	// }
-	// filter := &utils.StoredFilter{
-	// 	Type:      "event",
-	// 	CreatedBy: "0.0.0.0",
-	// 	// BlockHash: parsedFilter.BlockHash,
-	// 	FromBlock: parsedFilter.FromBlock,
-	// 	ToBlock:   parsedFilter.ToBlock,
-	// 	Addresses: parsedFilter.Address,
-	// 	Topics:    parsedFilter.Topics,
-	// 	PollBlock: *bn,
-	// }
-	// err = (*e.DbHandler).StoreFilter(ctx, *filterId, filter)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return filterId, nil
+// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+// 	On filter option parsing failure, returns errors code '32602' with custom message.
+//	On DB failure, returns errors code '-32000' with custom message.
+func (e *Eth) NewFilter(ctx context.Context, rawFilter request.Filter) (*common.Uint256, error) {
+	f, err := e.parseRequestFilter(ctx, &rawFilter)
+	if err != nil {
+		return nil, &errs.InvalidParamsError{Message: err.Error()}
+	}
+	dbf := f.ToLogFilter()
+	fid := common.RandomUint256()
+	err = e.DbHandler.StoreLogFilter(ctx, fid.Data32(), dbf)
+	if err != nil {
+		return nil, &errs.GenericError{Err: err}
+	}
+	return &fid, nil
 }
 
 // NewBlockFilter creates a filter and returns newly created filter ID on success. To check if the state has changed,
 // call "eth_getFilterChanges".
 //
-// 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-// 	On DB failure, returns error code '-32000' with custom message.
-func (e *Eth) NewBlockFilter(ctx context.Context) (*utils.Uint256, error) {
-	// TODO waiting for logs
-	return nil, nil
+// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+// 	On DB failure, returns errors code '-32000' with custom message.
+func (e *Eth) NewBlockFilter(ctx context.Context) (*common.Uint256, error) {
+	bn, err := e.DbHandler.BlockNumber(ctx)
+	if err != nil {
+		return nil, &errs.GenericError{Err: err}
+	}
+	fromBlock := uint64(*bn)
+	fid := common.RandomUint256()
+	dbf := types.Filter{FromBlock: &fromBlock}.ToBlockFilter()
+	err = e.DbHandler.StoreBlockFilter(ctx, fid.Data32(), dbf)
+	if err != nil {
+		return nil, &errs.GenericError{Err: err}
+	}
+	return &fid, nil
+}
 
-	// bn, err := (*e.DbHandler).BlockNumber(ctx)
-	// if err != nil {
-	// 	return nil, &utils.GenericError{Err: err}
-	// }
-	// filterId, err := utils.RandomUint256()
-	// if err != nil {
-	// 	return nil, &utils.GenericError{Err: err}
-	// }
-	// filter := &utils.StoredFilter{
-	// 	Type:      "block",
-	// 	CreatedBy: "0.0.0.0",
-	// 	PollBlock: *bn.Add(1),
-	// }
-	// err = (*e.DbHandler).StoreFilter(ctx, *filterId, filter)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return filterId, nil
+// NewPendingTransactionFilter creates a filter and returns newly created filter ID on success. To check if the state
+// has changed, call "eth_getFilterChanges". Filter created with this API behaves similarly to filter created by
+// NewBlockFilter. (i.e.: on eth_getFilterChanges call, it returns hashes of the transactions w.r.t filter regardless
+// of they are pending or not)
+//
+// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+// 	On DB failure, returns errors code '-32000' with custom message.
+func (e *Eth) NewPendingTransactionFilter(ctx context.Context) (*common.Uint256, error) {
+	bn, err := e.DbHandler.BlockNumber(ctx)
+	if err != nil {
+		return nil, &errs.GenericError{Err: err}
+	}
+	fromBlock := uint64(*bn)
+	fid := common.RandomUint256()
+	dbf := types.Filter{FromBlock: &fromBlock}.ToTxnFilter()
+	err = e.DbHandler.StoreTransactionFilter(ctx, fid.Data32(), dbf)
+	if err != nil {
+		return nil, &errs.GenericError{Err: err}
+	}
+	return &fid, nil
 }
 
 // UninstallFilter deletes a filter with given filter id and returns true on success. Additionally, filters timeout when
 // they aren't requested with "eth_getFilterChanges" for a period of time.
 //
-// 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-// 	On failure returns false
-func (e *Eth) UninstallFilter(ctx context.Context, filterId utils.Uint256) (*bool, error) {
-	// TODO waiting for logs
-	return nil, nil
-
-	// err := (*e.DbHandler).DeleteFilter(ctx, filterId)
-	// if err != nil {
-	// 	e.Logger.Err(err).Msgf("failed to uninstall filter [%d]", filterId)
-	// 	return false, nil
-	// }
-	// return true, nil
+// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+//	On DB failure or filterId not found, returns errors code '-32000' with custom message.
+func (e *Eth) UninstallFilter(ctx context.Context, filterId common.Uint256) (*bool, error) {
+	var err error
+	resp := true
+	err = e.DbHandler.DeleteFilter(ctx, filterId.Data32())
+	if err != nil {
+		resp = false
+	}
+	return &resp, err
 }
 
 // GetFilterChanges polls method for a filter, on success returns an array of logs which occurred since last poll.
 //
-// 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-//	On failure, returns error code '-32000' with custom message.
-func (e *Eth) GetFilterChanges(ctx context.Context, filterId utils.Uint256) (*[]interface{}, error) {
-	// TODO waiting for logs
-	return nil, nil
+// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+//	On failure, returns errors code '-32000' with custom message.
+func (e *Eth) GetFilterChanges(ctx context.Context, filterId common.Uint256) (*[]interface{}, error) {
+	fid := filterId.Data32()
+	filter, err := e.DbHandler.GetFilter(ctx, fid)
+	if err != nil {
+		return nil, &errs.GenericError{Err: err}
+	}
+	resp, err := e.DbHandler.GetFilterChanges(ctx, filter)
+	err = e.DbHandler.StoreFilter(ctx, fid, filter)
+	if err != nil {
+		return nil, &errs.GenericError{Err: err}
+	}
+	return resp, err
+}
 
-	// storedFilter, err := (*e.DbHandler).GetFilter(ctx, filterId)
-	// if err != nil {
-	// 	return nil, &utils.GenericError{Err: err}
-	// }
-
-	// filterChanges := make([]interface{}, 0)
-
-	// switch storedFilter.Type {
-	// case "event":
-	// 	logFilter := utils.LogFilter{
-	// 		FromBlock: &storedFilter.PollBlock,
-	// 		ToBlock:   storedFilter.ToBlock,
-	// 		Address:   storedFilter.Addresses,
-	// 		Topics:    storedFilter.Topics,
-	// 	}
-	// 	logs, err := (*e.DbHandler).GetLogs(ctx, logFilter)
-	// 	if err != nil {
-	// 		return nil, &utils.GenericError{Err: err}
-	// 	}
-	// 	for _, l := range *logs {
-	// 		filterChanges = append(filterChanges, l)
-	// 	}
-
-	// case "block":
-	// 	blocks, err := (*e.DbHandler).GetBlockHashesSinceNumber(ctx, storedFilter.PollBlock)
-	// 	if err != nil {
-	// 		return nil, &utils.GenericError{Err: err}
-	// 	}
-	// 	for _, b := range blocks {
-	// 		filterChanges = append(filterChanges, b)
-	// 	}
-	// case "transaction":
-	// default:
-	// }
-
-	// bn, err := (*e.DbHandler).BlockNumber(ctx)
-	// if err != nil {
-	// 	return nil, &utils.GenericError{Err: err}
-	// }
-	// storedFilter.PollBlock = *bn.Add(1)
-	// _ = (*e.DbHandler).StoreFilter(ctx, filterId, storedFilter)
-
-	// return &filterChanges, nil
+// GetLogs returns an array of log objects for the given filter
+//
+//	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+//	On filter option parsing failure, returns errors code '32602' with custom message.
+// 	On DB failure, returns errors code '-32000' with custom message.
+func (e *Eth) GetLogs(ctx context.Context, rawFilter request.Filter) (*[]*response.Log, error) {
+	filter, err := e.parseRequestFilter(ctx, &rawFilter)
+	if err != nil {
+		return nil, &errs.InvalidParamsError{Message: err.Error()}
+	}
+	dbf := filter.ToLogFilter()
+	logResponses, err := e.DbHandler.GetLogs(ctx, dbf)
+	if err != nil {
+		return nil, &errs.GenericError{Err: err}
+	}
+	return &logResponses, nil
 }
 
 // GetFilterLogs returns an array of all logs matching filter with given id.
 //
-// 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
-//	On failure, returns error code '-32000' with custom message.
-func (e *Eth) GetFilterLogs(ctx context.Context, filterId utils.Uint256) (*[]interface{}, error) {
-	// TODO waiting for logs
-	return nil, nil
-
-	// storedFilter, err := (*e.DbHandler).GetFilter(ctx, filterId)
-	// if err != nil {
-	// 	return nil, &utils.GenericError{Err: err}
-	// }
-
-	// var res = make([]interface{}, 0)
-
-	// switch storedFilter.Type {
-	// case "event":
-	// 	logFilter := utils.LogFilter{
-	// 		FromBlock: &storedFilter.PollBlock,
-	// 		ToBlock:   storedFilter.ToBlock,
-	// 		Address:   storedFilter.Addresses,
-	// 		Topics:    storedFilter.Topics,
-	// 	}
-	// 	logs, err := (*e.DbHandler).GetLogs(ctx, logFilter)
-	// 	if err != nil {
-	// 		return nil, &utils.GenericError{Err: err}
-	// 	}
-	// 	for _, l := range *logs {
-	// 		res = append(res, l)
-	// 	}
-
-	// case "block":
-	// 	blocks, err := (*e.DbHandler).GetBlockHashesSinceNumber(ctx, storedFilter.PollBlock)
-	// 	if err != nil {
-	// 		return nil, &utils.GenericError{Err: err}
-	// 	}
-	// 	for _, b := range blocks {
-	// 		res = append(res, b)
-	// 	}
-
-	// case "transaction":
-	// default:
-	// }
-
-	// curr, err := (*e.DbHandler).BlockNumber(ctx)
-	// if err != nil {
-	// 	return nil, &utils.GenericError{Err: err}
-	// }
-	// storedFilter.PollBlock = *curr.Add(1)
-	// err = (*e.DbHandler).StoreFilter(ctx, filterId, storedFilter)
-	// if err != nil {
-	// 	return nil, &utils.GenericError{Err: err}
-	// }
-
-	// return &res, nil
+// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+//	On DB failure, returns errors code '-32000' with custom message.
+func (e *Eth) GetFilterLogs(ctx context.Context, filterId common.Uint256) (*[]*response.Log, error) {
+	fid := filterId.Data32()
+	filter, err := e.DbHandler.GetLogFilter(ctx, fid)
+	if err != nil {
+		return nil, &errs.GenericError{Err: err}
+	}
+	logs, err := e.DbHandler.GetLogs(ctx, filter)
+	if err != nil {
+		return nil, &errs.GenericError{Err: err}
+	}
+	err = e.DbHandler.StoreLogFilter(ctx, fid, filter)
+	if err != nil {
+		return nil, &errs.GenericError{Err: err}
+	}
+	return &logs, nil
 }
 
-// GetUncleCountByBlockHash
+// GetUncleCountByBlockHash returns zero
 //
-// 	TODO: implement
-func (e *Eth) GetUncleCountByBlockHash(ctx context.Context, hash utils.H256) (*utils.Uint256, error) {
-	_, err := (*e.DbHandler).GetBlockByHash(ctx, hash)
-	if err != nil {
-		return nil, nil
-	}
+// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+func (e *Eth) GetUncleCountByBlockHash(_ context.Context, _ common.H256) (*common.Uint256, error) {
 	return &zero, nil
 }
 
-// GetUncleCountByBlockNumber
+// GetUncleCountByBlockNumber returns zero
 //
-//	TODO: implement
-func (e *Eth) GetUncleCountByBlockNumber(ctx context.Context, number utils.Uint256) (*utils.Uint256, error) {
-	_, err := (*e.DbHandler).GetBlockByNumber(ctx, number)
-	if err != nil {
-		return nil, nil
-	}
+// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+func (e *Eth) GetUncleCountByBlockNumber(_ context.Context, _ common.BN64) (*common.Uint256, error) {
 	return &zero, nil
 }
 
-func (e *Eth) formatFilterOptions(ctx context.Context, filterOptions *utils.FilterOptions) (*utils.LogFilter, error) {
-	// TODO waiting for logs
-	return nil, nil
+func (e *Eth) parseRequestFilter(ctx context.Context, filter *request.Filter) (*types.Filter, error) {
 
-	// result := &utils.LogFilter{}
-	// if filterOptions.BlockHash != nil {
-	// 	blockNum, err := (*e.DbHandler).BlockHashToNumber(ctx, *filterOptions.BlockHash)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	result.FromBlock, result.ToBlock = blockNum, blockNum
-	// } else {
-	// 	var err error
-	// 	result.FromBlock, result.ToBlock, err = e.parseFromAndTo(ctx, filterOptions)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// }
-	// if filterOptions.Address != nil {
-	// 	result.Address = make([][]byte, 0)
-	// 	seen := make(map[utils.Address]bool)
-	// 	for _, a := range filterOptions.Address {
-	// 		if seen[a] {
-	// 			continue
-	// 		}
-	// 		result.Address = append(result.Address, a.Bytes())
-	// 		seen[a] = true
-	// 	}
-	// }
-	// result.Topics = filterOptions.Topics
-	// return result, nil
-}
-
-func (e *Eth) parseFromAndTo(ctx context.Context, filter *utils.FilterOptions) (from, to *utils.Uint256, err error) {
-	// TODO waiting for logs
-	return nil, nil, nil
-
-	// from, err = parseBlock(filter.FromBlock)
-	// if err != nil {
-	// 	return nil, nil, err
-	// }
-	// to, err = parseBlock(filter.ToBlock)
-	// if err != nil {
-	// 	return nil, nil, err
-	// }
-
-	// if from != nil && to != nil {
-	// 	return
-	// }
-
-	// latest, err := (*e.DbHandler).BlockNumber(ctx)
-	// if err != nil || latest == nil {
-	// 	return
-	// }
-	// if from == nil {
-	// 	from = latest
-	// }
-	// if to == nil {
-	// 	to = latest
-	// }
-	// return
-}
-
-func parseBlock(block string) (*utils.Uint256, error) {
-	switch block {
-	case "", "pending", "latest":
-		return nil, nil
-	case "earliest":
-		zero := utils.IntToUint256(0)
-		return &zero, nil
-	default:
-		val := utils.IntToUint256(0)
-		err := val.FromHexString(block)
+	f := &types.Filter{}
+	if filter.BlockHash != nil {
+		bn, err := e.DbHandler.BlockHashToNumber(ctx, *filter.BlockHash)
 		if err != nil {
-			return nil, err
+			f.FromBlock, f.ToBlock = bn, bn
 		}
-		return &val, nil
+	} else {
+		if filter.ToBlock != nil {
+			f.ToBlock = filter.ToBlock.Uint64()
+		}
+		if filter.FromBlock != nil {
+			f.FromBlock = filter.FromBlock.Uint64()
+		}
 	}
+
+	f.Addresses = make([]primitives.Data20, 0)
+	if filter.Addresses != nil {
+		seen := make(map[common.Address]bool)
+		for _, a := range filter.Addresses {
+			if seen[a] {
+				continue
+			}
+			f.Addresses = append(f.Addresses, primitives.Data20FromBytes(a.Bytes()))
+			seen[a] = true
+		}
+	}
+
+	f.Topics = make([][]primitives.Data32, 0)
+	if filter.Topics != nil {
+		for i, t := range filter.Topics {
+			f.Topics = append(f.Topics, make([]primitives.Data32, 0))
+			for _, tt := range t {
+				f.Topics[i] = append(f.Topics[i], primitives.Data32FromBytes(tt))
+			}
+		}
+	}
+
+	return f, nil
 }

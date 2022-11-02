@@ -3,7 +3,7 @@ package endpoint
 import (
 	"aurora-relayer-go-common/cmd"
 	"aurora-relayer-go-common/log"
-	"aurora-relayer-go-common/utils"
+	"aurora-relayer-go-common/types/common"
 	"fmt"
 	"math/big"
 
@@ -22,9 +22,9 @@ const (
 )
 
 type EthConfig struct {
-	protocolVersion utils.Uint256 `mapstructure:"protocolVersion"`
-	hashrate        utils.Uint256 `mapstructure:"hashrate"`
-	zeroAddress     string        `mapstructure:"zeroAddress"`
+	protocolVersion common.Uint256 `mapstructure:"protocolVersion"`
+	hashrate        common.Uint256 `mapstructure:"hashrate"`
+	zeroAddress     string         `mapstructure:"zeroAddress"`
 }
 
 type Config struct {
@@ -122,8 +122,8 @@ func GetConfig() *Config {
 
 	config := &Config{
 		EthConfig: EthConfig{
-			protocolVersion: utils.IntToUint256(c.EthConfig.protocolVersion),
-			hashrate:        utils.IntToUint256(c.EthConfig.hashrate),
+			protocolVersion: common.IntToUint256(c.EthConfig.protocolVersion),
+			hashrate:        common.IntToUint256(c.EthConfig.hashrate),
 			zeroAddress:     fmt.Sprintf("0x%040x", c.EthConfig.zeroAddress),
 		},
 		EngineConfig: EngineConfig{

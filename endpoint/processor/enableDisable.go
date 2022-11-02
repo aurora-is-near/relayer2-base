@@ -2,7 +2,7 @@ package processor
 
 import (
 	"aurora-relayer-go-common/endpoint"
-	"aurora-relayer-go-common/utils"
+	errs "aurora-relayer-go-common/types/errors"
 	"context"
 )
 
@@ -14,7 +14,7 @@ func NewEnableDisable() endpoint.Processor {
 
 func (p *EnableDisable) Pre(ctx context.Context, name string, endpoint *endpoint.Endpoint, _ *any, _ ...any) (context.Context, bool, error) {
 	if endpoint.Config.DisabledEndpoints[name] {
-		return ctx, true, &utils.MethodNotFoundError{Method: name}
+		return ctx, true, &errs.MethodNotFoundError{Method: name}
 	}
 	return ctx, false, nil
 }
