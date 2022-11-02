@@ -4,6 +4,7 @@ import (
 	"aurora-relayer-go-common/db/badger2/core/dbkey"
 	dbp "aurora-relayer-go-common/db/badger2/core/dbprimitives"
 	"aurora-relayer-go-common/db/badger2/core/dbtypes"
+	"aurora-relayer-go-common/db/badger2/core/logscan"
 )
 
 func insert[T any](db *DB, key []byte, value *T) error {
@@ -58,6 +59,21 @@ func (db *DB) InsertLog(chainId, height, txIndex, logIndex uint64, data *dbtypes
 		db.logger.Errorf("DB: Can't insert log: %v", err)
 		return err
 	}
-	// TODO: populate scan-index
+
+	scanFeatures := make([][]byte, len(data.Topics.Content)+1)
+	scanFeatures[0] = data.Address.Bytes()
+	for i, t := range data.Topics.Content {
+		scanFeatures[i+1] = t.Bytes()
+	}
+
+	maxScanBitmask := 1<<len(scanFeatures) - 1
+	for scanBitmask := 1; scanBitmask <= maxScanBitmask; scanBitmask++ {
+		hash := logscan.CalcHash(scanFeatures, scanBitmask)
+		err := db.writer.Set(dbkey.LogScanEntry.Get(chainId, uint64(scanBitmask), hash, height, txIndex, logIndex), nil)
+		if err != nil {
+			db.logger.Errorf("DB: Can't insert LogScanEntry: %v", err)
+			return err
+		}
+	}
 	return nil
 }
