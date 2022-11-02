@@ -1,17 +1,18 @@
 package db
 
 import (
-	"aurora-relayer-go-common/db/badger/core"
 	"aurora-relayer-go-common/db/badger2/core/dbcore"
 	"aurora-relayer-go-common/tinypack"
+
 	badger "github.com/dgraph-io/badger/v3"
 )
 
 type DB struct {
-	CoreOpts    *dbcore.DBCoreOpts
-	Encoder     *tinypack.Encoder
-	Decoder     *tinypack.Decoder
-	LogScanOpts *core.ScanOpts
+	CoreOpts              *dbcore.DBCoreOpts
+	Encoder               *tinypack.Encoder
+	Decoder               *tinypack.Decoder
+	MaxLogScanIterators   uint // Should be somewhere between 1k and 100k
+	LogScanRangeThreshold uint // Minimum block range size for using index instead of simple iteration
 
 	logger badger.Logger
 	core   *dbcore.DBCore
@@ -19,6 +20,13 @@ type DB struct {
 }
 
 func (db *DB) Open(logger badger.Logger) error {
+	if db.MaxLogScanIterators == 0 {
+		db.MaxLogScanIterators = 10000
+	}
+	if db.LogScanRangeThreshold == 0 {
+		db.LogScanRangeThreshold = 3000
+	}
+
 	db.logger = logger
 	db.logger.Infof("DB: Opening")
 	var err error
