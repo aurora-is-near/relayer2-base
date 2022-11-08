@@ -14,16 +14,16 @@ import (
 )
 
 func (txn *ViewTxn) ReadTxKey(chainId uint64, hash dbp.Data32) (*dbtypes.TransactionKey, error) {
-	return read[dbtypes.TransactionKey](txn, dbkey.TxKeyByHash.Get(chainId, hash.Content))
+	return read[dbtypes.TransactionKey](txn, dbkey.TxKeyByHash.Get(chainId, hash.Bytes()))
 }
 
 func (txn *ViewTxn) ReadEarliestTxKey(chainId uint64) (*dbtypes.TransactionKey, error) {
 	it := txn.txn.NewIterator(badger.IteratorOptions{
-		Prefix: dbkey.Txs.Get(chainId),
+		Prefix: dbkey.TxHashes.Get(chainId),
 	})
 	defer it.Close()
 	it.Rewind()
-	key, err := readTxKeyFromTxIterator(it)
+	key, err := readTxKeyFromTxHashIterator(it)
 	if err != nil {
 		txn.db.logger.Errorf("DB: can't read earliest tx key: %v", err)
 	}
@@ -33,28 +33,28 @@ func (txn *ViewTxn) ReadEarliestTxKey(chainId uint64) (*dbtypes.TransactionKey, 
 func (txn *ViewTxn) ReadLatestTxKey(chainId uint64) (*dbtypes.TransactionKey, error) {
 	it := txn.txn.NewIterator(badger.IteratorOptions{
 		Reverse: true,
-		Prefix:  dbkey.Txs.Get(chainId),
+		Prefix:  dbkey.TxHashes.Get(chainId),
 	})
 	defer it.Close()
-	it.Seek(dbkey.Tx.Get(chainId, dbkey.MaxBlockHeight, dbkey.MaxLogIndex))
-	key, err := readTxKeyFromTxIterator(it)
+	it.Seek(dbkey.TxHash.Get(chainId, dbkey.MaxBlockHeight, dbkey.MaxTxIndex))
+	key, err := readTxKeyFromTxHashIterator(it)
 	if err != nil {
 		txn.db.logger.Errorf("DB: can't read latest tx key: %v", err)
 	}
 	return key, err
 }
 
-func readTxKeyFromTxIterator(it *badger.Iterator) (*dbtypes.TransactionKey, error) {
+func readTxKeyFromTxHashIterator(it *badger.Iterator) (*dbtypes.TransactionKey, error) {
 	if !it.Valid() {
 		return nil, nil
 	}
-	if !dbkey.Tx.Matches(it.Item().Key()) {
-		err := fmt.Errorf("found unexpected key format (expected to match dbkey.Tx)")
+	if !dbkey.TxHash.Matches(it.Item().Key()) {
+		err := fmt.Errorf("found unexpected key format (expected to match dbkey.TxHash)")
 		return nil, err
 	}
 	return &dbtypes.TransactionKey{
-		BlockHeight:      dbkey.Tx.ReadUintVar(it.Item().Key(), 1),
-		TransactionIndex: dbkey.Tx.ReadUintVar(it.Item().Key(), 2),
+		BlockHeight:      dbkey.TxHash.ReadUintVar(it.Item().Key(), 1),
+		TransactionIndex: dbkey.TxHash.ReadUintVar(it.Item().Key(), 2),
 	}, nil
 }
 
@@ -110,7 +110,7 @@ func (txn *ViewTxn) ReadTxReceipt(chainId uint64, key dbtypes.TransactionKey) (*
 		},
 		nil,
 		nil,
-		1000,
+		int(dbkey.MaxLogIndex)+1,
 	)
 	if err != nil {
 		errCtx := fmt.Sprintf("chainId=%v, block=%v, tx=%v", chainId, key.BlockHeight, key.TransactionIndex)
@@ -145,101 +145,118 @@ func (txn *ViewTxn) ReadTransactions(
 		return nil, fmt.Errorf("from > to")
 	}
 
-	fromKey := dbkey.Txs.Get(chainId, from.BlockHeight, from.TransactionIndex)
-	toKey := dbkey.Txs.Get(chainId, to.BlockHeight, to.TransactionIndex)
-	it := txn.txn.NewIterator(badger.IteratorOptions{
+	fromHashKey := dbkey.TxHash.Get(chainId, from.BlockHeight, from.TransactionIndex)
+	toHashKey := dbkey.TxHash.Get(chainId, to.BlockHeight, to.TransactionIndex)
+	hashIt := txn.txn.NewIterator(badger.IteratorOptions{
 		PrefetchValues: true,
 		PrefetchSize:   1000,
-		Prefix:         getCommonPrefix(fromKey, toKey),
+		Prefix:         getCommonPrefix(fromHashKey, toHashKey),
 	})
-	defer it.Close()
+	defer hashIt.Close()
+	hashIt.Seek(fromHashKey)
+
+	fromDataKey := dbkey.TxData.Get(chainId, from.BlockHeight, from.TransactionIndex)
+	toDataKey := dbkey.TxData.Get(chainId, to.BlockHeight, to.TransactionIndex)
+	var dataIt *badger.Iterator
+	if full {
+		dataIt = txn.txn.NewIterator(badger.IteratorOptions{
+			PrefetchValues: true,
+			PrefetchSize:   1000,
+			Prefix:         getCommonPrefix(fromDataKey, toDataKey),
+		})
+		defer dataIt.Close()
+		dataIt.Seek(fromDataKey)
+	}
 
 	response := []any{}
-	var pendingHashKey *dbtypes.TransactionKey
-	var pendingHash dbp.Data32
-
-	for it.Seek(fromKey); it.Valid(); it.Next() {
+	for {
 		select {
 		case <-ctx.Done():
 			return response, ctx.Err()
 		default:
 		}
-		if bytes.Compare(it.Item().Key(), toKey) > 0 {
+
+		if !hashIt.Valid() || bytes.Compare(hashIt.Item().Key(), toHashKey) > 0 {
 			break
 		}
-
-		if dbkey.TxHash.Matches(it.Item().Key()) {
-			if pendingHashKey != nil {
-				txn.db.logger.Errorf("DB: TxHash isn't followed by TxData, will ignore [key=%v]", pendingHashKey)
-				pendingHashKey = nil
-			}
-			txHash, err := readItem[dbp.Data32](txn.db, it.Item())
-			if err != nil || txHash == nil {
-				txn.db.logger.Errorf("DB: can't read TxHash, will ignore [key=%v]: %v", it.Item().Key(), err)
-				continue
-			}
-			if full {
-				pendingHashKey = &dbtypes.TransactionKey{
-					BlockHeight:      dbkey.TxHash.ReadUintVar(it.Item().Key(), 1),
-					TransactionIndex: dbkey.TxHash.ReadUintVar(it.Item().Key(), 2),
-				}
-				pendingHash = *txHash
-			} else {
-				if len(response) == limit {
-					return response, ErrLimited
-				}
-				response = append(response, txHash)
-			}
+		if !dbkey.TxHash.Matches(hashIt.Item().Key()) {
+			txn.db.logger.Errorf("DB: key was expected to match dbkey.TxHash, found %v, will ignore", hashIt.Item().Key())
+			hashIt.Next()
 			continue
 		}
-
-		if dbkey.TxData.Matches(it.Item().Key()) {
-			if full {
-				continue
-			}
-			if pendingHashKey == nil {
-				txn.db.logger.Errorf("DB: transaction doesn't start with hash, will ignore [key=%v]", it.Item().Key())
-				continue
-			}
-			key := &dbtypes.TransactionKey{
-				BlockHeight:      dbkey.TxData.ReadUintVar(it.Item().Key(), 1),
-				TransactionIndex: dbkey.TxData.ReadUintVar(it.Item().Key(), 2),
-			}
-			if key.BlockHeight != pendingHashKey.BlockHeight || key.TransactionIndex != pendingHashKey.TransactionIndex {
-				txn.db.logger.Errorf("DB: TxHash isn't followed by TxData, will ignore [key=%v]", pendingHashKey)
-				pendingHashKey = nil
-				txn.db.logger.Errorf("DB: transaction doesn't start with hash, will ignore [key=%v]", it.Item().Key())
-				continue
-			}
-			pendingHashKey = nil
-			txData, err := readItem[dbtypes.Transaction](txn.db, it.Item())
-			if err != nil || txData == nil {
-				txn.db.logger.Errorf("DB: can't read TxData, will ignore [key=%v]: %v", it.Item().Key(), err)
-				continue
-			}
-			blockHash, err := readCached[dbp.Data32](txn, dbkey.BlockHash.Get(chainId, key.BlockHeight))
-			if err != nil || blockHash == nil {
-				txn.db.logger.Errorf("DB: can't read BlockHash for tx, will ignore [key=%v]: %v", it.Item().Key(), err)
-				continue
-			}
+		txHash, err := readItem[dbp.Data32](txn.db, hashIt.Item())
+		if err != nil || txHash == nil {
+			txn.db.logger.Errorf("DB: can't read TxHash, will ignore [key=%v]: %v", hashIt.Item().Key(), err)
+			hashIt.Next()
+			continue
+		}
+		if !full {
 			if len(response) == limit {
 				return response, ErrLimited
 			}
-			response = append(response, makeTransactionResponse(
-				chainId,
-				key.BlockHeight,
-				key.TransactionIndex,
-				*blockHash,
-				pendingHash,
-				txData,
-			))
+			response = append(response, txHash)
+			hashIt.Next()
 			continue
 		}
 
-		txn.db.logger.Errorf("DB: found unknown key while iterating through txs, will ignore: [key=%v]", it.Item().Key())
-	}
-	if pendingHashKey != nil {
-		txn.db.logger.Errorf("DB: TxHash isn't followed by TxData, will ignore [key=%v]", pendingHashKey)
+		if !dataIt.Valid() || bytes.Compare(dataIt.Item().Key(), toDataKey) > 0 {
+			txn.db.logger.Errorf("DB: found dangling TxHash, will ignore [key=%v]", hashIt.Item().Key())
+			break
+		}
+		if !dbkey.TxData.Matches(dataIt.Item().Key()) {
+			txn.db.logger.Errorf("DB: key was expected to match dbkey.TxData, found %v", dataIt.Item().Key())
+			dataIt.Next()
+			continue
+		}
+		txData, err := readItem[dbtypes.Transaction](txn.db, dataIt.Item())
+		if err != nil || txData == nil {
+			txn.db.logger.Errorf("DB: can't read TxData, will ignore [key=%v]: %v", dataIt.Item().Key(), err)
+			dataIt.Next()
+			continue
+		}
+
+		hashKey := &dbtypes.TransactionKey{
+			BlockHeight:      dbkey.TxHash.ReadUintVar(hashIt.Item().Key(), 1),
+			TransactionIndex: dbkey.TxHash.ReadUintVar(hashIt.Item().Key(), 2),
+		}
+		dataKey := &dbtypes.TransactionKey{
+			BlockHeight:      dbkey.TxHash.ReadUintVar(dataIt.Item().Key(), 1),
+			TransactionIndex: dbkey.TxHash.ReadUintVar(dataIt.Item().Key(), 2),
+		}
+		keysCompare := hashKey.CompareTo(dataKey)
+		if keysCompare < 0 {
+			txn.db.logger.Errorf("DB: found dangling TxHash, will ignore [key=%v]", hashIt.Item().Key())
+			hashIt.Next()
+			continue
+		}
+		if keysCompare > 0 {
+			txn.db.logger.Errorf("DB: found dangling TxData, will ignore [key=%v]", dataIt.Item().Key())
+			dataIt.Next()
+			continue
+		}
+
+		blockHash, err := readCached[dbp.Data32](txn, dbkey.BlockHash.Get(chainId, hashKey.BlockHeight))
+		if err != nil || blockHash == nil {
+			txn.db.logger.Errorf("DB: can't read BlockHash for tx, will ignore [key=%v]: %v", hashIt.Item().Key(), err)
+			hashIt.Next()
+			dataIt.Next()
+			continue
+		}
+
+		if len(response) == limit {
+			return response, ErrLimited
+		}
+		response = append(response, makeTransactionResponse(
+			chainId,
+			hashKey.BlockHeight,
+			hashKey.TransactionIndex,
+			*blockHash,
+			*txHash,
+			txData,
+		))
+
+		hashIt.Next()
+		dataIt.Next()
 	}
 	return response, nil
 }

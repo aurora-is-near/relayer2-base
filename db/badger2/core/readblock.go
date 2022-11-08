@@ -15,7 +15,7 @@ import (
 )
 
 func (txn *ViewTxn) ReadBlockKey(chainId uint64, hash dbp.Data32) (*dbtypes.BlockKey, error) {
-	return read[dbtypes.BlockKey](txn, dbkey.BlockKeyByHash.Get(chainId, hash.Content))
+	return read[dbtypes.BlockKey](txn, dbkey.BlockKeyByHash.Get(chainId, hash.Bytes()))
 }
 
 func (txn *ViewTxn) ReadEarliestBlockKey(chainId uint64) (*dbtypes.BlockKey, error) {
@@ -78,7 +78,7 @@ func (txn *ViewTxn) ReadBlock(chainId uint64, key dbtypes.BlockKey, fullTransact
 			TransactionIndex: dbkey.MaxTxIndex,
 		},
 		fullTransactions,
-		1000,
+		int(dbkey.MaxTxIndex)+1,
 	)
 	if err != nil {
 		errCtx := fmt.Sprintf("chainId=%v, block=%v", chainId, key.Height)
@@ -92,19 +92,19 @@ func (txn *ViewTxn) ReadBlock(chainId uint64, key dbtypes.BlockKey, fullTransact
 func (txn *ViewTxn) ReadBlockTxCount(chainId uint64, key dbtypes.BlockKey) (dbp.HexUint, error) {
 	it := txn.txn.NewIterator(badger.IteratorOptions{
 		Reverse: true,
-		Prefix:  dbkey.TxsForBlock.Get(chainId, key.Height),
+		Prefix:  dbkey.TxHashesForBlock.Get(chainId, key.Height),
 	})
 	defer it.Close()
-	it.Seek(dbkey.Tx.Get(chainId, key.Height, dbkey.MaxTxIndex))
+	it.Seek(dbkey.TxHash.Get(chainId, key.Height, dbkey.MaxTxIndex))
 	if !it.Valid() {
 		return 0, nil
 	}
-	if !dbkey.Tx.Matches(it.Item().Key()) {
+	if !dbkey.TxHash.Matches(it.Item().Key()) {
 		err := fmt.Errorf("found unexpected key format (expected to match dbkey.Tx)")
 		txn.db.logger.Errorf("DB: can't read block tx count: %v", err)
 		return 0, err
 	}
-	return dbp.HexUint(dbkey.Tx.ReadUintVar(it.Item().Key(), 2)) + 1, nil
+	return dbp.HexUint(dbkey.TxHash.ReadUintVar(it.Item().Key(), 2)) + 1, nil
 }
 
 func (txn *ViewTxn) ReadBlockHashes(

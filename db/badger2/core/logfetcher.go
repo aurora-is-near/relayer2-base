@@ -152,6 +152,7 @@ func (lf *logFetcher) runProcessor() {
 			response, err := lf.processItem(item)
 			if err != nil {
 				lf.txn.db.logger.Errorf("DB: unable to fetch log, will ignore it: %v", err)
+				item.response <- nil
 			} else {
 				item.response <- response
 			}
@@ -165,7 +166,7 @@ func (lf *logFetcher) processItem(item *logFetch) (*dbresponses.Log, error) {
 		key := dbkey.Log.Get(lf.chainId, item.key.BlockHeight, item.key.TransactionIndex, item.key.LogIndex)
 		item.data, err = read[dbtypes.Log](lf.txn, key)
 		if err != nil || item.data == nil {
-			return nil, fmt.Errorf("unable to fetch log: %v", err)
+			return nil, fmt.Errorf("unable to fetch log [key=%v]: %v", key, err)
 		}
 	}
 

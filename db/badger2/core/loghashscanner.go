@@ -4,6 +4,7 @@ import (
 	"aurora-relayer-go-common/db/badger2/core/dbkey"
 	"aurora-relayer-go-common/db/badger2/core/dbtypes"
 	"aurora-relayer-go-common/db/badger2/core/logscan"
+	"bytes"
 	"container/heap"
 	"sync"
 
@@ -88,7 +89,7 @@ type logHashScanner struct {
 	bitmask uint64
 
 	hashes       chan string
-	iterators    *logHashIteratorHeap
+	iterators    logHashIteratorHeap
 	iteratorsMtx sync.Mutex
 
 	out      chan *logFetch
@@ -113,7 +114,7 @@ func startLogHashScanner(
 		to:        to,
 		bitmask:   uint64(bitmask),
 		hashes:    make(chan string, len(hashes)),
-		iterators: ptr(make(logHashIteratorHeap, 0, len(hashes))),
+		iterators: make(logHashIteratorHeap, 0, len(hashes)),
 		out:       make(chan *logFetch, logScannerBuffer),
 		stopChan:  make(chan struct{}),
 	}
@@ -133,7 +134,7 @@ func (ls *logHashScanner) output() <-chan *logFetch {
 func (ls *logHashScanner) stop() {
 	close(ls.stopChan)
 	ls.wg.Wait()
-	for _, it := range *ls.iterators {
+	for _, it := range ls.iterators {
 		it.it.Close()
 	}
 }
@@ -154,7 +155,7 @@ func (ls *logHashScanner) run() {
 		return
 	default:
 	}
-	heap.Init(ls.iterators)
+	heap.Init(&ls.iterators)
 
 	for {
 		select {
@@ -165,10 +166,10 @@ func (ls *logHashScanner) run() {
 		if ls.iterators.Len() == 0 {
 			return
 		}
-		it := (*ls.iterators)[0]
+		it := ls.iterators[0]
 		if !it.it.Valid() {
 			it.it.Close()
-			heap.Pop(ls.iterators)
+			heap.Pop(&ls.iterators)
 			continue
 		}
 		key := it.getLogKey()
@@ -177,7 +178,7 @@ func (ls *logHashScanner) run() {
 		} else {
 			if key.CompareTo(ls.to) > 0 {
 				it.it.Close()
-				heap.Pop(ls.iterators)
+				heap.Pop(&ls.iterators)
 				continue
 			}
 			select {
@@ -187,7 +188,7 @@ func (ls *logHashScanner) run() {
 			}
 		}
 		it.next()
-		heap.Fix(ls.iterators, 0)
+		heap.Fix(&ls.iterators, 0)
 	}
 }
 
@@ -206,15 +207,17 @@ func (ls *logHashScanner) runIteratorInit(wg *sync.WaitGroup) {
 
 		from := dbkey.LogScanEntry.Get(ls.chainId, ls.bitmask, hash, ls.from.BlockHeight, ls.from.TransactionIndex, ls.from.LogIndex)
 		to := dbkey.LogScanEntry.Get(ls.chainId, ls.bitmask, hash, ls.to.BlockHeight, ls.to.TransactionIndex, ls.to.LogIndex)
-		it := &logHashIterator{
-			it: ls.txn.txn.NewIterator(badger.IteratorOptions{
-				Prefix: getCommonPrefix(from, to),
-			}),
+		it := ls.txn.txn.NewIterator(badger.IteratorOptions{
+			Prefix: getCommonPrefix(from, to),
+		})
+		it.Seek(from)
+		if !it.Valid() || bytes.Compare(it.Item().Key(), to) > 0 {
+			it.Close()
+			continue
 		}
-		it.it.Seek(from)
 
 		ls.iteratorsMtx.Lock()
-		ls.iterators.Push(it)
+		ls.iterators = append(ls.iterators, &logHashIterator{it: it})
 		ls.iteratorsMtx.Unlock()
 	}
 }
