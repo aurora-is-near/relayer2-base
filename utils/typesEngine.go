@@ -440,8 +440,8 @@ func (ss *SubmitStatus) Validate() error {
 
 }
 
-// ToResponse processes the engine query response, retrieves the `result` map and converts it to Uint256 response
-func (ss *SubmitStatus) ToResponse() (*H256, error) {
+// ToResponse processes the engine query response, retrieves the `result` map and returns the hash
+func (ss *SubmitStatus) ToResponse() (*string, error) {
 	err := ss.Validate()
 	// Validate can generate either `utils.InvalidParams` or `errors.New` error
 	if err != nil {
@@ -452,6 +452,5 @@ func (ss *SubmitStatus) ToResponse() (*H256, error) {
 			return nil, &GenericError{Err: err}
 		}
 	}
-	h256Hash := HexStringToHash(ss.ResponseHash)
-	return &h256Hash, nil
+	return &(ss.ResponseHash), nil
 }

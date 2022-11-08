@@ -11,6 +11,7 @@ import (
 
 const (
 	configPath                           = "endpoint"
+	asyncSendRawTxsDefault               = true
 	minGasPriceDefault                   = 0
 	minGasLimitDefault                   = 21000
 	GasForNearTxsCallDefault             = 300000000000000
@@ -42,7 +43,9 @@ type ethConfig struct {
 type EngineConfig struct {
 	NearNetworkID                 string   `mapstructure:"nearNetworkID"`
 	NearNodeURL                   string   `mapstructure:"nearNodeURL"`
-	NearReceiverID                string   `mapstructure:"nearReceiverID"`
+	Signer                        string   `mapstructure:"signer"`
+	SignerKey                     string   `mapstructure:"signerKey"`
+	AsyncSendRawTxs               bool     `mapstructure:"asyncSendRawTxs"`
 	MinGasPrice                   *big.Int `mapstructure:"minGasPrice"`
 	MinGasLimit                   uint64   `mapstructure:"minGasLimit"`
 	GasForNearTxsCall             uint64   `mapstructure:"gasForNearTxsCall"`
@@ -54,7 +57,9 @@ type EngineConfig struct {
 type engineConfig struct {
 	NearNetworkID                 string `mapstructure:"nearNetworkID"`
 	NearNodeURL                   string `mapstructure:"nearNodeURL"`
-	NearReceiverID                string `mapstructure:"nearReceiverID"`
+	Signer                        string `mapstructure:"signer"`
+	SignerKey                     string `mapstructure:"signerKey"`
+	AsyncSendRawTxs               bool   `mapstructure:"asyncSendRawTxs"`
 	MinGasPrice                   uint64 `mapstructure:"minGasPrice"`
 	MinGasLimit                   uint64 `mapstructure:"minGasLimit"`
 	GasForNearTxsCall             uint64 `mapstructure:"gasForNearTxsCall"`
@@ -90,7 +95,9 @@ func defaultConfig() *config {
 		EngineConfig: engineConfig{
 			NearNetworkID:                 "",
 			NearNodeURL:                   "",
-			NearReceiverID:                "",
+			Signer:                        "",
+			SignerKey:                     "",
+			AsyncSendRawTxs:               asyncSendRawTxsDefault,
 			MinGasPrice:                   minGasPriceDefault,
 			MinGasLimit:                   minGasLimitDefault,
 			GasForNearTxsCall:             GasForNearTxsCallDefault,
@@ -120,7 +127,9 @@ func GetConfig() *Config {
 		EngineConfig: EngineConfig{
 			NearNetworkID:                 c.EngineConfig.NearNetworkID,
 			NearNodeURL:                   c.EngineConfig.NearNodeURL,
-			NearReceiverID:                c.EngineConfig.NearReceiverID,
+			Signer:                        c.EngineConfig.Signer,
+			SignerKey:                     c.EngineConfig.SignerKey,
+			AsyncSendRawTxs:               c.EngineConfig.AsyncSendRawTxs,
 			MinGasPrice:                   big.NewInt(0).SetUint64(c.EngineConfig.MinGasPrice),
 			MinGasLimit:                   c.EngineConfig.MinGasLimit,
 			GasForNearTxsCall:             c.EngineConfig.GasForNearTxsCall,
