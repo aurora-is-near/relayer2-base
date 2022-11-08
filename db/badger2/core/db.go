@@ -48,14 +48,6 @@ func (db *DB) View(fn func(txn *ViewTxn) error) error {
 	})
 }
 
-func (db *DB) OpenWriter() {
-	db.writer = db.core.BadgerDB().NewWriteBatch()
-}
-
-func (db *DB) CloseWriter() {
-	db.writer.Cancel()
-}
-
 func (db *DB) FlushWriter() error {
 	if err := db.writer.Flush(); err != nil {
 		db.logger.Errorf("DB: unable to flush writer: %v", err)

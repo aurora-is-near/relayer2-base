@@ -7,7 +7,3 @@ func getCommonPrefix(a, b []byte) []byte {
 	}
 	return a[:i]
 }
-
-func ptr[T any](x T) *T {
-	return &x
-}
