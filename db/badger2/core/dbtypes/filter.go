@@ -7,7 +7,7 @@ import (
 
 type BlockFilter struct {
 	CreatedAt uint64
-	Metadata  tp.VarData
+	Metadata  dbp.VarData
 	Next      BlockKey
 	Last      BlockKey
 }
@@ -23,7 +23,7 @@ func (f *BlockFilter) GetTinyPackChildrenPointers() ([]any, error) {
 
 type TransactionFilter struct {
 	CreatedAt uint64
-	Metadata  tp.VarData
+	Metadata  dbp.VarData
 	Next      TransactionKey
 	Last      TransactionKey
 }
@@ -39,7 +39,7 @@ func (f *TransactionFilter) GetTinyPackChildrenPointers() ([]any, error) {
 
 type LogFilter struct {
 	CreatedAt uint64
-	Metadata  tp.VarData
+	Metadata  dbp.VarData
 	Next      LogKey
 	Last      LogKey
 	Addresses tp.VarList[dbp.Data20]
