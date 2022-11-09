@@ -5,6 +5,8 @@ import (
 	dbp "aurora-relayer-go-common/db/badger2/core/dbprimitives"
 	"aurora-relayer-go-common/db/badger2/core/dbtypes"
 	"aurora-relayer-go-common/db/badger2/core/logscan"
+
+	badger "github.com/dgraph-io/badger/v3"
 )
 
 func insert[T any](db *DB, key []byte, value *T) error {
@@ -14,6 +16,22 @@ func insert[T any](db *DB, key []byte, value *T) error {
 		return err
 	}
 	if err := db.writer.Set(key, b); err != nil {
+		db.logger.Errorf("DB: Can't write value: %v", err)
+		return err
+	}
+	return nil
+}
+
+func insertInstantly[T any](db *DB, key []byte, value *T) error {
+	b, err := db.Encoder.Marshal(value)
+	if err != nil {
+		db.logger.Errorf("DB: Can't marshal value of type %T: %v", value, err)
+		return err
+	}
+	err = db.BadgerDB().Update(func(txn *badger.Txn) error {
+		return txn.Set(key, b)
+	})
+	if err != nil {
 		db.logger.Errorf("DB: Can't write value: %v", err)
 		return err
 	}
@@ -74,6 +92,30 @@ func (db *DB) InsertLog(chainId, height, txIndex, logIndex uint64, data *dbtypes
 			db.logger.Errorf("DB: Can't insert LogScanEntry: %v", err)
 			return err
 		}
+	}
+	return nil
+}
+
+func (db *DB) InsertBlockFilter(chainId uint64, filterId dbp.Data32, filter *dbtypes.BlockFilter) error {
+	if err := insertInstantly(db, dbkey.BlockFilter.Get(chainId, filterId.Bytes()), filter); err != nil {
+		db.logger.Errorf("DB: Can't insert BlockFilter: %v", err)
+		return err
+	}
+	return nil
+}
+
+func (db *DB) InsertTransactionFilter(chainId uint64, filterId dbp.Data32, filter *dbtypes.TransactionFilter) error {
+	if err := insertInstantly(db, dbkey.TxFilter.Get(chainId, filterId.Bytes()), filter); err != nil {
+		db.logger.Errorf("DB: Can't insert TransactionFilter: %v", err)
+		return err
+	}
+	return nil
+}
+
+func (db *DB) InsertLogFilter(chainId uint64, filterId dbp.Data32, filter *dbtypes.LogFilter) error {
+	if err := insertInstantly(db, dbkey.LogFilter.Get(chainId, filterId.Bytes()), filter); err != nil {
+		db.logger.Errorf("DB: Can't insert LogFilter: %v", err)
+		return err
 	}
 	return nil
 }
