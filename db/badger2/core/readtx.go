@@ -95,7 +95,7 @@ func (txn *ViewTxn) ReadTxReceipt(chainId uint64, key dbtypes.TransactionKey) (*
 		return nil, err
 	}
 
-	logs, err := txn.ReadLogs(
+	logs, _, err := txn.ReadLogs(
 		context.Background(),
 		chainId,
 		&dbtypes.LogKey{
@@ -135,14 +135,14 @@ func (txn *ViewTxn) ReadTransactions(
 	to *dbtypes.TransactionKey,
 	full bool,
 	limit int,
-) ([]any, error) {
+) ([]any, *dbtypes.TransactionKey, error) {
 
 	if limit <= 0 {
 		limit = 100_000
 	}
 
 	if from.CompareTo(to) > 0 {
-		return nil, fmt.Errorf("from > to")
+		return nil, nil, fmt.Errorf("from > to")
 	}
 
 	fromHashKey := dbkey.TxHash.Get(chainId, from.BlockHeight, from.TransactionIndex)
@@ -169,10 +169,11 @@ func (txn *ViewTxn) ReadTransactions(
 	}
 
 	response := []any{}
+	lastKey := from.Prev()
 	for {
 		select {
 		case <-ctx.Done():
-			return response, ctx.Err()
+			return response, lastKey, ctx.Err()
 		default:
 		}
 
@@ -190,11 +191,16 @@ func (txn *ViewTxn) ReadTransactions(
 			hashIt.Next()
 			continue
 		}
+		hashKey := &dbtypes.TransactionKey{
+			BlockHeight:      dbkey.TxHash.ReadUintVar(hashIt.Item().Key(), 1),
+			TransactionIndex: dbkey.TxHash.ReadUintVar(hashIt.Item().Key(), 2),
+		}
 		if !full {
 			if len(response) == limit {
-				return response, ErrLimited
+				return response, lastKey, ErrLimited
 			}
 			response = append(response, txHash)
+			lastKey = hashKey
 			hashIt.Next()
 			continue
 		}
@@ -214,15 +220,11 @@ func (txn *ViewTxn) ReadTransactions(
 			dataIt.Next()
 			continue
 		}
-
-		hashKey := &dbtypes.TransactionKey{
-			BlockHeight:      dbkey.TxHash.ReadUintVar(hashIt.Item().Key(), 1),
-			TransactionIndex: dbkey.TxHash.ReadUintVar(hashIt.Item().Key(), 2),
-		}
 		dataKey := &dbtypes.TransactionKey{
 			BlockHeight:      dbkey.TxHash.ReadUintVar(dataIt.Item().Key(), 1),
 			TransactionIndex: dbkey.TxHash.ReadUintVar(dataIt.Item().Key(), 2),
 		}
+
 		keysCompare := hashKey.CompareTo(dataKey)
 		if keysCompare < 0 {
 			txn.db.logger.Errorf("DB: found dangling TxHash, will ignore [key=%v]", hashIt.Item().Key())
@@ -244,7 +246,7 @@ func (txn *ViewTxn) ReadTransactions(
 		}
 
 		if len(response) == limit {
-			return response, ErrLimited
+			return response, lastKey, ErrLimited
 		}
 		response = append(response, makeTransactionResponse(
 			chainId,
@@ -254,9 +256,10 @@ func (txn *ViewTxn) ReadTransactions(
 			*txHash,
 			txData,
 		))
+		lastKey = hashKey
 
 		hashIt.Next()
 		dataIt.Next()
 	}
-	return response, nil
+	return response, to, nil
 }

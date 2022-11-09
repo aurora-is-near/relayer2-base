@@ -65,7 +65,7 @@ func (txn *ViewTxn) ReadBlock(chainId uint64, key dbtypes.BlockKey, fullTransact
 		return nil, err
 	}
 
-	txs, err := txn.ReadTransactions(
+	txs, _, err := txn.ReadTransactions(
 		context.Background(),
 		chainId,
 		&dbtypes.TransactionKey{
@@ -112,14 +112,14 @@ func (txn *ViewTxn) ReadBlockHashes(
 	from *dbtypes.BlockKey,
 	to *dbtypes.BlockKey,
 	limit int,
-) ([]dbp.Data32, error) {
+) ([]dbp.Data32, *dbtypes.BlockKey, error) {
 
 	if limit <= 0 {
 		limit = 100_000
 	}
 
 	if from.CompareTo(to) > 0 {
-		return nil, fmt.Errorf("from > to")
+		return nil, nil, fmt.Errorf("from > to")
 	}
 
 	fromKey := dbkey.BlockHash.Get(chainId, from.Height)
@@ -132,10 +132,11 @@ func (txn *ViewTxn) ReadBlockHashes(
 	defer it.Close()
 
 	response := []dbp.Data32{}
+	lastKey := from.Prev()
 	for it.Seek(fromKey); it.Valid(); it.Next() {
 		select {
 		case <-ctx.Done():
-			return response, ctx.Err()
+			return response, lastKey, ctx.Err()
 		default:
 		}
 		if bytes.Compare(it.Item().Key(), toKey) > 0 {
@@ -154,9 +155,10 @@ func (txn *ViewTxn) ReadBlockHashes(
 		}
 
 		if len(response) == limit {
-			return response, ErrLimited
+			return response, lastKey, ErrLimited
 		}
 		response = append(response, *blockHash)
+		lastKey = &dbtypes.BlockKey{Height: dbkey.BlockHash.ReadUintVar(it.Item().Key(), 1)}
 	}
-	return response, nil
+	return response, to, nil
 }

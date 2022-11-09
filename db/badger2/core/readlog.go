@@ -63,14 +63,14 @@ func (txn *ViewTxn) ReadLogs(
 	addresses []dbp.Data20,
 	topics [][]dbp.Data32,
 	limit int,
-) ([]*dbresponses.Log, error) {
+) ([]*dbresponses.Log, *dbtypes.LogKey, error) {
 
 	if limit < 0 {
 		limit = 100_000
 	}
 
 	if from.CompareTo(to) > 0 {
-		return nil, fmt.Errorf("from > to")
+		return nil, nil, fmt.Errorf("from > to")
 	}
 
 	var addressFilter map[string]struct{}
@@ -98,22 +98,35 @@ func (txn *ViewTxn) ReadLogs(
 	defer fetcher.stop()
 
 	responses := []*dbresponses.Log{}
+
+	getLastKey := func() *dbtypes.LogKey {
+		if len(responses) == 0 {
+			return from.Prev()
+		}
+		last := responses[len(responses)-1]
+		return &dbtypes.LogKey{
+			BlockHeight:      uint64(last.BlockNumber),
+			TransactionIndex: uint64(last.TransactionIndex),
+			LogIndex:         uint64(last.LogIndex),
+		}
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
-			return responses, ctx.Err()
+			return responses, getLastKey(), ctx.Err()
 		default:
 		}
 
 		select {
 		case <-ctx.Done():
-			return responses, ctx.Err()
+			return responses, getLastKey(), ctx.Err()
 		case out, ok := <-fetcher.output():
 			if !ok {
-				return responses, nil
+				return responses, to, nil
 			}
 			if len(responses) == limit {
-				return responses, ErrLimited
+				return responses, getLastKey(), ErrLimited
 			}
 			responses = append(responses, out)
 		}
