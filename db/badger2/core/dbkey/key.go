@@ -12,9 +12,9 @@ const (
 )
 
 const (
-	MaxBlockHeight uint64 = (1 << bytesPerBlockHeight) - 1
-	MaxTxIndex     uint64 = (1 << bytesPerTxIndex) - 1
-	MaxLogIndex    uint64 = (1 << bytesPerLogIndex) - 1
+	MaxBlockHeight uint64 = (1 << (bytesPerBlockHeight * 8)) - 1
+	MaxTxIndex     uint64 = (1 << (bytesPerTxIndex * 8)) - 1
+	MaxLogIndex    uint64 = (1 << (bytesPerLogIndex * 8)) - 1
 )
 
 var (

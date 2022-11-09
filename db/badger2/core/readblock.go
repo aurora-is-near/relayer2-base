@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"aurora-relayer-go-common/db/badger2/core/dbkey"
-	"aurora-relayer-go-common/db/badger2/core/dbprimitives"
 	dbp "aurora-relayer-go-common/db/badger2/core/dbprimitives"
 	"aurora-relayer-go-common/db/badger2/core/dbresponses"
 	"aurora-relayer-go-common/db/badger2/core/dbtypes"
@@ -113,7 +112,7 @@ func (txn *ViewTxn) ReadBlockHashes(
 	from *dbtypes.BlockKey,
 	to *dbtypes.BlockKey,
 	limit int,
-) ([]dbprimitives.Data32, error) {
+) ([]dbp.Data32, error) {
 
 	if limit <= 0 {
 		limit = 100_000
@@ -132,7 +131,7 @@ func (txn *ViewTxn) ReadBlockHashes(
 	})
 	defer it.Close()
 
-	response := []dbprimitives.Data32{}
+	response := []dbp.Data32{}
 	for it.Seek(fromKey); it.Valid(); it.Next() {
 		select {
 		case <-ctx.Done():
