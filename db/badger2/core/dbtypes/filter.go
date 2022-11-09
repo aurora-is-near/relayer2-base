@@ -5,23 +5,53 @@ import (
 	tp "aurora-relayer-go-common/tinypack"
 )
 
-type Filter struct {
-	Type      dbp.VarData
-	CreatedBy dbp.VarData
-	PollBlock uint64
-	FromBlock tp.Nullable[dbp.Data32]
-	ToBlock   tp.Nullable[dbp.Data32]
+type BlockFilter struct {
+	CreatedAt uint64
+	Metadata  tp.VarData
+	Next      BlockKey
+	Last      BlockKey
+}
+
+func (f *BlockFilter) GetTinyPackChildrenPointers() ([]any, error) {
+	return []any{
+		&f.CreatedAt,
+		&f.Metadata,
+		&f.Next,
+		&f.Last,
+	}, nil
+}
+
+type TransactionFilter struct {
+	CreatedAt uint64
+	Metadata  tp.VarData
+	Next      TransactionKey
+	Last      TransactionKey
+}
+
+func (f *TransactionFilter) GetTinyPackChildrenPointers() ([]any, error) {
+	return []any{
+		&f.CreatedAt,
+		&f.Metadata,
+		&f.Next,
+		&f.Last,
+	}, nil
+}
+
+type LogFilter struct {
+	CreatedAt uint64
+	Metadata  tp.VarData
+	Next      LogKey
+	Last      LogKey
 	Addresses tp.VarList[dbp.Data20]
 	Topics    tp.VarList[tp.VarList[dbp.Data32]]
 }
 
-func (f *Filter) GetTinyPackChildrenPointers() ([]any, error) {
+func (f *LogFilter) GetTinyPackChildrenPointers() ([]any, error) {
 	return []any{
-		&f.Type,
-		&f.CreatedBy,
-		&f.PollBlock,
-		&f.FromBlock,
-		&f.ToBlock,
+		&f.CreatedAt,
+		&f.Metadata,
+		&f.Next,
+		&f.Last,
 		&f.Addresses,
 		&f.Topics,
 	}, nil

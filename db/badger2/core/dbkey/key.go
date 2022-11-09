@@ -25,6 +25,7 @@ var (
 	hash        = dbs.Var(32)
 	logScanMask = dbs.Var(1)
 	logScanHash = dbs.Var(logscan.HashSize)
+	filterId    = dbs.Var(32)
 )
 
 var (
@@ -54,5 +55,12 @@ var (
 	LogScanForBlock  = dbs.Path(dbs.Const(0), chainId, dbs.Const(7), logScanMask, logScanHash, blockHeight)
 	LogScanForTx     = dbs.Path(dbs.Const(0), chainId, dbs.Const(7), logScanMask, logScanHash, blockHeight, txIndex)
 	LogScanEntry     = dbs.Path(dbs.Const(0), chainId, dbs.Const(7), logScanMask, logScanHash, blockHeight, txIndex, logIndex)
+	Filters          = dbs.Path(dbs.Const(0), chainId, dbs.Const(8))
+	BlockFilters     = dbs.Path(dbs.Const(0), chainId, dbs.Const(8), dbs.Const(0))
+	BlockFilter      = dbs.Path(dbs.Const(0), chainId, dbs.Const(8), dbs.Const(0), filterId)
+	TxFilters        = dbs.Path(dbs.Const(0), chainId, dbs.Const(8), dbs.Const(1))
+	TxFilter         = dbs.Path(dbs.Const(0), chainId, dbs.Const(8), dbs.Const(1), filterId)
+	LogFilters       = dbs.Path(dbs.Const(0), chainId, dbs.Const(8), dbs.Const(2))
+	LogFilter        = dbs.Path(dbs.Const(0), chainId, dbs.Const(8), dbs.Const(2), filterId)
 	IndexerState     = dbs.Path(dbs.Const(1))
 )
