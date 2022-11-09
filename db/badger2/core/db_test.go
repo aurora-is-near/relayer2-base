@@ -339,8 +339,10 @@ func initTestDb(t *testing.T) (*DB, *testLogger) {
 	err := testDb.Open(logger)
 	require.NoError(t, err, "DB must open")
 
+	writer := testDb.NewWriter()
+
 	for _, blockSeed := range blockSeeds {
-		require.NoError(t, testDb.InsertBlock(
+		require.NoError(t, writer.InsertBlock(
 			testChainId,
 			blockSeed.height,
 			blockSeed.getBlockHash(),
@@ -348,7 +350,7 @@ func initTestDb(t *testing.T) (*DB, *testLogger) {
 		), "InsertBlock must work")
 	}
 	for _, txSeed := range txSeeds {
-		require.NoError(t, testDb.InsertTransaction(
+		require.NoError(t, writer.InsertTransaction(
 			testChainId,
 			txSeed.height,
 			txSeed.index,
@@ -357,7 +359,7 @@ func initTestDb(t *testing.T) (*DB, *testLogger) {
 		), "InsertTransaction must work")
 	}
 	for _, logSeed := range logSeeds {
-		require.NoError(t, testDb.InsertLog(
+		require.NoError(t, writer.InsertLog(
 			testChainId,
 			logSeed.height,
 			logSeed.txIndex,
@@ -365,7 +367,7 @@ func initTestDb(t *testing.T) (*DB, *testLogger) {
 			logSeed.getLogData(),
 		), "InsertLog must work")
 	}
-	require.NoError(t, testDb.FlushWriter(), "FlushWriter must work")
+	require.NoError(t, writer.Flush(), "Flush must work")
 
 	require.EqualValues(t, 0, logger.getErrCnt(), "There should be no errors")
 	require.EqualValues(t, 0, logger.getWarnCnt(), "There should be no warnings")

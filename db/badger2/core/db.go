@@ -16,7 +16,6 @@ type DB struct {
 
 	logger badger.Logger
 	core   *dbcore.DBCore
-	writer *badger.WriteBatch
 }
 
 func (db *DB) Open(logger badger.Logger) error {
@@ -35,8 +34,14 @@ func (db *DB) Open(logger badger.Logger) error {
 		db.logger.Errorf("DB: Unable to open database: %v", err)
 		return err
 	}
-	db.writer = db.core.BadgerDB().NewWriteBatch()
 	return nil
+}
+
+func (db *DB) NewWriter() *Writer {
+	return &Writer{
+		db:     db,
+		writer: db.BadgerDB().NewWriteBatch(),
+	}
 }
 
 func (db *DB) View(fn func(txn *ViewTxn) error) error {
@@ -48,17 +53,8 @@ func (db *DB) View(fn func(txn *ViewTxn) error) error {
 	})
 }
 
-func (db *DB) FlushWriter() error {
-	if err := db.writer.Flush(); err != nil {
-		db.logger.Errorf("DB: unable to flush writer: %v", err)
-		return err
-	}
-	return nil
-}
-
 func (db *DB) Close() error {
 	db.logger.Infof("DB: Closing")
-	_ = db.FlushWriter()
 	if err := db.core.Close(); err != nil {
 		db.logger.Errorf("DB: unable to close database: %v", err)
 		return err

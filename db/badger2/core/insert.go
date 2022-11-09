@@ -9,14 +9,28 @@ import (
 	badger "github.com/dgraph-io/badger/v3"
 )
 
-func insert[T any](db *DB, key []byte, value *T) error {
-	b, err := db.Encoder.Marshal(value)
+// Wrapper that hides internals from outer packages
+type Writer struct {
+	db     *DB
+	writer *badger.WriteBatch
+}
+
+func (w *Writer) Flush() error {
+	return w.writer.Flush()
+}
+
+func (w *Writer) Cancel() {
+	w.writer.Cancel()
+}
+
+func insert[T any](w *Writer, key []byte, value *T) error {
+	b, err := w.db.Encoder.Marshal(value)
 	if err != nil {
-		db.logger.Errorf("DB: Can't marshal value of type %T: %v", value, err)
+		w.db.logger.Errorf("DB: Can't marshal value of type %T: %v", value, err)
 		return err
 	}
-	if err := db.writer.Set(key, b); err != nil {
-		db.logger.Errorf("DB: Can't write value: %v", err)
+	if err := w.writer.Set(key, b); err != nil {
+		w.db.logger.Errorf("DB: Can't write value: %v", err)
 		return err
 	}
 	return nil
@@ -38,43 +52,43 @@ func insertInstantly[T any](db *DB, key []byte, value *T) error {
 	return nil
 }
 
-func (db *DB) InsertBlock(chainId, height uint64, hash dbp.Data32, data *dbtypes.Block) error {
-	if err := insert(db, dbkey.BlockHash.Get(chainId, height), &hash); err != nil {
-		db.logger.Errorf("DB: Can't insert block hash: %v", err)
+func (w *Writer) InsertBlock(chainId, height uint64, hash dbp.Data32, data *dbtypes.Block) error {
+	if err := insert(w, dbkey.BlockHash.Get(chainId, height), &hash); err != nil {
+		w.db.logger.Errorf("DB: Can't insert block hash: %v", err)
 		return err
 	}
-	if err := insert(db, dbkey.BlockData.Get(chainId, height), data); err != nil {
-		db.logger.Errorf("DB: Can't insert block data: %v", err)
+	if err := insert(w, dbkey.BlockData.Get(chainId, height), data); err != nil {
+		w.db.logger.Errorf("DB: Can't insert block data: %v", err)
 		return err
 	}
 	blockKey := &dbtypes.BlockKey{Height: height}
-	if err := insert(db, dbkey.BlockKeyByHash.Get(chainId, hash.Bytes()), blockKey); err != nil {
-		db.logger.Errorf("DB: Can't insert block key: %v", err)
+	if err := insert(w, dbkey.BlockKeyByHash.Get(chainId, hash.Bytes()), blockKey); err != nil {
+		w.db.logger.Errorf("DB: Can't insert block key: %v", err)
 		return err
 	}
 	return nil
 }
 
-func (db *DB) InsertTransaction(chainId, height, index uint64, hash dbp.Data32, data *dbtypes.Transaction) error {
-	if err := insert(db, dbkey.TxHash.Get(chainId, height, index), &hash); err != nil {
-		db.logger.Errorf("DB: Can't insert transaction hash: %v", err)
+func (w *Writer) InsertTransaction(chainId, height, index uint64, hash dbp.Data32, data *dbtypes.Transaction) error {
+	if err := insert(w, dbkey.TxHash.Get(chainId, height, index), &hash); err != nil {
+		w.db.logger.Errorf("DB: Can't insert transaction hash: %v", err)
 		return err
 	}
-	if err := insert(db, dbkey.TxData.Get(chainId, height, index), data); err != nil {
-		db.logger.Errorf("DB: Can't insert transaction data: %v", err)
+	if err := insert(w, dbkey.TxData.Get(chainId, height, index), data); err != nil {
+		w.db.logger.Errorf("DB: Can't insert transaction data: %v", err)
 		return err
 	}
 	txKey := &dbtypes.TransactionKey{BlockHeight: height, TransactionIndex: index}
-	if err := insert(db, dbkey.TxKeyByHash.Get(chainId, hash.Bytes()), txKey); err != nil {
-		db.logger.Errorf("DB: Can't insert transaction key: %v", err)
+	if err := insert(w, dbkey.TxKeyByHash.Get(chainId, hash.Bytes()), txKey); err != nil {
+		w.db.logger.Errorf("DB: Can't insert transaction key: %v", err)
 		return err
 	}
 	return nil
 }
 
-func (db *DB) InsertLog(chainId, height, txIndex, logIndex uint64, data *dbtypes.Log) error {
-	if err := insert(db, dbkey.Log.Get(chainId, height, txIndex, logIndex), data); err != nil {
-		db.logger.Errorf("DB: Can't insert log: %v", err)
+func (w *Writer) InsertLog(chainId, height, txIndex, logIndex uint64, data *dbtypes.Log) error {
+	if err := insert(w, dbkey.Log.Get(chainId, height, txIndex, logIndex), data); err != nil {
+		w.db.logger.Errorf("DB: Can't insert log: %v", err)
 		return err
 	}
 
@@ -87,9 +101,9 @@ func (db *DB) InsertLog(chainId, height, txIndex, logIndex uint64, data *dbtypes
 	maxScanBitmask := 1<<len(scanFeatures) - 1
 	for scanBitmask := 1; scanBitmask <= maxScanBitmask; scanBitmask++ {
 		hash := logscan.CalcHash(scanFeatures, scanBitmask)
-		err := db.writer.Set(dbkey.LogScanEntry.Get(chainId, uint64(scanBitmask), hash, height, txIndex, logIndex), nil)
+		err := w.writer.Set(dbkey.LogScanEntry.Get(chainId, uint64(scanBitmask), hash, height, txIndex, logIndex), nil)
 		if err != nil {
-			db.logger.Errorf("DB: Can't insert LogScanEntry: %v", err)
+			w.db.logger.Errorf("DB: Can't insert LogScanEntry: %v", err)
 			return err
 		}
 	}
