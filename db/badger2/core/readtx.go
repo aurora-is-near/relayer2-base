@@ -199,7 +199,7 @@ func (txn *ViewTxn) ReadTransactions(
 			if len(response) == limit {
 				return response, lastKey, ErrLimited
 			}
-			response = append(response, txHash)
+			response = append(response, *txHash)
 			lastKey = hashKey
 			hashIt.Next()
 			continue

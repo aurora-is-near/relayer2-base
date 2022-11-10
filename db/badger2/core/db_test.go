@@ -6,6 +6,7 @@ import (
 	"aurora-relayer-go-common/db/badger2/core/dbresponses"
 	"aurora-relayer-go-common/db/badger2/core/dbtypes"
 	"aurora-relayer-go-common/tinypack"
+	"context"
 	"encoding/binary"
 	"log"
 	"sync/atomic"
@@ -97,12 +98,14 @@ func genTx(seed uint64) *dbtypes.Transaction {
 		LogsBloom:            genLogsBloom(seed, 17),
 	}
 	if tx.Type >= 1 {
+		tx.AccessList.Content = []dbtypes.AccessListEntry{}
 		n := int(genUint64(seed, 18) % 10)
 		for i := 0; i < n; i++ {
 			ale := dbtypes.AccessListEntry{
 				Address: genAddress(seed, 19, uint64(i)),
 			}
 			m := int(genUint64(seed, 20, uint64(i)) % 10)
+			ale.StorageKeys.Content = []dbp.Data32{}
 			for j := 0; j < m; j++ {
 				sk := genHash(seed, 21, uint64(i), uint64(j))
 				ale.StorageKeys.Content = append(ale.StorageKeys.Content, sk)
@@ -122,6 +125,7 @@ func genLog(addressSeed uint64, dataSeed uint64, topicSeeds ...uint64) *dbtypes.
 		Address: genAddress(addressSeed),
 		Data:    genVarData(0, 100, dataSeed),
 	}
+	log.Topics.Content = []dbp.Data32{}
 	for _, topicSeed := range topicSeeds {
 		log.Topics.Content = append(log.Topics.Content, genHash(topicSeed))
 	}
@@ -130,6 +134,12 @@ func genLog(addressSeed uint64, dataSeed uint64, topicSeeds ...uint64) *dbtypes.
 
 type blockSeed struct {
 	height uint64
+}
+
+func (bs *blockSeed) getBlockKey() *dbtypes.BlockKey {
+	return &dbtypes.BlockKey{
+		Height: bs.height,
+	}
 }
 
 func (bs *blockSeed) getBlockHash() dbp.Data32 {
@@ -141,7 +151,7 @@ func (bs *blockSeed) getBlockData() *dbtypes.Block {
 }
 
 func (bs *blockSeed) getBlockResponse(txSeeds []txSeed, full bool) *dbresponses.Block {
-	txs := make([]any, len(txSeeds))
+	txs := []any{}
 	for _, txSeed := range txSeeds {
 		if full {
 			txs = append(txs, txSeed.getTxResponse())
@@ -161,6 +171,13 @@ func (bs *blockSeed) getBlockResponse(txSeeds []txSeed, full bool) *dbresponses.
 type txSeed struct {
 	height uint64
 	index  uint64
+}
+
+func (ts *txSeed) getTxKey() *dbtypes.TransactionKey {
+	return &dbtypes.TransactionKey{
+		BlockHeight:      ts.height,
+		TransactionIndex: ts.index,
+	}
 }
 
 func (ts *txSeed) getTxHash() dbp.Data32 {
@@ -184,7 +201,7 @@ func (ts *txSeed) getTxResponse() *dbresponses.Transaction {
 }
 
 func (ts *txSeed) getTxReceiptResponse(logSeeds []*logSeed) *dbresponses.TransactionReceipt {
-	logResponses := make([]*dbresponses.Log, len(logSeeds))
+	logResponses := []*dbresponses.Log{}
 	for _, logSeed := range logSeeds {
 		logResponses = append(logResponses, logSeed.getLogResponse())
 	}
@@ -206,6 +223,14 @@ type logSeed struct {
 	logIndex    uint64
 	addressSeed uint64
 	topicSeeds  []uint64
+}
+
+func (ls *logSeed) getLogKey() *dbtypes.LogKey {
+	return &dbtypes.LogKey{
+		BlockHeight:      ls.height,
+		TransactionIndex: ls.txIndex,
+		LogIndex:         ls.logIndex,
+	}
 }
 
 func (ls *logSeed) getLogData() *dbtypes.Log {
@@ -292,6 +317,8 @@ var logSeeds = []logSeed{
 // 	}
 // }
 
+const suppressSecondaryLogging = true
+
 type testLogger struct {
 	errCnt  int32
 	warnCnt int32
@@ -316,11 +343,15 @@ func (l *testLogger) Warningf(f string, v ...interface{}) {
 }
 
 func (l *testLogger) Infof(f string, v ...interface{}) {
-	log.Printf("INFO: "+f, v...)
+	if !suppressSecondaryLogging {
+		log.Printf("INFO: "+f, v...)
+	}
 }
 
 func (l *testLogger) Debugf(f string, v ...interface{}) {
-	log.Printf("DEBUG: "+f, v...)
+	if !suppressSecondaryLogging {
+		log.Printf("DEBUG: "+f, v...)
+	}
 }
 
 func initTestDb(t *testing.T) (*DB, *testLogger) {
@@ -397,6 +428,89 @@ func TestReadBlock(t *testing.T) {
 		latestBlockKey, err := txn.ReadLatestBlockKey(testChainId)
 		require.NoError(t, err, "ReadLatestBlockKey must work")
 		require.Equal(t, &dbtypes.BlockKey{Height: 9_000_008}, latestBlockKey, "Latest block key must be right")
+
+		for _, blockSeed := range blockSeeds {
+			blockKey, err := txn.ReadBlockKey(testChainId, blockSeed.getBlockHash())
+			require.NoError(t, err, "ReadBlockKey must work")
+			require.Equal(t, blockSeed.getBlockKey(), blockKey, "ReadBlockKey must return right value")
+
+			txs := []txSeed{}
+			for _, txSeed := range txSeeds {
+				if txSeed.height == blockSeed.height {
+					txs = append(txs, txSeed)
+				}
+			}
+
+			txCount, err := txn.ReadBlockTxCount(testChainId, *blockSeed.getBlockKey())
+			require.NoError(t, err, "ReadBlockTxCount must work")
+			require.EqualValues(t, len(txs), txCount, "ReadBlockTxCount must return right value")
+
+			block, err := txn.ReadBlock(testChainId, *blockSeed.getBlockKey(), false)
+			require.NoError(t, err, "ReadBlock (full=false) must work")
+			require.Equal(t, blockSeed.getBlockResponse(txs, false), block, "ReadBlock (full=false) must return right value")
+
+			block, err = txn.ReadBlock(testChainId, *blockSeed.getBlockKey(), true)
+			require.NoError(t, err, "ReadBlock (full=true) must work")
+			require.Equal(t, blockSeed.getBlockResponse(txs, true), block, "ReadBlock (full=true) must return right value")
+		}
+
+		bounds := []*dbtypes.BlockKey{
+			{Height: 0},
+			{Height: 20},
+			{Height: 50},
+			{Height: 102},
+			{Height: 110},
+			{Height: 500},
+			{Height: 555_555},
+			{Height: 1_000_000},
+			{Height: 5_000_000},
+			{Height: 9_000_000},
+			{Height: 9_000_006},
+			{Height: 10_000_000},
+			{Height: 1_000_000_000},
+		}
+		for _, blockSeed := range blockSeeds {
+			bounds = append(bounds, blockSeed.getBlockKey())
+		}
+
+		for _, from := range bounds {
+			for _, to := range bounds {
+				if from.CompareTo(to) > 0 {
+					continue
+				}
+				for _, limit := range []int{1, 2, 5, 10, 100} {
+					expectedLastKey := from.Prev()
+					limited := false
+					expectedResult := []dbp.Data32{}
+					for _, blockSeed := range blockSeeds {
+						if blockSeed.getBlockKey().CompareTo(from) < 0 {
+							continue
+						}
+						if blockSeed.getBlockKey().CompareTo(to) > 0 {
+							continue
+						}
+						if len(expectedResult) == limit {
+							limited = true
+							break
+						}
+						expectedResult = append(expectedResult, blockSeed.getBlockHash())
+						expectedLastKey = blockSeed.getBlockKey()
+					}
+					if !limited {
+						expectedLastKey = to
+					}
+
+					blockHashes, lastKey, err := txn.ReadBlockHashes(context.Background(), testChainId, from, to, limit)
+					if limited {
+						require.Equal(t, ErrLimited, err, "ReadBlockHashes must return ErrLimited")
+					} else {
+						require.NoError(t, err, "ReadBlockHashes must work without errors")
+					}
+					require.Equal(t, expectedLastKey, lastKey, "ReadBlockHashes must return right lastKey")
+					require.Equal(t, expectedResult, blockHashes, "ReadBlockHashes must return right result")
+				}
+			}
+		}
 
 		return nil
 	})
