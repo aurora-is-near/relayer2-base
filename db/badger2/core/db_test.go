@@ -200,7 +200,7 @@ func (ts *txSeed) getTxResponse() *dbresponses.Transaction {
 	)
 }
 
-func (ts *txSeed) getTxReceiptResponse(logSeeds []*logSeed) *dbresponses.TransactionReceipt {
+func (ts *txSeed) getTxReceiptResponse(logSeeds []logSeed) *dbresponses.TransactionReceipt {
 	logResponses := []*dbresponses.Log{}
 	for _, logSeed := range logSeeds {
 		logResponses = append(logResponses, logSeed.getLogResponse())
@@ -423,11 +423,11 @@ func TestReadBlock(t *testing.T) {
 	testView(t, true, true, func(txn *ViewTxn) error {
 		earliestBlockKey, err := txn.ReadEarliestBlockKey(testChainId)
 		require.NoError(t, err, "ReadEarliestBlockKey must work")
-		require.Equal(t, &dbtypes.BlockKey{Height: 101}, earliestBlockKey, "Earliest block key must be right")
+		require.Equal(t, blockSeeds[0].getBlockKey(), earliestBlockKey, "Earliest block key must be right")
 
 		latestBlockKey, err := txn.ReadLatestBlockKey(testChainId)
 		require.NoError(t, err, "ReadLatestBlockKey must work")
-		require.Equal(t, &dbtypes.BlockKey{Height: 9_000_008}, latestBlockKey, "Latest block key must be right")
+		require.Equal(t, blockSeeds[len(blockSeeds)-1].getBlockKey(), latestBlockKey, "Latest block key must be right")
 
 		for _, blockSeed := range blockSeeds {
 			blockKey, err := txn.ReadBlockKey(testChainId, blockSeed.getBlockHash())
@@ -508,6 +508,124 @@ func TestReadBlock(t *testing.T) {
 					}
 					require.Equal(t, expectedLastKey, lastKey, "ReadBlockHashes must return right lastKey")
 					require.Equal(t, expectedResult, blockHashes, "ReadBlockHashes must return right result")
+				}
+			}
+		}
+
+		return nil
+	})
+}
+
+func TestReadTransaction(t *testing.T) {
+	testView(t, true, true, func(txn *ViewTxn) error {
+		earliestTxKey, err := txn.ReadEarliestTxKey(testChainId)
+		require.NoError(t, err, "ReadEarliestTxKey must work")
+		require.Equal(t, txSeeds[0].getTxKey(), earliestTxKey, "Earliest tx key must be right")
+
+		latestTxKey, err := txn.ReadLatestTxKey(testChainId)
+		require.NoError(t, err, "ReadLatestBlockKey must work")
+		require.Equal(t, txSeeds[len(txSeeds)-1].getTxKey(), latestTxKey, "Latest tx key must be right")
+
+		for _, txSeed := range txSeeds {
+			txKey, err := txn.ReadTxKey(testChainId, txSeed.getTxHash())
+			require.NoError(t, err, "ReadTxKey must work")
+			require.Equal(t, txSeed.getTxKey(), txKey, "ReadTxKey must return right value")
+
+			tx, err := txn.ReadTx(testChainId, *txSeed.getTxKey())
+			require.NoError(t, err, "ReadTx must work")
+			require.Equal(t, txSeed.getTxResponse(), tx, "ReadTx must return right value")
+
+			logs := []logSeed{}
+			for _, logSeed := range logSeeds {
+				if logSeed.height == txSeed.height && logSeed.txIndex == txSeed.index {
+					logs = append(logs, logSeed)
+				}
+			}
+
+			txReceipt, err := txn.ReadTxReceipt(testChainId, *txSeed.getTxKey())
+			require.NoError(t, err, "ReadTxReceipt must work")
+			require.Equal(t, txSeed.getTxReceiptResponse(logs), txReceipt, "ReadTx must return right value")
+		}
+
+		bounds := []*dbtypes.TransactionKey{
+			{BlockHeight: 0, TransactionIndex: 0},
+			{BlockHeight: 0, TransactionIndex: 1},
+			{BlockHeight: 0, TransactionIndex: 5},
+			{BlockHeight: 0, TransactionIndex: 1000},
+			{BlockHeight: 50, TransactionIndex: 0},
+			{BlockHeight: 50, TransactionIndex: 7},
+			{BlockHeight: 102, TransactionIndex: 0},
+			{BlockHeight: 102, TransactionIndex: 3},
+			{BlockHeight: 103, TransactionIndex: 5},
+			{BlockHeight: 104, TransactionIndex: 6},
+			{BlockHeight: 110, TransactionIndex: 2},
+			{BlockHeight: 500, TransactionIndex: 500},
+			{BlockHeight: 1_000_000, TransactionIndex: 0},
+			{BlockHeight: 1_000_000, TransactionIndex: 1000},
+			{BlockHeight: 9_000_001, TransactionIndex: 0},
+			{BlockHeight: 9_000_001, TransactionIndex: 1},
+			{BlockHeight: 9_000_001, TransactionIndex: 1000},
+			{BlockHeight: 9_000_003, TransactionIndex: 1},
+			{BlockHeight: 9_000_004, TransactionIndex: 0},
+			{BlockHeight: 9_000_004, TransactionIndex: 500},
+			{BlockHeight: 9_000_006, TransactionIndex: 1000},
+			{BlockHeight: 9_000_007, TransactionIndex: 3},
+			{BlockHeight: 9_000_007, TransactionIndex: 999},
+			{BlockHeight: 9_000_008, TransactionIndex: 3},
+			{BlockHeight: 9_000_008, TransactionIndex: 500},
+			{BlockHeight: 1_000_000_000, TransactionIndex: 0},
+			{BlockHeight: 1_000_000_000, TransactionIndex: 1000},
+		}
+		for _, txSeed := range txSeeds {
+			bounds = append(bounds, txSeed.getTxKey())
+		}
+
+		for _, from := range bounds {
+			for _, to := range bounds {
+				if from.CompareTo(to) > 0 {
+					continue
+				}
+				for _, limit := range []int{1, 2, 5, 10, 100} {
+					expectedLastKey := from.Prev()
+					limited := false
+					expectedHashes := []any{}
+					expectedTxes := []any{}
+					for _, txSeed := range txSeeds {
+						if txSeed.getTxKey().CompareTo(from) < 0 {
+							continue
+						}
+						if txSeed.getTxKey().CompareTo(to) > 0 {
+							continue
+						}
+						if len(expectedHashes) == limit {
+							limited = true
+							break
+						}
+						expectedHashes = append(expectedHashes, txSeed.getTxHash())
+						expectedTxes = append(expectedTxes, txSeed.getTxResponse())
+						expectedLastKey = txSeed.getTxKey()
+					}
+					if !limited {
+						expectedLastKey = to
+					}
+
+					hashes, lastKey, err := txn.ReadTransactions(context.Background(), testChainId, from, to, false, limit)
+					if limited {
+						require.Equal(t, ErrLimited, err, "ReadTransactions (full=false) must return ErrLimited")
+					} else {
+						require.NoError(t, err, "ReadTransactions (full=false) must work without errors")
+					}
+					require.Equal(t, expectedLastKey, lastKey, "ReadTransactions (full=false) must return right lastKey")
+					require.Equal(t, expectedHashes, hashes, "ReadTransactions (full=false) must return right result")
+
+					txes, lastKey, err := txn.ReadTransactions(context.Background(), testChainId, from, to, true, limit)
+					if limited {
+						require.Equal(t, ErrLimited, err, "ReadTransactions (full=true) must return ErrLimited")
+					} else {
+						require.NoError(t, err, "ReadTransactions (full=true) must work without errors")
+					}
+					require.Equal(t, expectedLastKey, lastKey, "ReadTransactions (full=true) must return right lastKey")
+					require.Equal(t, expectedTxes, txes, "ReadTransactions (full=true) must return right result")
 				}
 			}
 		}

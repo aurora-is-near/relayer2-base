@@ -1,7 +1,7 @@
 package db
 
 import (
-	"aurora-relayer-go-common/db/badger/dbkey"
+	"aurora-relayer-go-common/db/badger2/core/dbkey"
 	dbp "aurora-relayer-go-common/db/badger2/core/dbprimitives"
 	"aurora-relayer-go-common/db/badger2/core/dbresponses"
 	"aurora-relayer-go-common/db/badger2/core/dbtypes"
