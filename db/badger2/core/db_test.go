@@ -9,6 +9,8 @@ import (
 	"context"
 	"encoding/binary"
 	"log"
+	"strconv"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -274,29 +276,42 @@ var txSeeds = []txSeed{
 }
 
 var logSeeds = []logSeed{
-	{103, 0, 0, 555_0_0, []uint64{555_1_0}},
-	{103, 1, 0, 555_0_0, []uint64{555_1_2, 555_2_2, 555_3_1}},
-	{103, 2, 0, 555_0_0, []uint64{555_1_0}},
-	{104, 0, 0, 555_0_1, []uint64{555_1_1, 555_2_1}},
-	{104, 1, 0, 555_0_1, []uint64{555_1_0, 555_2_2, 555_3_2}},
-	{104, 1, 1, 555_0_2, []uint64{555_1_1}},
-	{105, 0, 0, 555_0_0, []uint64{555_1_2}},
-	{120, 1, 0, 555_0_2, []uint64{}},
-	{120, 1, 1, 555_0_1, []uint64{555_1_2}},
-	{120, 1, 2, 555_0_1, []uint64{555_1_1}},
-	{121, 0, 0, 555_0_0, []uint64{555_1_0, 555_2_1}},
-	{121, 1, 0, 555_0_0, []uint64{555_1_2, 555_2_2, 555_3_1}},
-	{121, 1, 1, 555_0_0, []uint64{555_1_2, 555_2_2, 555_3_1}},
-	{121, 1, 2, 555_0_2, []uint64{555_1_0, 555_2_2, 555_3_0}},
-	{121, 2, 0, 555_0_0, []uint64{}},
-	{1000001, 0, 0, 555_0_0, []uint64{555_1_0, 555_2_1, 555_3_1}},
-	{9000003, 0, 0, 555_0_2, []uint64{555_1_1, 555_2_0, 555_3_2}},
-	{9000007, 2, 0, 555_0_2, []uint64{}},
-	{9000007, 2, 1, 555_0_1, []uint64{}},
-	{9000008, 0, 0, 555_0_0, []uint64{555_1_0}},
-	{9000008, 2, 0, 555_0_1, []uint64{}},
-	{9000008, 2, 1, 555_0_1, []uint64{555_1_1, 555_2_1}},
-	{9000008, 2, 2, 555_0_1, []uint64{555_1_0, 555_2_1}},
+	{103, 0, 0, 555_0_0, []uint64{555_1_0, 555_2_1, 555_3_0}},
+	{103, 1, 0, 555_0_2, []uint64{555_1_1, 555_2_1, 555_3_0, 555_4_1}},
+	{103, 1, 1, 555_0_0, []uint64{555_1_2, 555_2_0}},
+	{103, 1, 2, 555_0_1, []uint64{555_1_1, 555_2_1, 555_3_1}},
+	{103, 2, 0, 555_0_0, []uint64{555_1_2, 555_2_2}},
+	{103, 2, 1, 555_0_2, []uint64{555_1_1, 555_2_2, 555_3_0, 555_4_1}},
+	{103, 3, 0, 555_0_1, []uint64{555_1_1, 555_2_2}},
+	{103, 3, 1, 555_0_2, []uint64{555_1_1, 555_2_2, 555_3_1, 555_4_2}},
+	{103, 4, 0, 555_0_1, []uint64{555_1_2, 555_2_0, 555_3_1}},
+	{103, 4, 1, 555_0_1, []uint64{555_1_1, 555_2_2, 555_3_2}},
+	{104, 0, 0, 555_0_0, []uint64{}},
+	{104, 0, 1, 555_0_2, []uint64{555_1_1, 555_2_2, 555_3_2}},
+	{104, 1, 0, 555_0_2, []uint64{555_1_2}},
+	{105, 0, 0, 555_0_2, []uint64{555_1_0, 555_2_2, 555_3_0}},
+	{105, 0, 1, 555_0_1, []uint64{555_1_0, 555_2_1, 555_3_2}},
+	{105, 0, 2, 555_0_1, []uint64{}},
+	{120, 0, 0, 555_0_2, []uint64{}},
+	{120, 0, 1, 555_0_0, []uint64{555_1_1, 555_2_1, 555_3_2, 555_4_2}},
+	{121, 0, 0, 555_0_0, []uint64{555_1_1, 555_2_1, 555_3_0}},
+	{121, 1, 0, 555_0_2, []uint64{}},
+	{121, 2, 0, 555_0_1, []uint64{555_1_0, 555_2_1, 555_3_1}},
+	{121, 2, 1, 555_0_2, []uint64{555_1_0, 555_2_1, 555_3_0}},
+	{1000001, 0, 0, 555_0_0, []uint64{555_1_2, 555_2_0, 555_3_1, 555_4_2}},
+	{1000001, 0, 1, 555_0_2, []uint64{555_1_2, 555_2_0, 555_3_2, 555_4_1}},
+	{1000001, 0, 2, 555_0_0, []uint64{555_1_1, 555_2_1}},
+	{9000003, 0, 0, 555_0_2, []uint64{555_1_2, 555_2_0, 555_3_0}},
+	{9000003, 0, 1, 555_0_0, []uint64{555_1_0, 555_2_2, 555_3_2}},
+	{9000007, 0, 0, 555_0_2, []uint64{555_1_0}},
+	{9000007, 0, 1, 555_0_2, []uint64{555_1_0}},
+	{9000007, 0, 2, 555_0_2, []uint64{}},
+	{9000007, 1, 0, 555_0_0, []uint64{}},
+	{9000007, 1, 1, 555_0_1, []uint64{555_1_2}},
+	{9000008, 0, 0, 555_0_1, []uint64{555_1_0, 555_2_1, 555_3_1}},
+	{9000008, 0, 1, 555_0_1, []uint64{555_1_0}},
+	{9000008, 1, 0, 555_0_2, []uint64{555_1_2, 555_2_1}},
+	{9000008, 1, 1, 555_0_2, []uint64{555_1_1, 555_2_2, 555_3_0}},
 }
 
 // func TestGenerateLogSeeds(t *testing.T) {
@@ -305,7 +320,7 @@ var logSeeds = []logSeed{
 // 		n := rand.Intn(4)
 // 		for i := 0; i < n; i++ {
 // 			fmt.Printf("{%v, %v, %v, 555_0_%v, []uint64{", txSeed.height, txSeed.index, i, rand.Intn(3))
-// 			t := rand.Intn(4)
+// 			t := rand.Intn(5)
 // 			for j := 0; j < t; j++ {
 // 				fmt.Printf("555_%v_%v", j+1, rand.Intn(3))
 // 				if j < t-1 {
@@ -580,12 +595,13 @@ func TestReadTransaction(t *testing.T) {
 			bounds = append(bounds, txSeed.getTxKey())
 		}
 
-		for _, from := range bounds {
-			for _, to := range bounds {
-				if from.CompareTo(to) > 0 {
-					continue
-				}
-				for _, limit := range []int{1, 2, 5, 10, 100} {
+		for _, limit := range []int{1, 2, 5, 10, 100} {
+			log.Printf("Testing ReadTransactions with limit=%v", limit)
+			for _, from := range bounds {
+				for _, to := range bounds {
+					if from.CompareTo(to) > 0 {
+						continue
+					}
 					expectedLastKey := from.Prev()
 					limited := false
 					expectedHashes := []any{}
@@ -626,6 +642,162 @@ func TestReadTransaction(t *testing.T) {
 					}
 					require.Equal(t, expectedLastKey, lastKey, "ReadTransactions (full=true) must return right lastKey")
 					require.Equal(t, expectedTxes, txes, "ReadTransactions (full=true) must return right result")
+				}
+			}
+		}
+
+		return nil
+	})
+}
+
+func TestReadLog(t *testing.T) {
+	testView(t, true, true, func(txn *ViewTxn) error {
+		earliestLogKey, err := txn.ReadEarliestLogKey(testChainId)
+		require.NoError(t, err, "ReadEarliestLogKey must work")
+		require.Equal(t, logSeeds[0].getLogKey(), earliestLogKey, "Earliest log key must be right")
+
+		latestLogKey, err := txn.ReadLatestLogKey(testChainId)
+		require.NoError(t, err, "ReadLatestLogKey must work")
+		require.Equal(t, logSeeds[len(logSeeds)-1].getLogKey(), latestLogKey, "Latest log key must be right")
+
+		bounds := []*dbtypes.LogKey{
+			{BlockHeight: 0, TransactionIndex: 0, LogIndex: 0},
+			{BlockHeight: 0, TransactionIndex: 1000, LogIndex: 0},
+			{BlockHeight: 0, TransactionIndex: 0, LogIndex: 1000},
+			{BlockHeight: 0, TransactionIndex: 1000, LogIndex: 1000},
+			{BlockHeight: 50, TransactionIndex: 50, LogIndex: 50},
+			{BlockHeight: 103, TransactionIndex: 500, LogIndex: 0},
+			{BlockHeight: 103, TransactionIndex: 500, LogIndex: 500},
+			{BlockHeight: 110, TransactionIndex: 0, LogIndex: 0},
+			{BlockHeight: 120, TransactionIndex: 2, LogIndex: 0},
+			{BlockHeight: 121, TransactionIndex: 1000, LogIndex: 1000},
+			{BlockHeight: 500_000, TransactionIndex: 0, LogIndex: 0},
+			{BlockHeight: 500_000, TransactionIndex: 500, LogIndex: 500},
+			{BlockHeight: 500_000, TransactionIndex: 1000, LogIndex: 1000},
+			{BlockHeight: 5_000_000, TransactionIndex: 1, LogIndex: 1},
+			{BlockHeight: 1_000_000_000, TransactionIndex: 0, LogIndex: 0},
+			{BlockHeight: 1_000_000_000, TransactionIndex: 1000, LogIndex: 1000},
+		}
+		addBound := func(bound *dbtypes.LogKey) {
+			if bound == nil {
+				return
+			}
+			for _, existingBound := range bounds {
+				if existingBound.CompareTo(bound) == 0 {
+					return
+				}
+			}
+			bounds = append(bounds, bound)
+		}
+		for _, logSeed := range logSeeds {
+			addBound(logSeed.getLogKey().Prev())
+			addBound(logSeed.getLogKey())
+			addBound(logSeed.getLogKey().Next())
+		}
+
+		filterDescs := [][]string{
+			{},
+			{"", "", "", "", ""},
+			{"012", "012", "012", "012", "012"},
+			{"01", "", "12"},
+		}
+
+		for filterNumber, filterDesc := range filterDescs {
+			log.Printf("Testing ReadLogs with filter [%v/%v]", filterNumber+1, len(filterDescs))
+
+			addressMap := map[uint64]struct{}{}
+			addressFilter := []dbp.Data20{}
+			topicMaps := []map[uint64]struct{}{}
+			topicFilters := [][]dbp.Data32{}
+
+			for i, filter := range filterDesc {
+				if i > 0 {
+					topicMaps = append(topicMaps, map[uint64]struct{}{})
+					topicFilters = append(topicFilters, []dbp.Data32{})
+				}
+				for j := 0; j < 3; j++ {
+					if strings.Contains(filter, strconv.FormatUint(uint64(j), 10)) {
+						seed := uint64((555*10+i)*10 + j)
+						if i == 0 {
+							addressMap[seed] = struct{}{}
+							addressFilter = append(addressFilter, genAddress(seed))
+						} else {
+							topicMaps[i-1][seed] = struct{}{}
+							topicFilters[i-1] = append(topicFilters[i-1], genHash(seed))
+						}
+					}
+				}
+			}
+			// log.Printf("Addresses: %v", addressMap)
+			// log.Printf("Topics: %v", topicMaps)
+
+			for _, limit := range []int{1, 2, 5, 10, 100} {
+				log.Printf("Testing ReadLogs with limit=%v", limit)
+				for _, from := range bounds {
+					for _, to := range bounds {
+						if from.CompareTo(to) > 0 {
+							continue
+						}
+						expectedLastKey := from.Prev()
+						limited := false
+						expectedLogs := []*dbresponses.Log{}
+						for _, logSeed := range logSeeds {
+							if logSeed.getLogKey().CompareTo(from) < 0 {
+								continue
+							}
+							if logSeed.getLogKey().CompareTo(to) > 0 {
+								continue
+							}
+							if len(addressMap) > 0 {
+								if _, ok := addressMap[logSeed.addressSeed]; !ok {
+									continue
+								}
+							}
+							valid := true
+							for i, topicMap := range topicMaps {
+								if len(topicMap) == 0 {
+									continue
+								}
+								if i >= len(logSeed.topicSeeds) {
+									valid = false
+									break
+								}
+								if _, ok := topicMap[logSeed.topicSeeds[i]]; !ok {
+									valid = false
+									break
+								}
+							}
+							if !valid {
+								continue
+							}
+							if len(expectedLogs) == limit {
+								limited = true
+								break
+							}
+							expectedLogs = append(expectedLogs, logSeed.getLogResponse())
+							expectedLastKey = logSeed.getLogKey()
+						}
+						if !limited {
+							expectedLastKey = to
+						}
+
+						logs, lastKey, err := txn.ReadLogs(
+							context.Background(),
+							testChainId,
+							from,
+							to,
+							addressFilter,
+							topicFilters,
+							limit,
+						)
+						if limited {
+							require.Equal(t, ErrLimited, err, "ReadLogs must return ErrLimited")
+						} else {
+							require.NoError(t, err, "ReadLogs must work without errors")
+						}
+						require.Equal(t, expectedLastKey, lastKey, "ReadLogs must return right lastKey")
+						require.Equal(t, expectedLogs, logs, "ReadLogs must return right result")
+					}
 				}
 			}
 		}
