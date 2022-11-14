@@ -650,6 +650,87 @@ func TestReadTransaction(t *testing.T) {
 	})
 }
 
+func assembleLogFilter(filterDesc []string) (
+	addressMap map[uint64]struct{},
+	addressFilter []dbp.Data20,
+	topicMaps []map[uint64]struct{},
+	topicFilters [][]dbp.Data32,
+) {
+	addressMap = map[uint64]struct{}{}
+	addressFilter = []dbp.Data20{}
+	topicMaps = []map[uint64]struct{}{}
+	topicFilters = [][]dbp.Data32{}
+
+	for i, filter := range filterDesc {
+		if i > 0 {
+			topicMaps = append(topicMaps, map[uint64]struct{}{})
+			topicFilters = append(topicFilters, []dbp.Data32{})
+		}
+		for j := 0; j <= 9; j++ {
+			if strings.Contains(filter, strconv.FormatUint(uint64(j), 10)) {
+				seed := uint64((555*10+i)*10 + j)
+				if i == 0 {
+					addressMap[seed] = struct{}{}
+					addressFilter = append(addressFilter, genAddress(seed))
+				} else {
+					topicMaps[i-1][seed] = struct{}{}
+					topicFilters[i-1] = append(topicFilters[i-1], genHash(seed))
+				}
+			}
+		}
+	}
+	return
+}
+
+func getLogSearchExpectedResult(
+	from *dbtypes.LogKey,
+	to *dbtypes.LogKey,
+	addressMap map[uint64]struct{},
+	topicMaps []map[uint64]struct{},
+	limit int,
+) ([]*dbresponses.Log, *dbtypes.LogKey, error) {
+
+	lastKey := from.Prev()
+	result := []*dbresponses.Log{}
+
+	for _, logSeed := range logSeeds {
+		if logSeed.getLogKey().CompareTo(from) < 0 {
+			continue
+		}
+		if logSeed.getLogKey().CompareTo(to) > 0 {
+			continue
+		}
+		if len(addressMap) > 0 {
+			if _, ok := addressMap[logSeed.addressSeed]; !ok {
+				continue
+			}
+		}
+		valid := true
+		for i, topicMap := range topicMaps {
+			if len(topicMap) == 0 {
+				continue
+			}
+			if i >= len(logSeed.topicSeeds) {
+				valid = false
+				break
+			}
+			if _, ok := topicMap[logSeed.topicSeeds[i]]; !ok {
+				valid = false
+				break
+			}
+		}
+		if !valid {
+			continue
+		}
+		if len(result) == limit {
+			return result, lastKey, ErrLimited
+		}
+		result = append(result, logSeed.getLogResponse())
+		lastKey = logSeed.getLogKey()
+	}
+	return result, to, nil
+}
+
 func TestReadLog(t *testing.T) {
 	testView(t, true, true, func(txn *ViewTxn) error {
 		earliestLogKey, err := txn.ReadEarliestLogKey(testChainId)
@@ -700,34 +781,20 @@ func TestReadLog(t *testing.T) {
 			{"", "", "", "", ""},
 			{"012", "012", "012", "012", "012"},
 			{"01", "", "12"},
+			{"023456", "1789", "", "056", ""},
+			{"0123456789", "0123456789", "0123456789", "0123456789", "0123456789"},
+			{"0123456789", "123456789", "0123456789", "013456789", "0123456789"},
+			{"02", "02"},
+			{"023456789", "023456789"},
+			{"", "", "", "", "0"},
+			{"", "", "", "", "1"},
+			{"02", "02", "02", "02", "01"},
 		}
 
 		for filterNumber, filterDesc := range filterDescs {
 			log.Printf("Testing ReadLogs with filter [%v/%v]", filterNumber+1, len(filterDescs))
 
-			addressMap := map[uint64]struct{}{}
-			addressFilter := []dbp.Data20{}
-			topicMaps := []map[uint64]struct{}{}
-			topicFilters := [][]dbp.Data32{}
-
-			for i, filter := range filterDesc {
-				if i > 0 {
-					topicMaps = append(topicMaps, map[uint64]struct{}{})
-					topicFilters = append(topicFilters, []dbp.Data32{})
-				}
-				for j := 0; j < 3; j++ {
-					if strings.Contains(filter, strconv.FormatUint(uint64(j), 10)) {
-						seed := uint64((555*10+i)*10 + j)
-						if i == 0 {
-							addressMap[seed] = struct{}{}
-							addressFilter = append(addressFilter, genAddress(seed))
-						} else {
-							topicMaps[i-1][seed] = struct{}{}
-							topicFilters[i-1] = append(topicFilters[i-1], genHash(seed))
-						}
-					}
-				}
-			}
+			addressMap, addressFilter, topicMaps, topicFilters := assembleLogFilter(filterDesc)
 			// log.Printf("Addresses: %v", addressMap)
 			// log.Printf("Topics: %v", topicMaps)
 
@@ -738,48 +805,9 @@ func TestReadLog(t *testing.T) {
 						if from.CompareTo(to) > 0 {
 							continue
 						}
-						expectedLastKey := from.Prev()
-						limited := false
-						expectedLogs := []*dbresponses.Log{}
-						for _, logSeed := range logSeeds {
-							if logSeed.getLogKey().CompareTo(from) < 0 {
-								continue
-							}
-							if logSeed.getLogKey().CompareTo(to) > 0 {
-								continue
-							}
-							if len(addressMap) > 0 {
-								if _, ok := addressMap[logSeed.addressSeed]; !ok {
-									continue
-								}
-							}
-							valid := true
-							for i, topicMap := range topicMaps {
-								if len(topicMap) == 0 {
-									continue
-								}
-								if i >= len(logSeed.topicSeeds) {
-									valid = false
-									break
-								}
-								if _, ok := topicMap[logSeed.topicSeeds[i]]; !ok {
-									valid = false
-									break
-								}
-							}
-							if !valid {
-								continue
-							}
-							if len(expectedLogs) == limit {
-								limited = true
-								break
-							}
-							expectedLogs = append(expectedLogs, logSeed.getLogResponse())
-							expectedLastKey = logSeed.getLogKey()
-						}
-						if !limited {
-							expectedLastKey = to
-						}
+						expectedLogs, expectedLastKey, expectedErr := getLogSearchExpectedResult(
+							from, to, addressMap, topicMaps, limit,
+						)
 
 						logs, lastKey, err := txn.ReadLogs(
 							context.Background(),
@@ -790,11 +818,7 @@ func TestReadLog(t *testing.T) {
 							topicFilters,
 							limit,
 						)
-						if limited {
-							require.Equal(t, ErrLimited, err, "ReadLogs must return ErrLimited")
-						} else {
-							require.NoError(t, err, "ReadLogs must work without errors")
-						}
+						require.Equal(t, expectedErr, err, "ReadLogs must return right error")
 						require.Equal(t, expectedLastKey, lastKey, "ReadLogs must return right lastKey")
 						require.Equal(t, expectedLogs, logs, "ReadLogs must return right result")
 					}
@@ -805,3 +829,23 @@ func TestReadLog(t *testing.T) {
 		return nil
 	})
 }
+
+// func TestReadLogManual(t *testing.T) {
+// 	testView(t, true, true, func(txn *ViewTxn) error {
+// 		from := &dbtypes.LogKey{0, 0, 0}
+// 		to := &dbtypes.LogKey{1e9, 0, 0}
+// 		addressMap, addressFilter, topicMaps, topicFilters := assembleLogFilter([]string{"02", "02", "02", "02", "01"})
+// 		limit := 100
+
+// 		expectedResult, _, _ := getLogSearchExpectedResult(from, to, addressMap, topicMaps, limit)
+// 		expectedJson, _ := json.MarshalIndent(expectedResult, "", "  ")
+// 		fmt.Printf("Expected: %s\n", expectedJson)
+
+// 		result, _, _ := txn.ReadLogs(context.Background(), testChainId, from, to, addressFilter, topicFilters, limit)
+// 		js, _ := json.MarshalIndent(result, "", "  ")
+// 		fmt.Printf("Actual: %s\n", js)
+// 		_ = js
+
+// 		return nil
+// 	})
+// }
