@@ -10,7 +10,7 @@ type BlockFilter struct {
 	Metadata  dbp.VarData
 	From      BlockKey
 	Next      BlockKey
-	Last      BlockKey
+	To        BlockKey
 }
 
 func (f *BlockFilter) GetTinyPackChildrenPointers() ([]any, error) {
@@ -19,7 +19,7 @@ func (f *BlockFilter) GetTinyPackChildrenPointers() ([]any, error) {
 		&f.Metadata,
 		&f.From,
 		&f.Next,
-		&f.Last,
+		&f.To,
 	}, nil
 }
 
@@ -28,7 +28,7 @@ type TransactionFilter struct {
 	Metadata  dbp.VarData
 	From      TransactionKey
 	Next      TransactionKey
-	Last      TransactionKey
+	To        TransactionKey
 }
 
 func (f *TransactionFilter) GetTinyPackChildrenPointers() ([]any, error) {
@@ -37,7 +37,7 @@ func (f *TransactionFilter) GetTinyPackChildrenPointers() ([]any, error) {
 		&f.Metadata,
 		&f.From,
 		&f.Next,
-		&f.Last,
+		&f.To,
 	}, nil
 }
 
@@ -46,7 +46,7 @@ type LogFilter struct {
 	Metadata  dbp.VarData
 	From      LogKey
 	Next      LogKey
-	Last      LogKey
+	To        LogKey
 	Addresses tp.VarList[dbp.Data20]
 	Topics    tp.VarList[tp.VarList[dbp.Data32]]
 }
@@ -57,7 +57,7 @@ func (f *LogFilter) GetTinyPackChildrenPointers() ([]any, error) {
 		&f.Metadata,
 		&f.From,
 		&f.Next,
-		&f.Last,
+		&f.To,
 		&f.Addresses,
 		&f.Topics,
 	}, nil
