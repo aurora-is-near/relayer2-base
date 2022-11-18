@@ -3,7 +3,7 @@ package log
 import "github.com/spf13/viper"
 
 const (
-	defaultLogFilePath = "/tmp/relayer/log"
+	defaultLogFilePath = "/tmp/relayer/log/relayer.log"
 	defaultLogLevel    = "info"
 	defaultLogToFile   = true
 	defaultLogToStdOut = true
