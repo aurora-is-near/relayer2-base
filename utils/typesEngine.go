@@ -264,8 +264,12 @@ type TransactionRevertStatus struct {
 func NewTransactionStatus(respArg interface{}) (*TransactionStatus, error) {
 	resp, ok := respArg.((map[string]interface{}))["result"].([]interface{})
 	if !ok {
-		log.Log().Error().Msgf("call response is not in correct format: %s", resp)
-		return nil, errors.New("call response is not in correct format")
+		err, ok := respArg.((map[string]interface{}))["error"].(string)
+		if !ok {
+			return nil, errors.New("call response is not in correct format")
+		}
+		log.Log().Error().Msgf("error returned to eth_call: %v", err)
+		return nil, fmt.Errorf("%v", err)
 	}
 	lenResp := len(resp)
 	buf := make([]byte, lenResp)
@@ -277,7 +281,7 @@ func NewTransactionStatus(respArg interface{}) (*TransactionStatus, error) {
 	}
 
 	ts := &TransactionStatus{}
-	// TODO -- Should be recovered before release
+	// TODO -- An interim solution to handle "OutOfGas, OutOfFund, OutOfOffset, CallTooDeep" txs statuses
 	if len(buf) == 1 && buf[0] > 1 && buf[0] < 8 {
 		tmp := make([]byte, 1)
 		tmp[0] = 1 << buf[0]
