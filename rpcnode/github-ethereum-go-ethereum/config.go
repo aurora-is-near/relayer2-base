@@ -17,6 +17,7 @@
 package github_ethereum_go_ethereum
 
 import (
+	"aurora-relayer-go-common/cmd"
 	"aurora-relayer-go-common/log"
 
 	gel "github.com/ethereum/go-ethereum/log"
@@ -130,6 +131,7 @@ func GetConfig() *Config {
 	config := defaultConfig()
 	sub := viper.Sub(configPath)
 	if sub != nil {
+		cmd.BindSubViper(sub, configPath)
 		if err := sub.Unmarshal(&config); err != nil {
 			log.Log().Warn().Err(err).Msgf("failed to parse configuration [%s] from [%s], "+
 				"falling back to defaults", configPath, viper.ConfigFileUsed())
