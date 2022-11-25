@@ -1,6 +1,7 @@
 package endpoint
 
 import (
+	"aurora-relayer-go-common/cmd"
 	"aurora-relayer-go-common/log"
 	"aurora-relayer-go-common/utils"
 	"fmt"
@@ -112,6 +113,7 @@ func GetConfig() *Config {
 	c := defaultConfig()
 	sub := viper.Sub(configPath)
 	if sub != nil {
+		cmd.BindSubViper(sub, configPath)
 		if err := sub.Unmarshal(&c); err != nil {
 			log.Log().Warn().Err(err).Msgf("failed to parse configuration [%s] from [%s], "+
 				"falling back to defaults", configPath, viper.ConfigFileUsed())

@@ -1,6 +1,10 @@
 package log
 
-import "github.com/spf13/viper"
+import (
+	"aurora-relayer-go-common/cmd"
+
+	"github.com/spf13/viper"
+)
 
 const (
 	defaultLogFilePath = "/tmp/relayer/log/relayer.log"
@@ -31,6 +35,7 @@ func GetConfig() *Config {
 	config := defaultConfig()
 	sub := viper.Sub(configPath)
 	if sub != nil {
+		cmd.BindSubViper(sub, configPath)
 		_ = sub.Unmarshal(&config)
 	}
 	return config

@@ -1,18 +1,33 @@
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"fmt"
+	"runtime/debug"
 
-const (
-	version = "v 0.1.0"
+	"github.com/spf13/cobra"
 )
 
-func VersionCmd(f func(cmd *cobra.Command, args []string)) *cobra.Command {
+var versionInfo = ""
+
+var buildInfo = func() string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		return info.String()
+	}
+	return "Build info not available"
+}()
+
+func VersionCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "version",
-		Short: "command to manage/display config",
+		Use:     "version",
+		Aliases: []string{"v"},
+		Short:   "Command to display version and build information",
 		Run: func(cmd *cobra.Command, args []string) {
-			f(cmd, args)
-			println("lib: ", version)
+			if versionInfo != "" {
+				fmt.Println("Version:\t", versionInfo)
+				println("")
+			}
+			println("Build Info:")
+			println(buildInfo)
 		},
 	}
 }
