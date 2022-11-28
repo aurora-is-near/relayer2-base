@@ -4,15 +4,17 @@ import (
 	"aurora-relayer-go-common/types/primitives"
 	"crypto/rand"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/rpc"
 	"math/big"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/rpc"
 )
 
 const (
@@ -28,6 +30,8 @@ type Integer interface {
 }
 
 type Uint64 struct{ uint64 }
+
+type DataVec []uint8
 
 type Uint256 struct{ hexutil.Big }
 
@@ -68,6 +72,26 @@ func (ui64 *Uint64) UnmarshalJSON(data []byte) error {
 
 func (ui64 *Uint64) Uint64() uint64 {
 	return ui64.uint64
+}
+
+func (dv *DataVec) UnmarshalJSON(data []byte) error {
+	input := strings.TrimSpace(string(data))
+	if len(input) > 2 && input[0] == '"' && input[len(input)-1] == '"' {
+		if len(input) >= 3 && input[1:3] == "0x" {
+			buf, err := hex.DecodeString(input[3 : len(input)-1])
+			if err != nil {
+				return err
+			}
+			*dv = buf
+		} else {
+			buf, err := hex.DecodeString(input[1 : len(input)-1])
+			if err != nil {
+				return err
+			}
+			*dv = buf
+		}
+	}
+	return nil
 }
 
 func (ui256 Uint256) Bytes() []byte {

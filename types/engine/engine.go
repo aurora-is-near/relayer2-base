@@ -13,6 +13,7 @@ import (
 	"github.com/near/borsh-go"
 
 	cc "aurora-relayer-go-common/types/common"
+
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -87,7 +88,7 @@ type TransactionForCall struct {
 	Gas      *cc.Uint256 `json:"gas,omitempty"`
 	GasPrice *cc.Uint256 `json:"gasPrice,omitempty"`
 	Value    *cc.Uint256 `json:"value,omitempty"`
-	Data     *cc.Uint256 `json:"data,omitempty"`
+	Data     cc.DataVec  `json:"data,omitempty"`
 }
 
 // NewTransactionForCall allocates and returns a new empty TransactionForCall
@@ -131,9 +132,8 @@ func (tc TransactionForCall) Serialize() ([]byte, error) {
 	}
 	var data []uint8
 	if tc.Data != nil {
-		tmp := tc.Data.Bytes()
-		data = make([]uint8, len(tmp))
-		copy(data, tmp)
+		data = make([]uint8, len(tc.Data))
+		copy(data, tc.Data)
 	}
 
 	tmpObj := NewTransactionForCallEngine().SetFields(to.Address, from.Address, value, data)
@@ -261,7 +261,7 @@ type TransactionRevertStatus struct {
 func NewTransactionStatus(respArg interface{}) (*TransactionStatus, error) {
 	resp, ok := respArg.((map[string]interface{}))["result"].([]interface{})
 	if !ok {
-		err, ok := respArg.((map[string]interface{}))["errors"].(string)
+		err, ok := respArg.((map[string]interface{}))["error"].(string)
 		if !ok {
 			return nil, errors.New("call response is not in correct format")
 		}
