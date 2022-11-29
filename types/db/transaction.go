@@ -14,7 +14,7 @@ type Transaction struct {
 	Type                 uint64
 	From                 primitives.Data20
 	IsContractDeployment bool
-	ToOrContract         primitives.Data20
+	ToOrContract         tp.Nullable[primitives.Data20]
 	Nonce                primitives.Quantity
 	GasPrice             primitives.Quantity
 	GasLimit             primitives.Quantity

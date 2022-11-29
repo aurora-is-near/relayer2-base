@@ -25,7 +25,8 @@ func IndexerBlockToDbBlock(block *indexer.Block) *dbt.Block {
 }
 
 func IndexerTxnToDbTxn(txn *indexer.Transaction) *dbt.Transaction {
-	toOrContract := primitives.Data20FromHex("0x0") // TODO: temporarily assigning zero addr for corrupted blocks; both contract address and to address is null, what should we do?
+
+	toOrContract := tinypack.CreateNullable[primitives.Data20](nil)
 	isContractDeployment := false
 	if txn.ContractAddress != nil {
 		if txn.To != nil {
@@ -33,9 +34,11 @@ func IndexerTxnToDbTxn(txn *indexer.Transaction) *dbt.Transaction {
 				txn.Hash, txn.To.String(), txn.ContractAddress.String())
 		}
 		isContractDeployment = true
-		toOrContract = primitives.Data20FromBytes(txn.ContractAddress.Bytes())
+		contract := primitives.Data20FromBytes(txn.ContractAddress.Bytes())
+		toOrContract = tinypack.CreateNullable[primitives.Data20](&contract)
 	} else if txn.To != nil {
-		toOrContract = primitives.Data20FromBytes(txn.To.Bytes())
+		to := primitives.Data20FromBytes(txn.To.Bytes())
+		toOrContract = tinypack.CreateNullable[primitives.Data20](&to)
 	} else {
 		log.Log().Warn().Msgf("both contract address and to address is null for txn: [%v]", txn.Hash)
 	}

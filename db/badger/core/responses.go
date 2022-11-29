@@ -56,7 +56,7 @@ func makeTransactionResponse(
 		Value:            data.Value,
 	}
 	if !data.IsContractDeployment {
-		tx.To = &data.ToOrContract
+		tx.To = data.ToOrContract.Ptr
 	}
 	if data.Type >= 1 {
 		accessList := make([]*response.AccessListEntry, len(data.AccessList.Content))
@@ -122,9 +122,9 @@ func makeTransactionReceiptResponse(
 		Type:              primitives.HexUint(txData.Type),
 	}
 	if txData.IsContractDeployment {
-		txReceipt.ContractAddress = &txData.ToOrContract
+		txReceipt.ContractAddress = txData.ToOrContract.Ptr
 	} else {
-		txReceipt.To = &txData.ToOrContract
+		txReceipt.To = txData.ToOrContract.Ptr
 	}
 	if txData.Status {
 		txReceipt.Status = 1
