@@ -18,10 +18,18 @@ package github_ethereum_go_ethereum
 
 import (
 	"aurora-relayer-go-common/broker"
+	"aurora-relayer-go-common/log"
 	eventbroker "aurora-relayer-go-common/rpcnode/github-ethereum-go-ethereum/events"
+	"net/http"
+	"os"
+
+	gel "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/jinzhu/copier"
-	"net/http"
+)
+
+const (
+	LoggerLevelConfPath = "logger.level"
 )
 
 // GoEthereum is a container on which underlying go-ethereum services can be registered.
@@ -43,6 +51,11 @@ func NewWithConf(conf *Config) (*GoEthereum, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Disable geth p2p server operation
+	n.Server().Config.NoDial = true
+	n.Server().Config.NoDiscovery = true
+	n.Server().Config.EnableMsgEvents = false
+	configureGoEthRootLogger()
 
 	// Start eventbroker if WS configured
 	eb := eventbroker.NewEventBroker()
@@ -66,6 +79,45 @@ func (ge GoEthereum) WithMiddleware(name string, path string, middleware func(ha
 		panic(err)
 	}
 	ge.RegisterHandler(name, path, middleware(h))
+}
+
+// HandleConfigChange re-configures the go-eth root.Logger if needed
+func (ge *GoEthereum) HandleConfigChange() {
+	configureGoEthRootLogger()
+}
+
+// configureGoEthRootLogger configures the go-eth root.Logger that used by its internal packages
+func configureGoEthRootLogger() {
+	logConf := log.GetConfig()
+	gLvl, err := gel.LvlFromString(logConf.Level)
+	if err != nil {
+		// go-eth doesn't support fatal and panic log levels. Therefore, LvlError is assigned when there is error
+		gLvl = gel.LvlError
+		log.Log().Error().Err(err).Msgf("error while setting the go-eth root.Logger Level: %s ", logConf.Level)
+	}
+
+	var consoleHandler gel.Handler
+	var fileHandler gel.Handler
+	if logConf.LogToConsole {
+		consoleHandler = gel.LvlFilterHandler(
+			gLvl,
+			gel.StreamHandler(os.Stderr, gel.JSONFormatEx(false, true)))
+	}
+	if logConf.LogToFile {
+		fileHandler = gel.LvlFilterHandler(
+			gLvl,
+			gel.Must.FileHandler(logConf.FilePath, gel.JSONFormatEx(false, true)))
+	}
+
+	if logConf.LogToConsole && logConf.LogToFile {
+		gel.Root().SetHandler(gel.MultiHandler(consoleHandler, fileHandler))
+	} else if logConf.LogToConsole {
+		gel.Root().SetHandler(consoleHandler)
+	} else if logConf.LogToFile {
+		gel.Root().SetHandler(fileHandler)
+	} else {
+		gel.Root().SetHandler(gel.DiscardHandler())
+	}
 }
 
 func convertConfigurationToEthNode(confAurora *Config) *node.Config {
