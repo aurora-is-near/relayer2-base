@@ -1,18 +1,31 @@
 package log
 
 import (
-	"github.com/rs/zerolog"
 	"io"
 	"os"
 	"sync"
+
+	"github.com/rs/zerolog"
 )
+
+var global *Logger
+var lock = &sync.Mutex{}
 
 type Logger struct {
 	zerolog.Logger
 }
 
-var global *Logger
-var lock = &sync.Mutex{}
+func (l *Logger) HandleConfigChange() {
+	oldLvl := zerolog.GlobalLevel()
+	cfg := GetConfig()
+	if cfg.Level != oldLvl.String() {
+		lvl, err := zerolog.ParseLevel(cfg.Level)
+		if err != nil {
+			lvl = oldLvl
+		}
+		zerolog.SetGlobalLevel(lvl)
+	}
+}
 
 // Log returns the common library global logger
 func Log() *Logger {

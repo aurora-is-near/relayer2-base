@@ -4,8 +4,7 @@ import (
 	"aurora-relayer-go-common/db"
 	"aurora-relayer-go-common/log"
 	"encoding/json"
-	"github.com/fsnotify/fsnotify"
-	"github.com/spf13/viper"
+
 	"golang.org/x/net/context"
 )
 
@@ -76,10 +75,6 @@ func New(dbh db.Handler) *Endpoint {
 		withProcessor(&ep, p)
 	}
 
-	viper.OnConfigChange(func(e fsnotify.Event) {
-		handleConfigChange(&ep)
-	})
-
 	return &ep
 }
 
@@ -87,6 +82,6 @@ func withProcessor(e *Endpoint, p Processor) {
 	e.Processors = append(e.Processors, p)
 }
 
-func handleConfigChange(e *Endpoint) {
+func (e *Endpoint) HandleConfigChange() {
 	e.Config = GetConfig()
 }
