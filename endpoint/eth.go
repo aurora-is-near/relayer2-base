@@ -3,20 +3,22 @@ package endpoint
 import (
 	"aurora-relayer-go-common/types"
 	"aurora-relayer-go-common/types/common"
+	"aurora-relayer-go-common/types/engine"
 	errs "aurora-relayer-go-common/types/errors"
 	"aurora-relayer-go-common/types/primitives"
 	"aurora-relayer-go-common/types/request"
 	"aurora-relayer-go-common/types/response"
 	"context"
+
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
 var (
-	zero     = common.IntToUint256(0)
-	syncing  = false
-	mining   = false
-	full     = false
-	accounts = []string{}
+	zero       = common.IntToUint256(0)
+	syncing    = false
+	mining     = false
+	full       = false
+	emptyArray = []string{}
 )
 
 type Eth struct {
@@ -31,28 +33,28 @@ func NewEth(endpoint *Endpoint) *Eth {
 //
 //	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
 func (e *Eth) Accounts(_ context.Context) (*[]string, error) {
-	return &accounts, nil
+	return &emptyArray, nil
 }
 
 // Coinbase returns constant 0x0, see relayer.yml to configure coinBase
 //
 //	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
 func (e *Eth) Coinbase(_ context.Context) (*string, error) {
-	return &e.Config.EthConfig.zeroAddress, nil
+	return &e.Config.EthConfig.ZeroAddress, nil
 }
 
 // ProtocolVersion returns constant 0x41, see relayer.yml to configure ProtocolVersion
 //
 //	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
 func (e *Eth) ProtocolVersion(_ context.Context) (*common.Uint256, error) {
-	return &e.Config.EthConfig.protocolVersion, nil
+	return &e.Config.EthConfig.ProtocolVersion, nil
 }
 
 // Hashrate returns constant 0x0, see relayer.yml to configure Hashrate
 //
 //	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
 func (e *Eth) Hashrate(_ context.Context) (*common.Uint256, error) {
-	return &e.Config.EthConfig.hashrate, nil
+	return &e.Config.EthConfig.Hashrate, nil
 }
 
 // Mining returns constant false
@@ -238,26 +240,11 @@ func (e *Eth) NewBlockFilter(ctx context.Context) (*common.Uint256, error) {
 	return &fid, nil
 }
 
-// NewPendingTransactionFilter creates a filter and returns newly created filter ID on success. To check if the state
-// has changed, call "eth_getFilterChanges". Filter created with this API behaves similarly to filter created by
-// NewBlockFilter. (i.e.: on eth_getFilterChanges call, it returns hashes of the transactions w.r.t filter regardless
-// of they are pending or not)
+// NewPendingTransactionFilter returns empty array
 //
-// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
-// 	On DB failure, returns errors code '-32000' with custom message.
-func (e *Eth) NewPendingTransactionFilter(ctx context.Context) (*common.Uint256, error) {
-	bn, err := e.DbHandler.BlockNumber(ctx)
-	if err != nil {
-		return nil, &errs.GenericError{Err: err}
-	}
-	fromBlock := uint64(*bn)
-	fid := common.RandomUint256()
-	dbf := types.Filter{FromBlock: &fromBlock}.ToTxnFilter()
-	err = e.DbHandler.StoreTransactionFilter(ctx, fid.Data32(), dbf)
-	if err != nil {
-		return nil, &errs.GenericError{Err: err}
-	}
-	return &fid, nil
+//	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+func (e *Eth) NewPendingTransactionFilter(_ context.Context) (*common.Uint256, error) {
+	return &zero, nil
 }
 
 // UninstallFilter deletes a filter with given filter id and returns true on success. Additionally, filters timeout when
@@ -344,6 +331,53 @@ func (e *Eth) GetUncleCountByBlockHash(_ context.Context, _ common.H256) (*commo
 // 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
 func (e *Eth) GetUncleCountByBlockNumber(_ context.Context, _ common.BN64) (*common.Uint256, error) {
 	return &zero, nil
+}
+
+// GetUncleByBlockHashAndIndex returns null/nil
+//
+// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+// 	On missing or invalid param returns error code '-32602' with custom message.
+func (e *Eth) GetUncleByBlockHashAndIndex(_ context.Context, _ common.H256, _ common.Uint64) (*string, error) {
+	return nil, nil
+}
+
+// GetUncleByBlockNumberAndIndex returns null/nil
+//
+// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+// 	On missing or invalid param returns error code '-32602' with custom message.
+func (e *Eth) GetUncleByBlockNumberAndIndex(_ context.Context, _ common.BN64, _ common.Uint64) (*string, error) {
+	return nil, nil
+}
+
+// GetCompilers returns empty array
+//
+//	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+func (e *Eth) GetCompilers(_ context.Context) (*[]string, error) {
+	return &emptyArray, nil
+}
+
+// PendingTransactions returns empty array
+//
+//	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+func (e *Eth) PendingTransactions(_ context.Context) (*[]string, error) {
+	return &emptyArray, nil
+}
+
+// EstimateGas returns constant gas estimation provided in configuration file.
+// The endpoint should be proxied to Mainnet to get an estimate of how much gas is necessary to allow the transaction to complete.
+//
+// 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
+// 	On missing or invalid param returns error code '-32602' with custom message.
+func (e *Eth) EstimateGas(_ context.Context, txs engine.TransactionForCall, number *common.BN64) (*common.Uint256, error) {
+	return &e.Config.EthConfig.GasEstimate, nil
+}
+
+// GasPrice returns constant gas price provided in the configuration file.
+// The endpoint should be proxied to Mainnet to get the value used in the Aurora infrastructure.
+//
+// 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
+func (e *Eth) GasPrice(_ context.Context) (*common.Uint256, error) {
+	return &e.Config.EthConfig.GasPrice, nil
 }
 
 func (e *Eth) parseRequestFilter(ctx context.Context, filter *request.Filter) (*types.Filter, error) {

@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	clientVersion = "Aurora Relayer"
+	clientVersion = "Aurora"
 )
 
 type Web3 struct {
