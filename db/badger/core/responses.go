@@ -6,27 +6,36 @@ import (
 	"aurora-relayer-go-common/types/response"
 )
 
+var (
+	sha3Uncles        = primitives.Data32FromHex("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347")
+	nonce             = primitives.Data8FromBytes(nil)
+	difficulty        = primitives.HexUint(0)
+	extraData         = primitives.VarDataFromBytes(nil)
+	uncles            = []primitives.Data[primitives.Len32]{}
+	cumulativeGasUsed = primitives.QuantityFromUint64(0) // TODO: check
+)
+
 func makeBlockResponse(height uint64, hash primitives.Data32, data dbt.Block, txs []any) *response.Block {
 	return &response.Block{
 		Number:           primitives.HexUint(height),
 		Hash:             hash,
 		ParentHash:       data.ParentHash,
-		Nonce:            primitives.Data8FromBytes(nil),
-		Sha3Uncles:       primitives.Data32FromBytes(nil),
+		Nonce:            nonce,
+		Sha3Uncles:       sha3Uncles,
 		LogsBloom:        data.LogsBloom,
 		TransactionsRoot: data.TransactionsRoot,
 		StateRoot:        data.StateRoot,
 		ReceiptsRoot:     data.ReceiptsRoot,
 		Miner:            data.Miner,
-		Difficulty:       primitives.HexUint(0),
-		TotalDifficulty:  primitives.HexUint(0),
-		ExtraData:        primitives.VarDataFromBytes(nil),
+		Difficulty:       difficulty,
+		TotalDifficulty:  difficulty,
+		ExtraData:        extraData,
 		Size:             primitives.HexUint(data.Size),
 		GasLimit:         data.GasLimit,
 		GasUsed:          data.GasUsed,
 		Timestamp:        primitives.HexUint(data.Timestamp),
 		Transactions:     txs,
-		Uncles:           []primitives.Data[primitives.Len32]{},
+		Uncles:           uncles,
 	}
 }
 
@@ -111,7 +120,7 @@ func makeTransactionReceiptResponse(
 	txReceipt := &response.TransactionReceipt{
 		BlockHash:         blockHash,
 		BlockNumber:       primitives.HexUint(height),
-		CumulativeGasUsed: primitives.QuantityFromUint64(0), // TODO: check
+		CumulativeGasUsed: cumulativeGasUsed,
 		EffectiveGasPrice: txData.GasPrice,
 		From:              txData.From,
 		GasUsed:           primitives.HexUint(txData.GasUsed),
