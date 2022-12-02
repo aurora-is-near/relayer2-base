@@ -22,9 +22,11 @@ const (
 )
 
 type EthConfig struct {
-	protocolVersion common.Uint256 `mapstructure:"protocolVersion"`
-	hashrate        common.Uint256 `mapstructure:"hashrate"`
-	zeroAddress     string         `mapstructure:"zeroAddress"`
+	ProtocolVersion common.Uint256 `mapstructure:"protocolVersion"`
+	Hashrate        common.Uint256 `mapstructure:"hashrate"`
+	GasEstimate     common.Uint256 `mapstructure:"gasEstimate"`
+	GasPrice        common.Uint256 `mapstructure:"gasPrice"`
+	ZeroAddress     string         `mapstructure:"zeroAddress"`
 }
 
 type Config struct {
@@ -36,9 +38,11 @@ type Config struct {
 }
 
 type ethConfig struct {
-	protocolVersion int `mapstructure:"protocolVersion"`
-	hashrate        int `mapstructure:"hashrate"`
-	zeroAddress     int `mapstructure:"zeroAddress"`
+	ProtocolVersion int `mapstructure:"protocolVersion"`
+	Hashrate        int `mapstructure:"hashrate"`
+	GasEstimate     int `mapstructure:"gasEstimate"`
+	GasPrice        int `mapstructure:"gasPrice"`
+	ZeroAddress     int `mapstructure:"zeroAddress"`
 }
 
 type EngineConfig struct {
@@ -89,9 +93,11 @@ func defaultConfig() *config {
 		},
 		DisabledEndpoints: []string{},
 		EthConfig: ethConfig{
-			protocolVersion: 0x41,
-			hashrate:        0,
-			zeroAddress:     0,
+			ProtocolVersion: 0x41,
+			Hashrate:        0,
+			GasEstimate:     0x6691b7,
+			GasPrice:        0x42c1d80,
+			ZeroAddress:     0,
 		},
 		EngineConfig: engineConfig{
 			NearNetworkID:                 "",
@@ -122,9 +128,11 @@ func GetConfig() *Config {
 
 	config := &Config{
 		EthConfig: EthConfig{
-			protocolVersion: common.IntToUint256(c.EthConfig.protocolVersion),
-			hashrate:        common.IntToUint256(c.EthConfig.hashrate),
-			zeroAddress:     fmt.Sprintf("0x%040x", c.EthConfig.zeroAddress),
+			ProtocolVersion: common.IntToUint256(c.EthConfig.ProtocolVersion),
+			Hashrate:        common.IntToUint256(c.EthConfig.Hashrate),
+			GasEstimate:     common.IntToUint256(c.EthConfig.GasEstimate),
+			GasPrice:        common.IntToUint256(c.EthConfig.GasPrice),
+			ZeroAddress:     fmt.Sprintf("0x%040x", c.EthConfig.ZeroAddress),
 		},
 		EngineConfig: EngineConfig{
 			NearNetworkID:                 c.EngineConfig.NearNetworkID,

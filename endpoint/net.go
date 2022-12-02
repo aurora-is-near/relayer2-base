@@ -6,15 +6,15 @@ import (
 
 var (
 	peerCount = "0x0"
-	listening = false
+	listening = true
 )
 
 type Net struct {
 	*Endpoint
 }
 
-func NewNet(endpoint *Endpoint) *Eth {
-	return &Eth{endpoint}
+func NewNet(endpoint *Endpoint) *Net {
+	return &Net{endpoint}
 }
 
 // Listening always returns true on success
