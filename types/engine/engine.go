@@ -96,7 +96,8 @@ func NewTransactionForCall() *TransactionForCall {
 	return new(TransactionForCall)
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
+// UnmarshalJSON implements json.Unmarshaler
+// This method is needed to make `.To` field of the TransactionForCall struct required/mandatory
 func (tc *TransactionForCall) UnmarshalJSON(data []byte) error {
 	type tmpType TransactionForCall
 	tmp := tmpType{}
@@ -108,12 +109,7 @@ func (tc *TransactionForCall) UnmarshalJSON(data []byte) error {
 		return errors.New("missing value for `To` address")
 	}
 
-	tc.From = tmp.From
-	tc.To = tmp.To
-	tc.Gas = tmp.Gas
-	tc.GasPrice = tmp.GasPrice
-	tc.Value = tmp.Value
-	tc.Data = tmp.Data
+	*tc = TransactionForCall(tmp)
 	return nil
 }
 
