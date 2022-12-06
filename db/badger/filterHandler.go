@@ -90,7 +90,7 @@ func (h *FilterHandler) StoreFilter(ctx context.Context, filterId primitives.Dat
 	} else if tf, ok := filter.(*dbt.TransactionFilter); ok {
 		return h.StoreTransactionFilter(ctx, filterId, tf)
 	} else if lf, ok := filter.(*dbt.LogFilter); ok {
-		return h.StoreFilter(ctx, filterId, lf)
+		return h.StoreLogFilter(ctx, filterId, lf)
 	}
 	return errors.New("unknown filter type")
 }
