@@ -4,6 +4,7 @@ import (
 	"aurora-relayer-go-common/log"
 	error2 "aurora-relayer-go-common/types/errors"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -187,8 +188,22 @@ func NewQueryResult(resp interface{}) (*QueryResult, error) {
 	return &QueryResult{Result: result}, nil
 }
 
-// ToResponse processes the engine query response, retrieves the `result` map and converts it to Uint256 response
-func (r *QueryResult) ToResponse() (*cc.Uint256, error) {
+// ToUint256Response processes the engine query response, retrieves the `result` map and converts it to Uint256 response
+func (r *QueryResult) ToUint256Response() (*cc.Uint256, error) {
+	buf := r.resultToByteBuffer()
+	ui256 := cc.Uint256FromBytes(buf)
+	return &ui256, nil
+}
+
+// ToStringResponse processes the engine query response, retrieves the `result` map and converts it to string response
+func (r *QueryResult) ToStringResponse() (*string, error) {
+	buf := r.resultToByteBuffer()
+	strHex := "0x" + hex.EncodeToString(buf)
+	return &strHex, nil
+}
+
+// resultToByteBuffer processes the engine query response and creates a byte buffer
+func (r *QueryResult) resultToByteBuffer() []byte {
 	length := len(r.Result)
 	buf := make([]byte, length)
 	for i, b := range r.Result {
@@ -197,8 +212,7 @@ func (r *QueryResult) ToResponse() (*cc.Uint256, error) {
 			buf[i] = byte(t)
 		}
 	}
-	ui256 := cc.Uint256FromBytes(buf)
-	return &ui256, nil
+	return buf
 }
 
 // SubmitResultV2 is the type used to handle engine response for sendRawTransactionSync endpoint

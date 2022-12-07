@@ -212,7 +212,10 @@ func Uint256FromBytes(b []byte) Uint256 {
 	return Uint256{Big: hexutil.Big(*big.NewInt(0).SetBytes(b))}
 }
 
-func Uint256FromHex(s string) Uint256 {
-	big, _ := hexutil.DecodeBig(s)
-	return Uint256{Big: hexutil.Big(*big)}
+func Uint256FromHex(s string) (*Uint256, error) {
+	big, err := hexutil.DecodeBig(s)
+	if err != nil {
+		return nil, err
+	}
+	return &Uint256{Big: hexutil.Big(*big)}, nil
 }
