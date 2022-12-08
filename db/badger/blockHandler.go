@@ -235,7 +235,7 @@ func (h *BlockHandler) GetLogs(ctx context.Context, filter *dbt.LogFilter) ([]*r
 	var resp []*response.Log
 	var err error
 	err = h.db.View(func(txn *core.ViewTxn) error {
-		resp, _, err = h.getLogs(ctx, txn, filter)
+		resp, _, err = h.getLogs(ctx, txn, filter, true)
 		return err
 	})
 	return resp, err
@@ -279,7 +279,7 @@ func (h *BlockHandler) GetFilterChanges(ctx context.Context, filter any) (*[]int
 		var logs []*response.Log
 		var lastKey *dbt.LogKey
 		err = h.db.View(func(txn *core.ViewTxn) error {
-			logs, lastKey, err = h.getLogs(ctx, txn, lf)
+			logs, lastKey, err = h.getLogs(ctx, txn, lf, false)
 			if lastKey != nil && lastKey.CompareTo(&lf.From) > -1 {
 				lf.Next = *lastKey.Next()
 			}
@@ -368,24 +368,39 @@ func (h *BlockHandler) InsertBlock(block *indexer.Block) error {
 	return nil
 }
 
-func (h *BlockHandler) getLogs(ctx context.Context, txn *core.ViewTxn, filter *dbt.LogFilter) ([]*response.Log, *dbt.LogKey, error) {
+func (h *BlockHandler) getLogs(ctx context.Context, txn *core.ViewTxn, filter *dbt.LogFilter, ignoreNext bool) ([]*response.Log, *dbt.LogKey, error) {
 	var from, to, lastKey *dbt.LogKey
 	var err error
 	var resp []*response.Log
+	var bk *dbt.BlockKey
 
 	chainId := utils.GetChainId(ctx)
 
-	if filter.Next.BlockHeight == 0 && filter.Next.TransactionIndex == 0 && filter.Next.LogIndex == 0 {
-		from = &filter.From
+	if ignoreNext || (filter.Next.BlockHeight == 0 && filter.Next.TransactionIndex == 0 && filter.Next.LogIndex == 0) {
+		// for GetLogs and GetFilterLogs, use the initial filter definition, i.e.: ignoreNext = true => use initial 'from'
+		// or in case 'next' is all zero, then also use initial 'from'
+		if filter.From.BlockHeight == 0 && filter.From.TransactionIndex == 0 && filter.From.LogIndex == 0 {
+			// use the latest block key if initial 'from' is all zero
+			bk, err = txn.ReadLatestBlockKey(chainId)
+			if err != nil {
+				return nil, nil, err
+			}
+			from = &dbt.LogKey{BlockHeight: bk.Height, TransactionIndex: 0, LogIndex: 0}
+		} else {
+			from = &filter.From
+		}
 	} else {
+		// for GetFilterChanges (i.e.: ignoreNext = false) and non-zero 'next' case use next as 'from'
 		from = &filter.Next
 	}
 
-	if filter.To.BlockHeight == 0 && filter.Next.TransactionIndex == 0 && filter.Next.BlockHeight == 0 {
-		var bk *dbt.BlockKey
-		bk, err = txn.ReadLatestBlockKey(chainId)
-		if err != nil {
-			return nil, nil, err
+	if filter.To.BlockHeight == 0 && filter.To.TransactionIndex == 0 && filter.To.BlockHeight == 0 {
+		// use the latest block key if initial 'to' is all zero
+		if bk == nil {
+			bk, err = txn.ReadLatestBlockKey(chainId)
+			if err != nil {
+				return nil, nil, err
+			}
 		}
 		to = &dbt.LogKey{BlockHeight: bk.Height, TransactionIndex: 0, LogIndex: 0}
 	} else {
@@ -397,9 +412,18 @@ func (h *BlockHandler) getLogs(ctx context.Context, txn *core.ViewTxn, filter *d
 	for i, t := range filter.Topics.Content {
 		topics[i] = t.Content
 	}
-	resp, lastKey, err = txn.ReadLogs(ctx, chainId, from, to, addresses, topics, 1000)
-	if err != nil && len(resp) > 0 {
-		return resp, lastKey, nil
+
+	if from.CompareTo(to) > 0 {
+		// unlikely but can happen if, for the same filter, getFilterChanges called twice within one block indexing time.
+		// i.e.: latest block not changed on DB since the last call, in such case returns next.prev() which is the last
+		// log's key returned. => the caller increments it to set next again if necessary, see BlockHandler.GetLogs and
+		// BlockHandler.GetFilterChanges.
+		return resp, filter.Next.Prev(), nil
+	} else {
+		resp, lastKey, err = txn.ReadLogs(ctx, chainId, from, to, addresses, topics, 1000)
+		if err != nil && len(resp) > 0 {
+			return resp, lastKey, nil
+		}
 	}
 	return resp, lastKey, err
 }
