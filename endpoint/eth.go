@@ -323,14 +323,14 @@ func (e *Eth) GetFilterLogs(ctx context.Context, filterId common.Uint256) (*[]*r
 // GetUncleCountByBlockHash returns zero
 //
 // 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
-func (e *Eth) GetUncleCountByBlockHash(_ context.Context, _ common.H256) (*common.Uint256, error) {
+func (e *Eth) GetUncleCountByBlockHash(_ context.Context, _ *common.H256) (*common.Uint256, error) {
 	return &zero, nil
 }
 
 // GetUncleCountByBlockNumber returns zero
 //
 // 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
-func (e *Eth) GetUncleCountByBlockNumber(_ context.Context, _ common.BN64) (*common.Uint256, error) {
+func (e *Eth) GetUncleCountByBlockNumber(_ context.Context, _ *common.BN64) (*common.Uint256, error) {
 	return &zero, nil
 }
 
@@ -338,7 +338,7 @@ func (e *Eth) GetUncleCountByBlockNumber(_ context.Context, _ common.BN64) (*com
 //
 // 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
 // 	On missing or invalid param returns error code '-32602' with custom message.
-func (e *Eth) GetUncleByBlockHashAndIndex(_ context.Context, _ common.H256, _ common.Uint64) (*string, error) {
+func (e *Eth) GetUncleByBlockHashAndIndex(_ context.Context, _ *common.H256, _ *common.Uint64) (*string, error) {
 	return nil, nil
 }
 
@@ -346,7 +346,7 @@ func (e *Eth) GetUncleByBlockHashAndIndex(_ context.Context, _ common.H256, _ co
 //
 // 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
 // 	On missing or invalid param returns error code '-32602' with custom message.
-func (e *Eth) GetUncleByBlockNumberAndIndex(_ context.Context, _ common.BN64, _ common.Uint64) (*string, error) {
+func (e *Eth) GetUncleByBlockNumberAndIndex(_ context.Context, _ *common.BN64, _ *common.Uint64) (*string, error) {
 	return nil, nil
 }
 

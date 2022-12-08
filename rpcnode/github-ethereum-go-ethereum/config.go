@@ -119,7 +119,7 @@ func defaultConfig() *Config {
 		HTTPHost:         DefaultHost,
 		HTTPPort:         DefaultHTTPPort,
 		HTTPPathPrefix:   DefaultPathPrefix,
-		HTTPModules:      []string{"net", "web3", "eth"},
+		HTTPModules:      []string{"net", "web3", "eth", "parity"},
 		HTTPVirtualHosts: []string{},
 		HTTPCors:         []string{},
 		HTTPTimeouts:     rpc.DefaultHTTPTimeouts,
