@@ -119,25 +119,25 @@ func (e *EthProcessorAware) GetFilterLogs(ctx context.Context, filterId common.U
 	}, filterId)
 }
 
-func (e *EthProcessorAware) GetUncleCountByBlockHash(ctx context.Context, hash common.H256) (*common.Uint256, error) {
+func (e *EthProcessorAware) GetUncleCountByBlockHash(ctx context.Context, hash *common.H256) (*common.Uint256, error) {
 	return Process(ctx, "eth_getUncleCountByBlockHash", e.Endpoint, func(ctx context.Context) (*common.Uint256, error) {
 		return e.Eth.GetUncleCountByBlockHash(ctx, hash)
 	}, hash)
 }
 
-func (e *EthProcessorAware) GetUncleCountByBlockNumber(ctx context.Context, number common.BN64) (*common.Uint256, error) {
+func (e *EthProcessorAware) GetUncleCountByBlockNumber(ctx context.Context, number *common.BN64) (*common.Uint256, error) {
 	return Process(ctx, "eth_getUncleCountByBlockNumber", e.Endpoint, func(ctx context.Context) (*common.Uint256, error) {
 		return e.Eth.GetUncleCountByBlockNumber(ctx, number)
 	}, number)
 }
 
-func (e *EthProcessorAware) GetUncleByBlockHashAndIndex(ctx context.Context, hash common.H256, index common.Uint64) (*string, error) {
+func (e *EthProcessorAware) GetUncleByBlockHashAndIndex(ctx context.Context, hash *common.H256, index *common.Uint64) (*string, error) {
 	return Process(ctx, "eth_getUncleCountByHashAndIndex", e.Endpoint, func(ctx context.Context) (*string, error) {
 		return e.Eth.GetUncleByBlockHashAndIndex(ctx, hash, index)
 	}, hash, index)
 }
 
-func (e *EthProcessorAware) GetUncleByBlockNumberAndIndex(ctx context.Context, number common.BN64, index common.Uint64) (*string, error) {
+func (e *EthProcessorAware) GetUncleByBlockNumberAndIndex(ctx context.Context, number *common.BN64, index *common.Uint64) (*string, error) {
 	return Process(ctx, "eth_getUncleByBlockNumberAndIndex", e.Endpoint, func(ctx context.Context) (*string, error) {
 		return e.Eth.GetUncleByBlockNumberAndIndex(ctx, number, index)
 	}, number, index)
