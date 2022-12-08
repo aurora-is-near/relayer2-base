@@ -9,6 +9,7 @@ import (
 	"aurora-relayer-go-common/types/request"
 	"aurora-relayer-go-common/types/response"
 	"context"
+	"errors"
 
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -394,6 +395,18 @@ func (e *Eth) parseRequestFilter(ctx context.Context, filter *request.Filter) (*
 		}
 		if filter.FromBlock != nil {
 			f.FromBlock = filter.FromBlock.Uint64()
+		}
+
+		// toBlock specified while fromBlock not => possible from > to case since fromBlock is latest if not specified
+		if f.FromBlock == nil && f.ToBlock != nil {
+			return nil, errors.New("fromBlock cannot be latest while toBlock is specified")
+		}
+
+		// if both specified and from > to then do not save filter at first place
+		if f.FromBlock != nil && f.ToBlock != nil {
+			if *f.FromBlock > *f.ToBlock {
+				return nil, errors.New("fromBlock cannot be greater than toBlock")
+			}
 		}
 	}
 
