@@ -65,16 +65,18 @@ func TestFormatFilterOptions(t *testing.T) {
 		panic(err)
 	}
 
-	ca1 := common.HexStringToAddress("0x2")
-	ca2 := common.HexStringToAddress("0x1")
-	ca3 := common.HexStringToAddress("0x2")
-	ca4 := common.HexStringToAddress("0x1")
-	ca5 := common.HexStringToAddress("0x3")
+	ca1 := primitives.Data20FromHex("0x2")
+	ca2 := primitives.Data20FromHex("0x1")
+	ca3 := primitives.Data20FromHex("0x2")
+	ca4 := primitives.Data20FromHex("0x1")
+	ca5 := primitives.Data20FromHex("0x3")
 
+	blockHash := primitives.Data32FromHex("0xa")
+	filterHash := common.HexStringToHash(blockHash.Hex())
 	var blockData = indexer.Block{
-		ChainId: common.IntToUint64(1313161554),
-		Height:  common.IntToUint64(1),
-		Hash:    common.HexStringToHash("a"),
+		ChainId: 1313161554,
+		Height:  1,
+		Hash:    blockHash,
 		Transactions: []*indexer.Transaction{
 			{ContractAddress: &ca1},
 			{ContractAddress: &ca2},
@@ -106,7 +108,7 @@ func TestFormatFilterOptions(t *testing.T) {
 		{
 			name: "blockHash is added",
 			data: request.Filter{
-				BlockHash: &blockData.Hash,
+				BlockHash: &filterHash,
 			},
 			wantFrom:    nil,
 			wantTo:      nil,

@@ -1,6 +1,9 @@
 package codec
 
-import "github.com/fxamacker/cbor/v2"
+import (
+	"aurora-relayer-go-common/log"
+	"github.com/fxamacker/cbor/v2"
+)
 
 type CborCodec struct {
 	Encoder
@@ -8,20 +11,28 @@ type CborCodec struct {
 }
 
 func NewCborCodec() Codec {
-	enc, dec := cborEncDec()
-	return CborCodec{enc, dec}
+	return CborCodec{
+		Encoder: CborEncoder(),
+		Decoder: CborDecoder(),
+	}
 }
 
-func cborEncDec() (Encoder, Decoder) {
+func CborDecoder() cbor.DecMode {
+	dec, err := cbor.DecOptions{
+		MaxArrayElements: 2147483647,
+	}.DecMode()
+	if err != nil {
+		log.Log().Fatal().Err(err).Msg("failed to initialize CBOR decoder")
+	}
+	return dec
+}
+
+func CborEncoder() cbor.EncMode {
 	enc, err := cbor.EncOptions{
 		BigIntConvert: cbor.BigIntConvertShortest,
 	}.EncMode()
 	if err != nil {
-		panic(err)
+		log.Log().Fatal().Err(err).Msg("failed to initialize CBOR encoder")
 	}
-	dec, err := cbor.DecOptions{}.DecMode()
-	if err != nil {
-		panic(err)
-	}
-	return enc, dec
+	return enc
 }
