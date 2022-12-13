@@ -338,18 +338,17 @@ func (h *BlockHandler) InsertBlock(block *indexer.Block) error {
 	writer := h.db.NewWriter()
 	defer writer.Cancel()
 
-	chainId := block.ChainId.Uint64()
-	height := block.Height.Uint64()
-	hash := primitives.DataFromBytes[primitives.Len32](block.Hash.Bytes())
+	chainId := block.ChainId
+	height := block.Height
+	hash := block.Hash
 	err := writer.InsertBlock(chainId, height, hash, utils.IndexerBlockToDbBlock(block))
 	if err != nil {
 		return err
 	}
 
 	for i, t := range block.Transactions {
-		txnHash := primitives.DataFromBytes[primitives.Len32](t.Hash.Bytes())
 		txnIndex := uint64(i)
-		err = writer.InsertTransaction(chainId, height, txnIndex, txnHash, utils.IndexerTxnToDbTxn(t))
+		err = writer.InsertTransaction(chainId, height, txnIndex, t.Hash, utils.IndexerTxnToDbTxn(t))
 		if err != nil {
 			return err
 		}

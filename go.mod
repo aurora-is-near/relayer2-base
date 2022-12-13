@@ -2,15 +2,17 @@ module aurora-relayer-go-common
 
 go 1.18
 
+replace github.com/btcsuite/btcd => github.com/btcsuite/btcd v0.23.2
+
 require (
 	capnproto.org/go/capnp/v3 v3.0.0-alpha.7
+	github.com/aurora-is-near/stream-backup v0.0.0-20221212013533-1e06e263c3f7
+	github.com/btcsuite/btcutil v1.0.2
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/ethereum/go-ethereum v1.10.25
-	github.com/fsnotify/fsnotify v1.6.0
 	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/jinzhu/copier v0.3.5
-	github.com/mailru/easyjson v0.7.7
 	github.com/nats-io/nats.go v1.18.0
 	github.com/near/borsh-go v0.3.1
 	github.com/pkg/errors v0.9.1
@@ -61,6 +63,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/dgraph-io/ristretto v0.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
+	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/glog v1.0.0 // indirect
@@ -70,7 +73,6 @@ require (
 	github.com/google/flatbuffers v22.9.29+incompatible // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
-	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.15.11 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/nats-io/nats-server/v2 v2.8.4 // indirect

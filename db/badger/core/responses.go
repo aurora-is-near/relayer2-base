@@ -13,6 +13,8 @@ var (
 	extraData         = primitives.VarDataFromBytes(nil)
 	uncles            = []primitives.Data[primitives.Len32]{}
 	cumulativeGasUsed = primitives.QuantityFromUint64(0) // TODO: check
+	gasLimit          = primitives.QuantityFromHex("0xfffffffffffff")
+	miner             = primitives.Data20FromHex("0x0000000000000000000000000000000000000000")
 )
 
 func makeBlockResponse(height uint64, hash primitives.Data32, data dbt.Block, txs []any) *response.Block {
@@ -26,12 +28,12 @@ func makeBlockResponse(height uint64, hash primitives.Data32, data dbt.Block, tx
 		TransactionsRoot: data.TransactionsRoot,
 		StateRoot:        data.StateRoot,
 		ReceiptsRoot:     data.ReceiptsRoot,
-		Miner:            data.Miner,
+		Miner:            miner,
 		Difficulty:       difficulty,
 		TotalDifficulty:  difficulty,
 		ExtraData:        extraData,
 		Size:             primitives.HexUint(data.Size),
-		GasLimit:         data.GasLimit,
+		GasLimit:         gasLimit,
 		GasUsed:          data.GasUsed,
 		Timestamp:        primitives.HexUint(data.Timestamp),
 		Transactions:     txs,
@@ -105,6 +107,7 @@ func makeLogResponse(
 		BlockNumber:      primitives.HexUint(height),
 		Address:          data.Address,
 		Topics:           data.Topics.Content,
+		Data:             data.Data,
 	}
 }
 

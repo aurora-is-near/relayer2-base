@@ -17,3 +17,12 @@ func (h HexUint) Hex() string {
 func (h HexUint) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%v"`, h.Hex())), nil
 }
+
+func (h *HexUint) UnmarshalJSON(b []byte) error {
+	ui64, err := hexutil.DecodeUint64(string(b[1 : len(b)-1]))
+	if err != nil {
+		return err
+	}
+	*h = HexUint(ui64)
+	return nil
+}
