@@ -6,6 +6,12 @@ import (
 	dbt "aurora-relayer-go-common/types/db"
 	"aurora-relayer-go-common/types/indexer"
 	"aurora-relayer-go-common/types/primitives"
+	"crypto/sha256"
+	"encoding/binary"
+)
+
+const (
+	AccountId = "aurora"
 )
 
 func IndexerBlockToDbBlock(block *indexer.Block) *dbt.Block {
@@ -100,4 +106,23 @@ func IndexerLogToDbLog(log *indexer.Log) *dbt.Log {
 		Topics:  tinypack.VarList[primitives.Data32]{t},
 	}
 	return &l
+}
+
+func ComputeBlockHash(bHeight, chainId uint64) []byte {
+	bufEmpty25 := make([]byte, 25)
+
+	bufCId := make([]byte, 8)
+	binary.BigEndian.PutUint64(bufCId, chainId)
+
+	bufAId := []byte(AccountId)
+
+	bufBH := make([]byte, 8)
+	binary.BigEndian.PutUint64(bufBH, bHeight)
+
+	bufHash := append(bufEmpty25, bufCId...)
+	bufHash = append(bufHash, bufAId...)
+	bufHash = append(bufHash, bufBH...)
+	hash := sha256.Sum256(bufHash)
+
+	return hash[:]
 }
