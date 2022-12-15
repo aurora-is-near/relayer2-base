@@ -156,7 +156,7 @@ func (e *EthProcessorAware) NewBlockFilter(ctx context.Context) (*common.Uint256
 }
 
 func (e *EthProcessorAware) NewPendingTransactionFilter(ctx context.Context) (*common.Uint256, error) {
-	return Process(ctx, "eth_newBlockFilter", e.Endpoint, func(ctx context.Context) (*common.Uint256, error) {
+	return Process(ctx, "eth_newPendingTransactionFilter", e.Endpoint, func(ctx context.Context) (*common.Uint256, error) {
 		return e.Eth.NewPendingTransactionFilter(ctx)
 	})
 }
