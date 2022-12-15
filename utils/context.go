@@ -2,6 +2,7 @@ package utils
 
 import (
 	"aurora-relayer-go-common/log"
+
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
 )
@@ -19,7 +20,7 @@ type chainIdKey struct{}
 
 // GetChainId returns the chainId in the following order;
 // 	1. returns chainId if exists in ctx
-//	2. returns chainId if exists in relayer.yml
+//	2. returns chainId if exists in relayer configuration .yml file
 //	3. returns defaultChainId=1313161554
 func GetChainId(ctx context.Context) uint64 {
 	if cid, ok := ctx.Value(chainIdKey{}).(*uint64); ok && cid != nil {
