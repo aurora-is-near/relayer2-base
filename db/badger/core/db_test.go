@@ -2,17 +2,19 @@ package core
 
 import (
 	"aurora-relayer-go-common/db/codec"
+	"aurora-relayer-go-common/tinypack"
 	dbt "aurora-relayer-go-common/types/db"
 	"aurora-relayer-go-common/types/primitives"
 	"aurora-relayer-go-common/types/response"
 	"context"
 	"encoding/binary"
-	"github.com/dgraph-io/badger/v3"
 	"log"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
+
+	"github.com/dgraph-io/badger/v3"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
@@ -80,18 +82,20 @@ func genBlock(seed uint64) *dbt.Block {
 }
 
 func genTx(seed uint64) *dbt.Transaction {
+	tmpAddr := genAddress(seed, 4)
+	tmpHash := genHash(seed, 11)
 	tx := &dbt.Transaction{
 		Type:                 genUint64(seed, 1) % 3,
 		From:                 genAddress(seed, 2),
 		IsContractDeployment: genBool(seed, 3),
-		ToOrContract:         genAddress(seed, 4),
+		ToOrContract:         tinypack.CreateNullable(&tmpAddr),
 		Nonce:                genQuantity(seed, 5),
 		GasPrice:             genQuantity(seed, 6),
 		GasLimit:             genQuantity(seed, 7),
 		GasUsed:              genUint64(seed, 8),
 		Value:                genQuantity(seed, 9),
 		Input:                genVarData(0, 512, seed, 10),
-		NearHash:             genHash(seed, 11),
+		NearHash:             tinypack.CreateNullable(&tmpHash),
 		NearReceiptHash:      genHash(seed, 12),
 		Status:               genBool(seed, 13),
 		V:                    genUint64(seed, 14),
