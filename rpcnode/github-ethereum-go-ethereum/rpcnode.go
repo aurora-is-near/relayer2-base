@@ -20,8 +20,12 @@ import (
 	"aurora-relayer-go-common/broker"
 	"aurora-relayer-go-common/log"
 	eventbroker "aurora-relayer-go-common/rpcnode/github-ethereum-go-ethereum/events"
+	"github.com/ethereum/go-ethereum/rpc"
+	"golang.org/x/net/context"
+	"io"
 	"net/http"
 	"os"
+	"time"
 
 	gel "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/node"
@@ -38,7 +42,22 @@ type GoEthereum struct {
 	Broker broker.Broker
 }
 
-// New creates a new node with default config
+type connection struct {
+	io.Reader
+	io.Writer
+}
+
+func (nc connection) RemoteAddr() string {
+	return ""
+}
+
+func (nc connection) Close() error {
+	return nil
+}
+
+func (nc connection) SetWriteDeadline(time.Time) error { return nil }
+
+// New creates a new node with default conf
 func New() (*GoEthereum, error) {
 	conf := GetConfig()
 	return NewWithConf(conf)
@@ -79,6 +98,18 @@ func (ge GoEthereum) WithMiddleware(name string, path string, middleware func(ha
 		panic(err)
 	}
 	ge.RegisterHandler(name, path, middleware(h))
+}
+
+func (ge GoEthereum) Resolve(_ context.Context, reader io.Reader, writer io.Writer) error {
+	rpcHandler, err := ge.RPCHandler()
+	if err != nil {
+		return err
+	}
+	rpcHandler.ServeCodec(rpc.NewCodec(connection{
+		Reader: reader,
+		Writer: writer,
+	}), 0)
+	return nil
 }
 
 // HandleConfigChange re-configures the go-eth root.Logger if needed
