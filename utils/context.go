@@ -23,14 +23,16 @@ type chainIdKey struct{}
 //	2. returns chainId if exists in relayer configuration .yml file
 //	3. returns defaultChainId=1313161554
 func GetChainId(ctx context.Context) uint64 {
-	if cid, ok := ctx.Value(chainIdKey{}).(*uint64); ok && cid != nil {
-		return *cid
-	} else {
-		if chainId == nil {
-			chainId = getChainId()
+	if ctx != nil {
+		if cid, ok := ctx.Value(chainIdKey{}).(*uint64); ok && cid != nil {
+			return *cid
 		}
-		return *chainId
 	}
+
+	if chainId == nil {
+		chainId = getChainId()
+	}
+	return *chainId
 }
 
 // PutChainId is a helper function to put chainId in the context, also see GetChainId
