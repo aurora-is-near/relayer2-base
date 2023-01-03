@@ -1,6 +1,8 @@
 package dbschema
 
-import "fmt"
+import (
+	"aurora-relayer-go-common/log"
+)
 
 type SchemaPath struct {
 	consts []SchemaConst
@@ -39,7 +41,7 @@ func Path(tokens ...any) *SchemaPath {
 			p.vars = append(p.vars, tt)
 			p.length += tt.size
 		default:
-			panic(fmt.Errorf("object of type %T can't be token of dbschema.Path", t))
+			log.Log().Fatal().Msgf("object of type %T can't be token of dbschema.Path", t)
 		}
 	}
 	return p
@@ -47,7 +49,7 @@ func Path(tokens ...any) *SchemaPath {
 
 func (p *SchemaPath) Get(vars ...any) []byte {
 	if len(vars) != len(p.vars) {
-		panic("wrong vars count")
+		log.Log().Fatal().Msg("wrong vars count")
 	}
 
 	result := make([]byte, p.length)
@@ -65,7 +67,7 @@ func (p *SchemaPath) Get(vars ...any) []byte {
 		case uint64:
 			putBigEndian(result[varDesc.offset:][:varDesc.size], vt)
 		default:
-			panic(fmt.Errorf("%T can't be path var", vars[i]))
+			log.Log().Fatal().Msgf("%T can't be path var", vars[i])
 		}
 	}
 	return result

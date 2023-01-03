@@ -62,7 +62,7 @@ type Endpoint struct {
 
 func New(dbh db.Handler) *Endpoint {
 	if dbh == nil {
-		panic("DB Handler should be initialized")
+		log.Log().Fatal().Msg("DB Handler should be initialized")
 	}
 	ep := Endpoint{
 		DbHandler:  dbh,

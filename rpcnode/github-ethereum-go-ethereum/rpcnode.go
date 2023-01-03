@@ -95,7 +95,7 @@ func NewWithConf(conf *Config) (*GoEthereum, error) {
 func (ge GoEthereum) WithMiddleware(name string, path string, middleware func(handler http.Handler) http.Handler) {
 	h, err := ge.RPCHandler()
 	if err != nil {
-		panic(err)
+		log.Log().Fatal().Err(err).Msg("failed to get rpc handler")
 	}
 	ge.RegisterHandler(name, path, middleware(h))
 }
