@@ -3,6 +3,7 @@ package badger
 import (
 	dbh "aurora-relayer-go-common/db"
 	"aurora-relayer-go-common/db/badger/core"
+	"aurora-relayer-go-common/db/badger/core/dbkey"
 	"aurora-relayer-go-common/db/codec"
 	"aurora-relayer-go-common/types/common"
 	dbt "aurora-relayer-go-common/types/db"
@@ -393,15 +394,15 @@ func (h *BlockHandler) getLogs(ctx context.Context, txn *core.ViewTxn, filter *d
 		from = &filter.Next
 	}
 
-	if filter.To.BlockHeight == 0 && filter.To.TransactionIndex == 0 && filter.To.BlockHeight == 0 {
-		// use the latest block key if initial 'to' is all zero
+	if filter.To.BlockHeight == 0 && filter.To.TransactionIndex == dbkey.MaxTxIndex && filter.To.BlockHeight == dbkey.MaxLogIndex {
+		// use the latest block key if initial 'to' is all set to defaults
 		if bk == nil {
 			bk, err = txn.ReadLatestBlockKey(chainId)
 			if err != nil {
 				return nil, nil, err
 			}
 		}
-		to = &dbt.LogKey{BlockHeight: bk.Height, TransactionIndex: 0, LogIndex: 0}
+		to = &dbt.LogKey{BlockHeight: bk.Height, TransactionIndex: dbkey.MaxTxIndex, LogIndex: dbkey.MaxLogIndex}
 	} else {
 		to = &filter.To
 	}
