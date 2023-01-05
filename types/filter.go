@@ -1,6 +1,7 @@
 package types
 
 import (
+	"aurora-relayer-go-common/db/badger/core/dbkey"
 	"aurora-relayer-go-common/tinypack"
 	"aurora-relayer-go-common/types/db"
 	"aurora-relayer-go-common/types/primitives"
@@ -21,6 +22,9 @@ type Filter struct {
 func (f Filter) ToLogFilter() *db.LogFilter {
 
 	var fb, tb, ft, tt, fl, tl uint64
+	tt = dbkey.MaxTxIndex
+	tl = dbkey.MaxLogIndex
+
 	if f.FromBlock != nil {
 		fb = *f.FromBlock
 	}
