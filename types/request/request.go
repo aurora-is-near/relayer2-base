@@ -3,9 +3,12 @@ package request
 import (
 	"aurora-relayer-go-common/types/common"
 	"encoding/json"
+	"errors"
+	"fmt"
 )
 
 type Topics [][][]byte
+type SingleOrSliceOfAddress []common.Address
 
 type LogSubscriptionOptions struct {
 	Address []common.Address `json:"address"`
@@ -13,11 +16,11 @@ type LogSubscriptionOptions struct {
 }
 
 type Filter struct {
-	BlockHash *common.H256     `json:"blockhash"`
-	FromBlock *common.BN64     `json:"fromBlock"`
-	ToBlock   *common.BN64     `json:"toBlock"`
-	Addresses []common.Address `json:"address"`
-	Topics    Topics           `json:"topics"`
+	BlockHash *common.H256           `json:"blockhash"`
+	FromBlock *common.BN64           `json:"fromBlock"`
+	ToBlock   *common.BN64           `json:"toBlock"`
+	Addresses SingleOrSliceOfAddress `json:"address"`
+	Topics    Topics                 `json:"topics"`
 }
 
 func (t *Topics) UnmarshalJSON(b []byte) error {
@@ -42,5 +45,35 @@ func (t *Topics) UnmarshalJSON(b []byte) error {
 		}
 	}
 	*t = results
+	return nil
+}
+
+func (a *SingleOrSliceOfAddress) UnmarshalJSON(b []byte) error {
+	type input interface{}
+	var raw input
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+
+	if raw != nil {
+		// rawAddr can contain a single address or an slice of addresses
+		switch rawAddr := raw.(type) {
+		case string:
+			addr := common.HexStringToAddress(rawAddr)
+			*a = []common.Address{addr}
+		case []interface{}:
+			for i, addr := range rawAddr {
+				if strAddr, ok := addr.(string); ok {
+					addr := common.HexStringToAddress(strAddr)
+					*a = append(*a, addr)
+				} else {
+					return fmt.Errorf("non-string address at index %d", i)
+				}
+			}
+		default:
+			return errors.New("invalid addresses field in filter options object")
+		}
+	}
+
 	return nil
 }

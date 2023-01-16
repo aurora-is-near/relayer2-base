@@ -2,16 +2,13 @@ package endpoint
 
 import (
 	errs "aurora-relayer-go-common/types/errors"
+	"aurora-relayer-go-common/utils"
 	"context"
 	"encoding/hex"
 	"fmt"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto"
-)
-
-var (
-	clientVersion = "Aurora"
 )
 
 type Web3 struct {
@@ -27,7 +24,7 @@ func NewWeb3(endpoint *Endpoint) *Web3 {
 // 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
 // 	TODO: implement
 func (e *Web3) ClientVersion(_ context.Context) (*string, error) {
-	return &clientVersion, nil
+	return utils.Constants.ClientVersion(), nil
 }
 
 // Sha3 returns Keccak-256 hash of the given data.

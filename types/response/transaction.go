@@ -24,6 +24,5 @@ type Transaction struct {
 	S                    primitives.Quantity  `json:"s"`
 	To                   *primitives.Data20   `json:"to"`
 	TransactionIndex     primitives.HexUint   `json:"transactionIndex"`
-	Type                 primitives.HexUint   `json:"type"`
 	Value                primitives.Quantity  `json:"value"`
 }

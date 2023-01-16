@@ -119,7 +119,7 @@ func (e *EthProcessorAware) GetFilterLogs(ctx context.Context, filterId common.U
 	}, filterId)
 }
 
-func (e *EthProcessorAware) GetUncleCountByBlockHash(ctx context.Context, hash *common.H256) (*common.Uint256, error) {
+func (e *EthProcessorAware) GetUncleCountByBlockHash(ctx context.Context, hash common.H256) (*common.Uint256, error) {
 	return Process(ctx, "eth_getUncleCountByBlockHash", e.Endpoint, func(ctx context.Context) (*common.Uint256, error) {
 		return e.Eth.GetUncleCountByBlockHash(ctx, hash)
 	}, hash)
@@ -155,8 +155,8 @@ func (e *EthProcessorAware) NewBlockFilter(ctx context.Context) (*common.Uint256
 	})
 }
 
-func (e *EthProcessorAware) NewPendingTransactionFilter(ctx context.Context) (*common.Uint256, error) {
-	return Process(ctx, "eth_newPendingTransactionFilter", e.Endpoint, func(ctx context.Context) (*common.Uint256, error) {
+func (e *EthProcessorAware) NewPendingTransactionFilter(ctx context.Context) (*string, error) {
+	return Process(ctx, "eth_newPendingTransactionFilter", e.Endpoint, func(ctx context.Context) (*string, error) {
 		return e.Eth.NewPendingTransactionFilter(ctx)
 	})
 }
@@ -192,7 +192,7 @@ func (e *EthProcessorAware) EstimateGas(ctx context.Context, txs engine.Transact
 }
 
 func (e *EthProcessorAware) GasPrice(ctx context.Context) (*common.Uint256, error) {
-	return Process(ctx, "eth_estimateGas", e.Endpoint, func(ctx context.Context) (*common.Uint256, error) {
+	return Process(ctx, "eth_gasPrice", e.Endpoint, func(ctx context.Context) (*common.Uint256, error) {
 		return e.Eth.GasPrice(ctx)
 	})
 }

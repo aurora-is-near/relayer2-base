@@ -18,6 +18,7 @@ type Block struct {
 	StateRoot        primitives.Data32   `json:"stateRoot"`
 	ReceiptsRoot     primitives.Data32   `json:"receiptsRoot"`
 	Miner            primitives.Data20   `json:"miner"`
+	MixHash          primitives.Data32   `json:"mixHash"`
 	Difficulty       primitives.HexUint  `json:"difficulty"`
 	TotalDifficulty  primitives.HexUint  `json:"totalDifficulty"`
 	ExtraData        primitives.VarData  `json:"extraData"`

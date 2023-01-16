@@ -2,6 +2,7 @@ package endpoint
 
 import (
 	"aurora-relayer-go-common/types/common"
+	"aurora-relayer-go-common/utils"
 
 	"golang.org/x/net/context"
 )
@@ -19,5 +20,5 @@ func NewParity(endpoint *Endpoint) *Parity {
 //
 //	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
 func (p *Parity) PendingTransactions(_ context.Context, _ *common.Uint64, _ *interface{}) (*[]string, error) {
-	return &emptyArray, nil
+	return utils.Constants.EmptyArray(), nil
 }

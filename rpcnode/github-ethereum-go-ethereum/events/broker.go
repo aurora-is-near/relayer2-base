@@ -7,6 +7,7 @@ import (
 	"aurora-relayer-go-common/types/event"
 	"aurora-relayer-go-common/types/request"
 	"bytes"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/rpc"
@@ -228,7 +229,7 @@ Logs:
 
 func includes(addresses []common.Address, address string) bool {
 	for _, addr := range addresses {
-		if addr.Hex() == address {
+		if strings.EqualFold(addr.Hex(), address) {
 			return true
 		}
 	}

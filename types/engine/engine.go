@@ -3,6 +3,7 @@ package engine
 import (
 	"aurora-relayer-go-common/log"
 	error2 "aurora-relayer-go-common/types/errors"
+	"aurora-relayer-go-common/utils"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -23,6 +24,10 @@ const (
 	storageSlotLength = 32
 	// ValueLength is the max length of the value argument
 	ValueLength = 32
+
+	// Engine TxsStatus errors
+	errStackOverflow = "ERR_STACK_OVERFLOW"
+	errUnreachable   = "FunctionCallError(WasmTrap(Unreachable))"
 )
 
 // ArgsForGetStorageAt is used to process GetStorageAt endpoint arguments
@@ -85,7 +90,7 @@ func (gse ArgsForGetStorageAtEngine) Serialize() ([]byte, error) {
 // TransactionForCall is the type used to serialize eth_call input
 type TransactionForCall struct {
 	From     *cc.Address `json:"from,omitempty"`
-	To       *cc.Address `json:"to"`
+	To       *cc.Address `json:"to,omitempty"`
 	Gas      *cc.Uint256 `json:"gas,omitempty"`
 	GasPrice *cc.Uint256 `json:"gasPrice,omitempty"`
 	Value    *cc.Uint256 `json:"value,omitempty"`
@@ -106,9 +111,6 @@ func (tc *TransactionForCall) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	if tmp.To == nil {
-		return errors.New("missing value for `To` address")
-	}
 
 	*tc = TransactionForCall(tmp)
 	return nil
@@ -117,7 +119,10 @@ func (tc *TransactionForCall) UnmarshalJSON(data []byte) error {
 // Serialize transforms TransactionForCall to TransactionForCallEngine, calls its Serialize method
 // and returns the received buffer
 func (tc TransactionForCall) Serialize() ([]byte, error) {
-	to := *tc.To
+	to := cc.HexStringToAddress("0x0")
+	if tc.To != nil {
+		to = *tc.To
+	}
 	from := cc.HexStringToAddress("0x0")
 	if tc.From != nil {
 		from = *tc.From
@@ -276,6 +281,12 @@ func NewTransactionStatus(respArg interface{}) (*TransactionStatus, error) {
 			return nil, errors.New("call response is not in correct format")
 		}
 		log.Log().Error().Msgf("errors returned to eth_call: %v", err)
+		// Check for specific TxsStatus errors
+		if strings.Contains(err, errStackOverflow) {
+			return nil, &error2.TxsStatusError{Message: "EvmError(StackOverflow)"}
+		} else if strings.Contains(err, errUnreachable) {
+			return nil, &error2.TxsStatusError{Message: "WasmTrap(Unreachable)"}
+		}
 		return nil, fmt.Errorf("%v", err)
 	}
 	lenResp := len(resp)
@@ -313,35 +324,44 @@ func (ts *TransactionStatus) Validate() ([]uint8, error) {
 		}
 	case 1: // RevertStatus case
 		if len(ts.Revert.Output) > 0 {
-			return ts.Revert.Output, &error2.InvalidParamsError{Message: fmt.Sprintf("execution errors: transaction revert with status %v", ts.Revert.Output)}
+			rReason, err := utils.ParseEVMRevertReason(ts.Revert.Output)
+			rOutputStr := "0x" + hex.EncodeToString(ts.Revert.Output)
+			if err != nil {
+				log.Log().Error().Msgf("execution reverted with data 0x%s, got err %s", hex.EncodeToString(ts.Revert.Output), err.Error())
+				return nil, &error2.TxsStatusError{Message: fmt.Sprintf("execution reverted. error thrown while parsing revert msg %s", err.Error())}
+			}
+			return nil, &error2.TxsRevertError{
+				Code:    3,
+				Message: "execution reverted: " + rReason,
+				Data:    rOutputStr,
+			}
 		} else {
-			return []uint8{}, &error2.InvalidParamsError{Message: "execution errors: transaction revert without any status"}
+			return nil, &error2.TxsRevertError{
+				Code:    3,
+				Message: "execution reverted",
+			}
 		}
 	case 2: // OutOfGas case
-		return nil, &error2.InvalidParamsError{Message: "execution errors: Out Of Gas"}
+		return nil, &error2.TxsStatusError{Message: "Ok(OutOfGas)"}
 	case 3: // OutOfFund case
-		return nil, &error2.InvalidParamsError{Message: "execution errors: Out Of Fund"}
+		return nil, &error2.TxsStatusError{Message: "Ok(OutOfFund)"}
 	case 4: // OutOfOffset case
-		return nil, &error2.InvalidParamsError{Message: "execution errors: Out Of Offset"}
+		return nil, &error2.TxsStatusError{Message: "Ok(OutOfOffset)"}
 	case 5: // CallTooDeep case
-		return nil, &error2.InvalidParamsError{Message: "execution errors: Call Too Deep"}
+		return nil, &error2.InvalidParamsError{Message: "Call Too Deep)"}
 	}
 	log.Log().Debug().Msgf("unhandled transaction status: %d", ts.Enum)
-	return nil, errors.New("execution errors: unhandled transaction status")
+	return nil, errors.New("unhandled transaction status")
 }
 
 // ToResponse processes the engine query response (`TransactionStatus`) and returns output buffer or errors
 func (ts *TransactionStatus) ToResponse() (*string, error) {
 	buf, err := ts.Validate()
-	if buf != nil {
-		str := "0x"
-		for _, b := range buf {
-			tmp := fmt.Sprint(int(b))
-			str = str + tmp
-		}
-		return &str, nil
+	if err != nil {
+		return nil, err
 	}
-	return nil, err
+	str := "0x" + hex.EncodeToString(buf)
+	return &str, nil
 }
 
 // SubmitStatus is the type received from engine for submit (eg: sendRawTransactionSync) calls
@@ -450,7 +470,7 @@ func (ss *SubmitStatus) Validate() error {
 // ToResponse processes the engine query response, retrieves the `result` map and returns the hash
 func (ss *SubmitStatus) ToResponse() (*string, error) {
 	err := ss.Validate()
-	// Validate can generate either `utils.InvalidParams` or `errors.New` errors
+	// Validate can generate either `errors.InvalidParamError` or `errors.GenericError` errors
 	if err != nil {
 		_, ok := err.(*error2.InvalidParamsError)
 		if ok {

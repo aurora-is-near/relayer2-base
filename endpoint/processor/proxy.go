@@ -3,8 +3,11 @@ package processor
 import (
 	"aurora-relayer-go-common/endpoint"
 	"context"
-	"github.com/ethereum/go-ethereum/rpc"
+	"reflect"
 	"sync"
+
+	"github.com/ethereum/go-ethereum/rpc"
+	"golang.org/x/exp/slices"
 )
 
 var lock = &sync.Mutex{}
@@ -29,6 +32,13 @@ func (p *Proxy) Pre(ctx context.Context, name string, endpoint *endpoint.Endpoin
 				if err != nil {
 					return ctx, true, err
 				}
+			}
+		}
+		// Delete nil values (empty optional parameters) from the parameter array
+		for i, v := range args {
+			rv := reflect.ValueOf(v)
+			if rv.Kind() == reflect.Ptr && rv.IsNil() {
+				args = slices.Delete(args, i, i+1)
 			}
 		}
 		err = p.client.CallContext(ctx, response, name, args...)
