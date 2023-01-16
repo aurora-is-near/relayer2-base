@@ -7,16 +7,13 @@ import (
 	"aurora-relayer-go-common/db/codec"
 	"aurora-relayer-go-common/types/common"
 	dbt "aurora-relayer-go-common/types/db"
+	errs "aurora-relayer-go-common/types/errors"
 	"aurora-relayer-go-common/types/indexer"
 	"aurora-relayer-go-common/types/primitives"
 	"aurora-relayer-go-common/types/response"
 	"aurora-relayer-go-common/utils"
 	"context"
-	"github.com/pkg/errors"
-)
-
-var (
-	keyNotFoundError = errors.New("key not found")
+	"fmt"
 )
 
 type BlockHandler struct {
@@ -52,7 +49,7 @@ func (h *BlockHandler) BlockNumber(ctx context.Context) (*primitives.HexUint, er
 			return err
 		}
 		if key == nil {
-			return keyNotFoundError
+			return &errs.KeyNotFoundError{}
 		}
 		bn = primitives.HexUint(key.Height)
 		return nil
@@ -71,7 +68,7 @@ func (h *BlockHandler) GetBlockByHash(ctx context.Context, hash common.H256, isF
 			return err
 		}
 		if key == nil {
-			return keyNotFoundError
+			return &errs.KeyNotFoundError{}
 		}
 		resp, err = txn.ReadBlock(chainId, *key, isFull)
 		return err
@@ -117,8 +114,10 @@ func (h *BlockHandler) GetBlockTransactionCountByHash(ctx context.Context, hash 
 		if err != nil {
 			return err
 		}
+		// Should return 0 for transaction count if no block found for the provided hash
 		if key == nil {
-			return keyNotFoundError
+			resp = 0
+			return nil
 		}
 		resp, err = txn.ReadBlockTxCount(chainId, *key)
 		return err
@@ -159,7 +158,7 @@ func (h *BlockHandler) GetTransactionByHash(ctx context.Context, hash common.H25
 			return err
 		}
 		if key == nil {
-			return keyNotFoundError
+			return &errs.KeyNotFoundError{}
 		}
 		resp, err = txn.ReadTx(chainId, *key)
 		return err
@@ -178,7 +177,7 @@ func (h *BlockHandler) GetTransactionByBlockHashAndIndex(ctx context.Context, ha
 			return err
 		}
 		if key == nil {
-			return keyNotFoundError
+			return &errs.KeyNotFoundError{}
 		}
 		resp, err = txn.ReadTx(chainId, dbt.TransactionKey{
 			BlockHeight:      key.Height,
@@ -224,7 +223,7 @@ func (h *BlockHandler) GetTransactionReceipt(ctx context.Context, hash common.H2
 			return err
 		}
 		if key == nil {
-			return keyNotFoundError
+			return &errs.KeyNotFoundError{}
 		}
 		resp, err = txn.ReadTxReceipt(chainId, *key)
 		return err
@@ -305,7 +304,7 @@ func (h *BlockHandler) BlockHashToNumber(ctx context.Context, hash common.H256) 
 			return err
 		}
 		if key == nil {
-			return keyNotFoundError
+			return &errs.KeyNotFoundError{}
 		}
 		resp = key.Height
 		return err
@@ -326,7 +325,7 @@ func (h *BlockHandler) BlockNumberToHash(ctx context.Context, number common.BN64
 			return err
 		}
 		if b == nil {
-			return keyNotFoundError
+			return &errs.KeyNotFoundError{}
 		}
 		resp = b.Hash.Hex()
 		return err
@@ -394,7 +393,7 @@ func (h *BlockHandler) getLogs(ctx context.Context, txn *core.ViewTxn, filter *d
 		from = &filter.Next
 	}
 
-	if filter.To.BlockHeight == 0 && filter.To.TransactionIndex == dbkey.MaxTxIndex && filter.To.BlockHeight == dbkey.MaxLogIndex {
+	if filter.To.BlockHeight == 0 && filter.To.TransactionIndex == dbkey.MaxTxIndex && filter.To.LogIndex == dbkey.MaxLogIndex {
 		// use the latest block key if initial 'to' is all set to defaults
 		if bk == nil {
 			bk, err = txn.ReadLatestBlockKey(chainId)
@@ -408,7 +407,7 @@ func (h *BlockHandler) getLogs(ctx context.Context, txn *core.ViewTxn, filter *d
 	}
 
 	addresses := filter.Addresses.Content
-	var topics [][]primitives.Data32
+	topics := make([][]primitives.Data32, len(filter.Topics.Content))
 	for i, t := range filter.Topics.Content {
 		topics[i] = t.Content
 	}
@@ -420,8 +419,24 @@ func (h *BlockHandler) getLogs(ctx context.Context, txn *core.ViewTxn, filter *d
 		// BlockHandler.GetFilterChanges.
 		return resp, filter.Next.Prev(), nil
 	} else {
-		resp, lastKey, err = txn.ReadLogs(ctx, chainId, from, to, addresses, topics, 1000)
-		if err != nil && len(resp) > 0 {
+		limit := int(100_000) // Max limit
+		// If the block range is higher than ScanRangeThreshold, then limit the maximum logs in the response to MaxScanIterators
+		if to.BlockHeight-from.BlockHeight > uint64(h.config.Core.ScanRangeThreshold) {
+			limit = int(h.config.Core.MaxScanIterators)
+		}
+		resp, lastKey, err = txn.ReadLogs(ctx, chainId, from, to, addresses, topics, limit)
+		if err != nil {
+			if err == core.ErrLimited {
+				var err error
+				if limit == int(h.config.Core.MaxScanIterators) {
+					err = fmt.Errorf("log response size exceeded. You can make eth_getLogs requests with up to a %d block range, or you can request any block range with a cap of %d logs in the response", int(h.config.Core.ScanRangeThreshold), int(h.config.Core.MaxScanIterators))
+				} else {
+					err = fmt.Errorf("log response size exceeded. Your requests can not exceed the maximum capacity of %d logs in the response", limit)
+				}
+				return resp, lastKey, err
+			}
+			return resp, lastKey, err
+		} else if limit < 0 || len(resp) <= limit {
 			return resp, lastKey, nil
 		}
 	}

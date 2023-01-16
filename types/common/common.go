@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	FilterIdByteSize = 32
+	FilterIdByteSize = 16
 )
 
 type Uinteger interface {
@@ -90,6 +90,26 @@ func (dv *DataVec) UnmarshalJSON(data []byte) error {
 			}
 			*dv = buf
 		}
+	}
+	return nil
+}
+
+// Can (and must) be dramatically optimized
+func (dv DataVec) MarshalText() ([]byte, error) {
+	return []byte(fmt.Sprintf("0x%v", hex.EncodeToString([]byte(dv)))), nil
+}
+
+func (ui256 *Uint256) UnmarshalJSON(data []byte) error {
+	input := strings.TrimSpace(string(data))
+	if len(input) > 4 && input[0] == '"' && input[1] == '0' && input[2] == 'x' && input[len(input)-1] == '"' {
+		numPart := input[3 : len(input)-2]
+		trimmed := strings.TrimLeft(numPart, "0")
+		err := ui256.Big.UnmarshalJSON([]byte(string(input[:3]) + trimmed + string(data[len(input)-2:])))
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("%s not valid", string(input[1:len(input)-1]))
 	}
 	return nil
 }

@@ -21,8 +21,8 @@ type Transaction struct {
 	GasUsed              uint64
 	Value                primitives.Quantity
 	Input                primitives.VarData
-	NearHash             tp.Nullable[primitives.Data32] // Is it 32 bytes long?
-	NearReceiptHash      primitives.Data32              // Is it 32 bytes long?
+	NearHash             tp.Nullable[primitives.Data32]
+	NearReceiptHash      primitives.Data32
 	Status               bool
 	V                    uint64
 	R                    primitives.Quantity

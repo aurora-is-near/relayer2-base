@@ -4,6 +4,7 @@ import (
 	dbt "aurora-relayer-go-common/types/db"
 	"aurora-relayer-go-common/types/primitives"
 	"aurora-relayer-go-common/types/response"
+	"aurora-relayer-go-common/utils"
 )
 
 var (
@@ -13,11 +14,19 @@ var (
 	extraData         = primitives.VarDataFromBytes(nil)
 	uncles            = []primitives.Data[primitives.Len32]{}
 	cumulativeGasUsed = primitives.QuantityFromUint64(0) // TODO: check
-	gasLimit          = primitives.QuantityFromHex("0xfffffffffffff")
-	miner             = primitives.Data20FromHex("0x0000000000000000000000000000000000000000")
+	gasLimit          = primitives.QuantityFromUint64(*utils.Constants.GasLimit())
+	miner             = primitives.Data20FromHex(*utils.Constants.ZeroStrUint160())
+	mixHash           = primitives.Data32FromHex(*utils.Constants.ZeroStrUint256())
 )
 
 func makeBlockResponse(height uint64, hash primitives.Data32, data dbt.Block, txs []any) *response.Block {
+	// It is not allowed to burn more gas than the gas limit. However, because of an error there were
+	// invalid gas consumption records. Below control is added to support the following fix.
+	// https://github.com/aurora-is-near/aurora-relayer/pull/348/files
+	gasUsed := data.GasUsed
+	if data.GasUsed.Uint64() > *utils.Constants.GasLimit() {
+		gasUsed = primitives.QuantityFromUint64(*utils.Constants.GasLimit())
+	}
 	return &response.Block{
 		Number:           primitives.HexUint(height),
 		Hash:             hash,
@@ -29,12 +38,13 @@ func makeBlockResponse(height uint64, hash primitives.Data32, data dbt.Block, tx
 		StateRoot:        data.StateRoot,
 		ReceiptsRoot:     data.ReceiptsRoot,
 		Miner:            miner,
+		MixHash:          mixHash,
 		Difficulty:       difficulty,
 		TotalDifficulty:  difficulty,
 		ExtraData:        extraData,
 		Size:             primitives.HexUint(data.Size),
 		GasLimit:         gasLimit,
-		GasUsed:          data.GasUsed,
+		GasUsed:          gasUsed,
 		Timestamp:        primitives.HexUint(data.Timestamp),
 		Transactions:     txs,
 		Uncles:           uncles,
@@ -63,7 +73,6 @@ func makeTransactionResponse(
 		R:                data.R,
 		S:                data.S,
 		TransactionIndex: primitives.HexUint(index),
-		Type:             primitives.HexUint(data.Type),
 		Value:            data.Value,
 	}
 	if !data.IsContractDeployment {
@@ -119,19 +128,26 @@ func makeTransactionReceiptResponse(
 	txData *dbt.Transaction,
 	Logs []*response.Log,
 ) *response.TransactionReceipt {
+	// It is not allowed to burn more gas than the gas limit. However, because of an error there were
+	// invalid gas consumption records. Below control is added to support the following fix.
+	// https://github.com/aurora-is-near/aurora-relayer/pull/348/files
+	gasUsed := txData.GasUsed
+	if txData.GasUsed > *utils.Constants.GasLimit() {
+		gasUsed = *utils.Constants.GasLimit()
+	}
 
 	txReceipt := &response.TransactionReceipt{
-		BlockHash:         blockHash,
-		BlockNumber:       primitives.HexUint(height),
-		CumulativeGasUsed: cumulativeGasUsed,
-		EffectiveGasPrice: txData.GasPrice,
-		From:              txData.From,
-		GasUsed:           primitives.HexUint(txData.GasUsed),
-		Logs:              Logs,
-		LogsBloom:         txData.LogsBloom,
-		TransactionHash:   txHash,
-		TransactionIndex:  primitives.HexUint(txIndex),
-		Type:              primitives.HexUint(txData.Type),
+		BlockHash:           blockHash,
+		BlockNumber:         primitives.HexUint(height),
+		CumulativeGasUsed:   cumulativeGasUsed,
+		From:                txData.From,
+		GasUsed:             primitives.HexUint(gasUsed),
+		Logs:                Logs,
+		LogsBloom:           txData.LogsBloom,
+		NearReceiptHash:     txData.NearReceiptHash,
+		NearTransactionHash: txData.NearReceiptHash, // Use NearReceiptHash
+		TransactionHash:     txHash,
+		TransactionIndex:    primitives.HexUint(txIndex),
 	}
 	if txData.IsContractDeployment {
 		txReceipt.ContractAddress = txData.ToOrContract.Ptr

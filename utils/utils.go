@@ -6,8 +6,12 @@ import (
 	dbt "aurora-relayer-go-common/types/db"
 	"aurora-relayer-go-common/types/indexer"
 	"aurora-relayer-go-common/types/primitives"
+	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
+	"errors"
+
+	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 
 const (
@@ -125,4 +129,24 @@ func ComputeBlockHash(bHeight, chainId uint64) []byte {
 	hash := sha256.Sum256(bufHash)
 
 	return hash[:]
+}
+
+// ParseEVMRevertReason resolves the abi-encoded revert reason
+func ParseEVMRevertReason(data []byte) (string, error) {
+	if len(data) < 4 {
+		return "", errors.New("invalid data for unpacking")
+	}
+	//The first 4 bytes (08c379a0) are the function selector for error signature
+	errorSig := []byte{0x08, 0xc3, 0x79, 0xa0} // Keccak256("Error(string)")[:4]
+	if !bytes.Equal(data[:4], errorSig) {
+		return "txs result not Error(string)", errors.New("txs result not of type Error(string)")
+	}
+
+	// The remaining slice is decoded according to the ABI specification to get the revert message
+	abiString, _ := abi.NewType("string", "", nil)
+	vs, err := abi.Arguments{{Type: abiString}}.UnpackValues(data[4:])
+	if err != nil {
+		return "invalid txs result", err
+	}
+	return vs[0].(string), nil
 }
