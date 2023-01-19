@@ -62,5 +62,5 @@ var (
 	TxFilter         = dbs.Path(dbs.Const(0), chainId, dbs.Const(8), dbs.Const(1), filterId)
 	LogFilters       = dbs.Path(dbs.Const(0), chainId, dbs.Const(8), dbs.Const(2))
 	LogFilter        = dbs.Path(dbs.Const(0), chainId, dbs.Const(8), dbs.Const(2), filterId)
-	IndexerState     = dbs.Path(dbs.Const(1))
+	IndexerState     = dbs.Path(dbs.Const(0), chainId, dbs.Const(9))
 )
