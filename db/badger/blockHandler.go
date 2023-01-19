@@ -294,6 +294,19 @@ func (h *BlockHandler) GetFilterChanges(ctx context.Context, filter any) (*[]int
 	return &filterChanges, nil
 }
 
+func (h *BlockHandler) GetIndexerState(chainId uint64) ([]byte, error) {
+	var resp []byte
+	err := h.db.View(func(txn *core.ViewTxn) error {
+		data, err := txn.ReadIndexerState(chainId)
+		if err != nil {
+			return err
+		}
+		resp = data
+		return nil
+	})
+	return resp, err
+}
+
 func (h *BlockHandler) BlockHashToNumber(ctx context.Context, hash common.H256) (*uint64, error) {
 	var resp uint64
 	var err error
@@ -366,6 +379,10 @@ func (h *BlockHandler) InsertBlock(block *indexer.Block) error {
 		return err
 	}
 	return nil
+}
+
+func (h *BlockHandler) SetIndexerState(chainId uint64, data []byte) error {
+	return h.db.InsertIndexerState(chainId, data)
 }
 
 func (h *BlockHandler) getLogs(ctx context.Context, txn *core.ViewTxn, filter *dbt.LogFilter, ignoreNext bool) ([]*response.Log, *dbt.LogKey, error) {

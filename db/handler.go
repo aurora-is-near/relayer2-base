@@ -37,6 +37,9 @@ type BlockHandler interface {
 
 	InsertBlock(block *indexer.Block) error
 
+	SetIndexerState(chainId uint64, data []byte) error
+	GetIndexerState(chainId uint64) ([]byte, error)
+
 	Close() error
 }
 
