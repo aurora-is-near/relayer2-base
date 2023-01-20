@@ -100,16 +100,17 @@ func (dv DataVec) MarshalText() ([]byte, error) {
 }
 
 func (ui256 *Uint256) UnmarshalJSON(data []byte) error {
-	input := strings.TrimSpace(string(data))
-	if len(input) > 4 && input[0] == '"' && input[1] == '0' && input[2] == 'x' && input[len(input)-1] == '"' {
-		numPart := input[3 : len(input)-2]
-		trimmed := strings.TrimLeft(numPart, "0")
-		err := ui256.Big.UnmarshalJSON([]byte(string(input[:3]) + trimmed + string(data[len(input)-2:])))
+	input := strings.Trim(string(data), "\"")
+	numPart := strings.TrimPrefix(input, "0x")
+	if len(input) >= 1 {
+		trimmed := strings.TrimLeft(numPart[:len(numPart)-1], "0")
+		hexNum := "\"0x" + trimmed + numPart[len(numPart)-1:] + "\""
+		err := ui256.Big.UnmarshalJSON([]byte(hexNum))
 		if err != nil {
 			return err
 		}
 	} else {
-		return fmt.Errorf("%s not valid", string(input[1:len(input)-1]))
+		return fmt.Errorf("%s not valid", string(data))
 	}
 	return nil
 }
