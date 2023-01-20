@@ -139,7 +139,6 @@ func (e *Eth) GetBlockTransactionCountByHash(ctx context.Context, hash common.H2
 // 	On DB failure or number not found, returns errors code '-32000' with custom message.
 // 	On missing or invalid param returns errors code '-32602' with custom message.
 func (e *Eth) GetBlockTransactionCountByNumber(ctx context.Context, number *common.BN64) (*primitives.HexUint, error) {
-	//
 	if number == nil {
 		number = &common.BN64{BlockNumber: rpc.LatestBlockNumber}
 	}
@@ -362,13 +361,15 @@ func (e *Eth) GetUncleCountByBlockHash(ctx context.Context, hash common.H256) (*
 // 	If block number not found (KeyNotFoundError) returns nil
 // 	On DB failure or other internal errors, returns errors code '-32000' with custom message.
 func (e *Eth) GetUncleCountByBlockNumber(ctx context.Context, number *common.BN64) (*common.Uint256, error) {
-	block, err := e.DbHandler.GetBlockByNumber(ctx, *number, false)
-	if block == nil || err != nil {
-		_, ok := err.(*errs.KeyNotFoundError)
-		if !ok {
-			return nil, err
+	if number != nil {
+		block, err := e.DbHandler.GetBlockByNumber(ctx, *number, false)
+		if block == nil || err != nil {
+			_, ok := err.(*errs.KeyNotFoundError)
+			if !ok {
+				return nil, err
+			}
+			return nil, nil
 		}
-		return nil, nil
 	}
 	return utils.Constants.ZeroUint256(), nil
 }

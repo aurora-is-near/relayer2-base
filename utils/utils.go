@@ -9,9 +9,11 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 const (
@@ -38,15 +40,16 @@ func IndexerTxnToDbTxn(txn *indexer.Transaction) *dbt.Transaction {
 
 	toOrContract := tinypack.CreateNullable[primitives.Data20](nil)
 	isContractDeployment := false
-	if txn.ContractAddress != nil {
-		if txn.To != nil {
-			log.Log().Warn().Msgf("both contract address and to address is set for txn: [%v], to: [%s], contract: [%s]",
-				txn.Hash, txn.To.Hex(), txn.ContractAddress.Hex())
-		}
-		isContractDeployment = true
-		toOrContract = tinypack.CreateNullable[primitives.Data20](txn.ContractAddress)
-	} else if txn.To != nil {
+	if txn.To != nil {
 		toOrContract = tinypack.CreateNullable[primitives.Data20](txn.To)
+		if len(txn.Output.Content) == common.AddressLength {
+			log.Log().Warn().Msgf("both contract address and to address is set for txn: [%v], to: [%s], contract: [0x%s]",
+				txn.Hash, txn.To.Hex(), hex.EncodeToString(txn.Output.Content))
+		}
+	} else if len(txn.Output.Content) == common.AddressLength {
+		isContractDeployment = true
+		contractAddress := primitives.Data20FromBytes(txn.Output.Content)
+		toOrContract = tinypack.CreateNullable[primitives.Data20](&contractAddress)
 	} else {
 		log.Log().Warn().Msgf("both contract address and to address is null for txn: [%v]", txn.Hash.Hex())
 	}

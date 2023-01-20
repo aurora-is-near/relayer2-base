@@ -19,6 +19,7 @@ package github_ethereum_go_ethereum
 import (
 	"aurora-relayer-go-common/cmd"
 	"aurora-relayer-go-common/log"
+	"time"
 
 	gel "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -33,6 +34,15 @@ const (
 
 	configPath = "rpcNode.geth"
 )
+
+// defaultHTTPTimeouts represents the default timeout values used by the RPC server if further
+// configuration is not provided.
+var defaultHTTPTimeouts = rpc.HTTPTimeouts{
+	ReadTimeout:       300 * time.Second,
+	ReadHeaderTimeout: 120 * time.Second,
+	WriteTimeout:      120 * time.Second,
+	IdleTimeout:       120 * time.Second,
+}
 
 // Config represents a small collection of configuration values to fine tune the
 // P2P network layer of a protocol stack. These values can be further extended by
@@ -107,7 +117,7 @@ type Config struct {
 // HTTPCors: []
 // HTTPModules: ["net", "web3", "eth"]
 // HTTPVirtualHosts: []
-// HTTPTimeouts: rpc.DefaultHTTPTimeouts
+// HTTPTimeouts: defaultHTTPTimeouts
 // -> WS parameters are optional. Add the following WS parameters to make them mandatory.
 // WSHost: DefaultHost
 // WSPort: DefaultWSPort
@@ -122,7 +132,7 @@ func defaultConfig() *Config {
 		HTTPModules:      []string{"net", "web3", "eth", "parity"},
 		HTTPVirtualHosts: []string{},
 		HTTPCors:         []string{},
-		HTTPTimeouts:     rpc.DefaultHTTPTimeouts,
+		HTTPTimeouts:     defaultHTTPTimeouts,
 		Logger:           NewGoEthLogger(log.Log()),
 	}
 }
