@@ -3,7 +3,6 @@ package core
 import (
 	"aurora-relayer-go-common/db/badger/core/dbkey"
 	"aurora-relayer-go-common/db/badger/core/logscan"
-	"aurora-relayer-go-common/tinypack"
 	dbt "aurora-relayer-go-common/types/db"
 	"aurora-relayer-go-common/types/primitives"
 
@@ -112,7 +111,7 @@ func (w *Writer) InsertLog(chainId, height, txIndex, logIndex uint64, data *dbt.
 }
 
 func (db *DB) InsertIndexerState(chainId uint64, data []byte) error {
-	d := tinypack.CreateVarData(data...)
+	d := primitives.DataFromBytes[primitives.VarLen](data)
 	if err := insertInstantly(db, dbkey.IndexerState.Get(chainId), &d); err != nil {
 		return err
 	}
