@@ -1,7 +1,6 @@
 package primitives
 
 import (
-	tp "aurora-relayer-go-common/tinypack"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -10,6 +9,7 @@ import (
 	"github.com/fxamacker/cbor/v2"
 	"math/big"
 	"reflect"
+	tp "relayer2-base/tinypack"
 )
 
 type Quantity struct {

@@ -1,12 +1,12 @@
 package events
 
 import (
-	"aurora-relayer-go-common/broker"
-	"aurora-relayer-go-common/log"
-	"aurora-relayer-go-common/types/common"
-	"aurora-relayer-go-common/types/event"
-	"aurora-relayer-go-common/types/request"
 	"bytes"
+	"relayer2-base/broker"
+	"relayer2-base/log"
+	"relayer2-base/types/common"
+	"relayer2-base/types/event"
+	"relayer2-base/types/request"
 	"strings"
 	"time"
 

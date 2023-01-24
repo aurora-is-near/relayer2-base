@@ -1,8 +1,8 @@
 package core
 
 import (
-	"aurora-relayer-go-common/db/badger/core/dbkey"
-	dbp "aurora-relayer-go-common/types/primitives"
+	"relayer2-base/db/badger/core/dbkey"
+	dbp "relayer2-base/types/primitives"
 )
 
 func (txn *ViewTxn) DeleteFilter(chainId uint64, filterId dbp.Data32) error {

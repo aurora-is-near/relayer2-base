@@ -1,11 +1,11 @@
 package endpoint
 
 import (
-	"aurora-relayer-go-common/cmd"
-	"aurora-relayer-go-common/log"
-	"aurora-relayer-go-common/types/common"
 	"fmt"
 	"math/big"
+	"relayer2-base/cmd"
+	"relayer2-base/log"
+	"relayer2-base/types/common"
 
 	"github.com/spf13/viper"
 )

@@ -1,4 +1,4 @@
-module aurora-relayer-go-common
+module relayer2-base
 
 go 1.18
 
@@ -14,9 +14,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.4.0
 	github.com/jackc/pgx/v5 v5.2.0
 	github.com/jinzhu/copier v0.3.5
-	github.com/nats-io/nats.go v1.18.0
 	github.com/near/borsh-go v0.3.1
-	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.28.0
 	github.com/spf13/cobra v1.6.0
 	github.com/spf13/viper v1.13.0
@@ -46,6 +44,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/pointerstructure v1.2.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/tsdb v0.10.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
@@ -80,9 +79,6 @@ require (
 	github.com/jackc/puddle/v2 v2.1.2 // indirect
 	github.com/klauspost/compress v1.15.11 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
-	github.com/nats-io/nats-server/v2 v2.8.4 // indirect
-	github.com/nats-io/nkeys v0.3.0 // indirect
-	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

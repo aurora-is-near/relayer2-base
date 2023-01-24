@@ -1,8 +1,8 @@
 package codec
 
 import (
-	"aurora-relayer-go-common/log"
 	"github.com/fxamacker/cbor/v2"
+	"relayer2-base/log"
 )
 
 type CborCodec struct {

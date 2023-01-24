@@ -1,6 +1,6 @@
 package utils
 
-import "aurora-relayer-go-common/types/common"
+import "relayer2-base/types/common"
 
 type constants struct {
 	clientVersion  string

@@ -1,7 +1,7 @@
 package response
 
 import (
-	"aurora-relayer-go-common/types/primitives"
+	"relayer2-base/types/primitives"
 )
 
 // https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_getfilterchanges

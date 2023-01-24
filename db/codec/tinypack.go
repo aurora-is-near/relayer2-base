@@ -1,6 +1,6 @@
 package codec
 
-import "aurora-relayer-go-common/tinypack"
+import "relayer2-base/tinypack"
 
 type Tinypack struct {
 	Encoder

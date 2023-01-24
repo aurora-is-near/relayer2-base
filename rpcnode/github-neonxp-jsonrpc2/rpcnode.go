@@ -1,11 +1,11 @@
 package github_neonxp_jsonrpc2
 
 import (
-	"aurora-relayer-go-common/log"
 	"context"
 	"fmt"
 	"go.neonxp.dev/jsonrpc2/rpc"
 	"go.neonxp.dev/jsonrpc2/transport"
+	"relayer2-base/log"
 )
 
 type JsonRpc2 struct {

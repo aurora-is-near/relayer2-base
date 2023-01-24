@@ -1,10 +1,10 @@
 package request
 
 import (
-	"aurora-relayer-go-common/types/common"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"relayer2-base/types/common"
 )
 
 type Topics [][][]byte

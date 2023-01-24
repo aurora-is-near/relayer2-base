@@ -1,15 +1,15 @@
 package core
 
 import (
-	dbt "aurora-relayer-go-common/types/db"
-	"aurora-relayer-go-common/types/primitives"
-	"aurora-relayer-go-common/types/response"
 	"bytes"
 	"context"
 	"fmt"
+	dbt "relayer2-base/types/db"
+	"relayer2-base/types/primitives"
+	"relayer2-base/types/response"
 
-	"aurora-relayer-go-common/db/badger/core/dbkey"
 	"github.com/dgraph-io/badger/v3"
+	"relayer2-base/db/badger/core/dbkey"
 )
 
 func (txn *ViewTxn) ReadBlockKey(chainId uint64, hash primitives.Data32) (*dbt.BlockKey, error) {

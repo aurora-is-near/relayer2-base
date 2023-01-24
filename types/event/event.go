@@ -1,6 +1,6 @@
 package event
 
-import "aurora-relayer-go-common/types/response"
+import "relayer2-base/types/response"
 
 type Block *response.Block
 

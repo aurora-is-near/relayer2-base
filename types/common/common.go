@@ -1,12 +1,12 @@
 package common
 
 import (
-	"aurora-relayer-go-common/types/primitives"
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"relayer2-base/types/primitives"
 	"strconv"
 	"strings"
 	"time"

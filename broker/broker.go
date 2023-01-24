@@ -1,8 +1,8 @@
 package broker
 
 import (
-	"aurora-relayer-go-common/types/event"
-	"aurora-relayer-go-common/types/request"
+	"relayer2-base/types/event"
+	"relayer2-base/types/request"
 )
 
 type SubID string

@@ -1,15 +1,15 @@
 package indexer
 
 import (
-	"aurora-relayer-go-common/db/codec"
-	"aurora-relayer-go-common/tinypack"
-	"aurora-relayer-go-common/types/primitives"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"relayer2-base/db/codec"
+	"relayer2-base/tinypack"
+	"relayer2-base/types/primitives"
 	"strconv"
 	"strings"
 )

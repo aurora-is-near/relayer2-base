@@ -1,6 +1,6 @@
 package primitives
 
-import "aurora-relayer-go-common/tinypack"
+import "relayer2-base/tinypack"
 
 type VarLen = tinypack.VariadicLength
 

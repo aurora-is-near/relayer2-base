@@ -1,7 +1,7 @@
 package log
 
 import (
-	"aurora-relayer-go-common/cmd"
+	"relayer2-base/cmd"
 
 	"github.com/spf13/viper"
 )

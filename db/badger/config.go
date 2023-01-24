@@ -1,9 +1,9 @@
 package badger
 
 import (
-	"aurora-relayer-go-common/cmd"
-	"aurora-relayer-go-common/db/badger/core"
-	"aurora-relayer-go-common/log"
+	"relayer2-base/cmd"
+	"relayer2-base/db/badger/core"
+	"relayer2-base/log"
 
 	"github.com/dgraph-io/badger/v3"
 	"github.com/spf13/viper"

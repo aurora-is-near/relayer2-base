@@ -1,11 +1,11 @@
 package endpoint
 
 import (
-	errs "aurora-relayer-go-common/types/errors"
-	"aurora-relayer-go-common/utils"
 	"context"
 	"encoding/hex"
 	"fmt"
+	errs "relayer2-base/types/errors"
+	"relayer2-base/utils"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto"

@@ -1,6 +1,6 @@
 package db
 
-import "aurora-relayer-go-common/db/badger/core/dbkey"
+import "relayer2-base/db/badger/core/dbkey"
 
 type LogKey struct {
 	BlockHeight      uint64
