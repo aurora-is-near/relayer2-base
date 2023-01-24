@@ -1,8 +1,8 @@
 package core
 
 import (
-	"aurora-relayer-go-common/db/codec"
 	"github.com/dgraph-io/badger/v3"
+	"relayer2-base/db/codec"
 )
 
 type DB struct {

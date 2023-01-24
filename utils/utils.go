@@ -1,16 +1,16 @@
 package utils
 
 import (
-	"aurora-relayer-go-common/log"
-	"aurora-relayer-go-common/tinypack"
-	dbt "aurora-relayer-go-common/types/db"
-	"aurora-relayer-go-common/types/indexer"
-	"aurora-relayer-go-common/types/primitives"
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
+	"relayer2-base/log"
+	"relayer2-base/tinypack"
+	dbt "relayer2-base/types/db"
+	"relayer2-base/types/indexer"
+	"relayer2-base/types/primitives"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -139,7 +139,7 @@ func ParseEVMRevertReason(data []byte) (string, error) {
 	if len(data) < 4 {
 		return "", errors.New("invalid data for unpacking")
 	}
-	//The first 4 bytes (08c379a0) are the function selector for error signature
+	// The first 4 bytes (08c379a0) are the function selector for error signature
 	errorSig := []byte{0x08, 0xc3, 0x79, 0xa0} // Keccak256("Error(string)")[:4]
 	if !bytes.Equal(data[:4], errorSig) {
 		return "txs result not Error(string)", errors.New("txs result not of type Error(string)")

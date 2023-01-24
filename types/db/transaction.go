@@ -1,10 +1,10 @@
 package db
 
 import (
-	"aurora-relayer-go-common/types/primitives"
 	"fmt"
+	"relayer2-base/types/primitives"
 
-	tp "aurora-relayer-go-common/tinypack"
+	tp "relayer2-base/tinypack"
 )
 
 //

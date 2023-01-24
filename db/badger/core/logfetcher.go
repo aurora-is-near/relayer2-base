@@ -1,11 +1,11 @@
 package core
 
 import (
-	"aurora-relayer-go-common/db/badger/core/dbkey"
-	dbt "aurora-relayer-go-common/types/db"
-	"aurora-relayer-go-common/types/primitives"
-	"aurora-relayer-go-common/types/response"
 	"fmt"
+	"relayer2-base/db/badger/core/dbkey"
+	dbt "relayer2-base/types/db"
+	"relayer2-base/types/primitives"
+	"relayer2-base/types/response"
 	"sync"
 )
 

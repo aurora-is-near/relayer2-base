@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	tp "aurora-relayer-go-common/tinypack"
 	"github.com/davecgh/go-spew/spew"
+	tp "relayer2-base/tinypack"
 )
 
 type Person struct {

@@ -1,8 +1,8 @@
 package dbkey
 
 import (
-	dbs "aurora-relayer-go-common/db/badger/core/dbkey/dbschema"
-	"aurora-relayer-go-common/db/badger/core/logscan"
+	dbs "relayer2-base/db/badger/core/dbkey/dbschema"
+	"relayer2-base/db/badger/core/logscan"
 )
 
 const (

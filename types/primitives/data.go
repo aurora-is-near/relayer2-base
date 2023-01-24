@@ -1,13 +1,13 @@
 package primitives
 
 import (
-	"aurora-relayer-go-common/db/codec"
-	tp "aurora-relayer-go-common/tinypack"
 	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"reflect"
+	"relayer2-base/db/codec"
+	tp "relayer2-base/tinypack"
 	"strconv"
 )
 

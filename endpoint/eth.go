@@ -1,16 +1,16 @@
 package endpoint
 
 import (
-	"aurora-relayer-go-common/types"
-	"aurora-relayer-go-common/types/common"
-	"aurora-relayer-go-common/types/engine"
-	errs "aurora-relayer-go-common/types/errors"
-	"aurora-relayer-go-common/types/primitives"
-	"aurora-relayer-go-common/types/request"
-	"aurora-relayer-go-common/types/response"
-	"aurora-relayer-go-common/utils"
 	"context"
 	"errors"
+	"relayer2-base/types"
+	"relayer2-base/types/common"
+	"relayer2-base/types/engine"
+	errs "relayer2-base/types/errors"
+	"relayer2-base/types/primitives"
+	"relayer2-base/types/request"
+	"relayer2-base/types/response"
+	"relayer2-base/utils"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rpc"

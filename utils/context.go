@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"aurora-relayer-go-common/log"
+	"relayer2-base/log"
 
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"

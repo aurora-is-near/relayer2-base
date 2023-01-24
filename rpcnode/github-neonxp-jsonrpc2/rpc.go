@@ -1,10 +1,10 @@
 package github_neonxp_jsonrpc2
 
 import (
-	error2 "aurora-relayer-go-common/types/errors"
 	"context"
 	"encoding/json"
 	"fmt"
+	error2 "relayer2-base/types/errors"
 
 	"go.neonxp.dev/jsonrpc2/rpc"
 )

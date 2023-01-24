@@ -1,12 +1,12 @@
 package endpoint
 
 import (
-	"aurora-relayer-go-common/types/common"
-	"aurora-relayer-go-common/types/engine"
-	"aurora-relayer-go-common/types/primitives"
-	"aurora-relayer-go-common/types/request"
-	"aurora-relayer-go-common/types/response"
 	"context"
+	"relayer2-base/types/common"
+	"relayer2-base/types/engine"
+	"relayer2-base/types/primitives"
+	"relayer2-base/types/request"
+	"relayer2-base/types/response"
 )
 
 type EthProcessorAware struct {

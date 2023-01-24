@@ -1,18 +1,18 @@
 package endpoint
 
 import (
-	"aurora-relayer-go-common/db"
-	"aurora-relayer-go-common/db/badger"
-	"aurora-relayer-go-common/types"
-	"aurora-relayer-go-common/types/common"
-	"aurora-relayer-go-common/types/indexer"
-	"aurora-relayer-go-common/types/primitives"
-	"aurora-relayer-go-common/types/request"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"relayer2-base/db"
+	"relayer2-base/db/badger"
+	"relayer2-base/types"
+	"relayer2-base/types/common"
+	"relayer2-base/types/indexer"
+	"relayer2-base/types/primitives"
+	"relayer2-base/types/request"
 	"strings"
 	"testing"
 )

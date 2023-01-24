@@ -1,13 +1,13 @@
 package db
 
 import (
-	"aurora-relayer-go-common/types/common"
-	"aurora-relayer-go-common/types/db"
-	"aurora-relayer-go-common/types/indexer"
-	"aurora-relayer-go-common/types/primitives"
-	"aurora-relayer-go-common/types/response"
 	"context"
 	"fmt"
+	"relayer2-base/types/common"
+	"relayer2-base/types/db"
+	"relayer2-base/types/indexer"
+	"relayer2-base/types/primitives"
+	"relayer2-base/types/response"
 	"strings"
 )
 

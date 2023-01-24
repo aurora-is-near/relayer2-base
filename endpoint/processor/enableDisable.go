@@ -1,9 +1,9 @@
 package processor
 
 import (
-	"aurora-relayer-go-common/endpoint"
-	errs "aurora-relayer-go-common/types/errors"
 	"context"
+	"relayer2-base/endpoint"
+	errs "relayer2-base/types/errors"
 )
 
 type EnableDisable struct{}

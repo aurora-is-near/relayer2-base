@@ -17,8 +17,8 @@
 package github_ethereum_go_ethereum
 
 import (
-	"aurora-relayer-go-common/cmd"
-	"aurora-relayer-go-common/log"
+	"relayer2-base/cmd"
+	"relayer2-base/log"
 	"time"
 
 	gel "github.com/ethereum/go-ethereum/log"

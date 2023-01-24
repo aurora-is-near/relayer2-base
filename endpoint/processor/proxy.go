@@ -1,9 +1,9 @@
 package processor
 
 import (
-	"aurora-relayer-go-common/endpoint"
 	"context"
 	"reflect"
+	"relayer2-base/endpoint"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/rpc"

@@ -1,9 +1,9 @@
 package tar
 
 import (
-	"aurora-relayer-go-common/cmd"
-	"aurora-relayer-go-common/log"
 	"github.com/spf13/viper"
+	"relayer2-base/cmd"
+	"relayer2-base/log"
 )
 
 const (

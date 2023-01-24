@@ -1,6 +1,6 @@
 package response
 
-import "aurora-relayer-go-common/types/primitives"
+import "relayer2-base/types/primitives"
 
 // https://openethereum.github.io/JSONRPC
 type AccessListEntry struct {

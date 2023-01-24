@@ -1,10 +1,10 @@
 package core
 
 import (
-	dbt "aurora-relayer-go-common/types/db"
-	"aurora-relayer-go-common/types/primitives"
-	"aurora-relayer-go-common/types/response"
-	"aurora-relayer-go-common/utils"
+	dbt "relayer2-base/types/db"
+	"relayer2-base/types/primitives"
+	"relayer2-base/types/response"
+	"relayer2-base/utils"
 )
 
 var (

@@ -1,8 +1,8 @@
 package badger
 
 import (
-	"aurora-relayer-go-common/log"
 	"fmt"
+	"relayer2-base/log"
 )
 
 type Logger struct {

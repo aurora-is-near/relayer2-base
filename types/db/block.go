@@ -1,7 +1,7 @@
 package db
 
 import (
-	"aurora-relayer-go-common/types/primitives"
+	"relayer2-base/types/primitives"
 )
 
 type Block struct {

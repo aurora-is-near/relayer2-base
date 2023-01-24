@@ -1,13 +1,13 @@
 package prehistory
 
 import (
-	"aurora-relayer-go-common/db"
-	"aurora-relayer-go-common/log"
-	"aurora-relayer-go-common/types/indexer"
-	"aurora-relayer-go-common/types/primitives"
-	"aurora-relayer-go-common/utils"
 	"context"
 	"errors"
+	"relayer2-base/db"
+	"relayer2-base/log"
+	"relayer2-base/types/indexer"
+	"relayer2-base/types/primitives"
+	"relayer2-base/utils"
 	"sync"
 	"time"
 

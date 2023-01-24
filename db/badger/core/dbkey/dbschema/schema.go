@@ -1,7 +1,7 @@
 package dbschema
 
 import (
-	"aurora-relayer-go-common/log"
+	"relayer2-base/log"
 )
 
 type SchemaPath struct {

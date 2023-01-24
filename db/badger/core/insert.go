@@ -1,10 +1,10 @@
 package core
 
 import (
-	"aurora-relayer-go-common/db/badger/core/dbkey"
-	"aurora-relayer-go-common/db/badger/core/logscan"
-	dbt "aurora-relayer-go-common/types/db"
-	"aurora-relayer-go-common/types/primitives"
+	"relayer2-base/db/badger/core/dbkey"
+	"relayer2-base/db/badger/core/logscan"
+	dbt "relayer2-base/types/db"
+	"relayer2-base/types/primitives"
 
 	"github.com/dgraph-io/badger/v3"
 )

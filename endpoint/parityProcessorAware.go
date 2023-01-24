@@ -1,7 +1,7 @@
 package endpoint
 
 import (
-	"aurora-relayer-go-common/types/common"
+	"relayer2-base/types/common"
 
 	"golang.org/x/net/context"
 )
