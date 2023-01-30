@@ -10,5 +10,8 @@ func (txn *ViewTxn) ReadIndexerState(chainId uint64) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return data.Bytes(), nil
+	if data != nil {
+		return data.Bytes(), nil
+	}
+	return nil, nil
 }
