@@ -15,6 +15,7 @@ require (
 	github.com/jackc/pgx/v5 v5.2.0
 	github.com/jinzhu/copier v0.3.5
 	github.com/near/borsh-go v0.3.1
+	github.com/puzpuzpuz/xsync/v2 v2.4.0
 	github.com/rs/zerolog v1.28.0
 	github.com/spf13/cobra v1.6.0
 	github.com/spf13/viper v1.13.0
