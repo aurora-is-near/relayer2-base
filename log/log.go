@@ -3,13 +3,12 @@ package log
 import (
 	"io"
 	"os"
-	"sync"
+	"relayer2-base/syncutils"
 
 	"github.com/rs/zerolog"
 )
 
-var global *Logger
-var lock = &sync.Mutex{}
+var globalPtr syncutils.LockablePtr[Logger]
 
 type Logger struct {
 	zerolog.Logger
@@ -29,12 +28,10 @@ func (l *Logger) HandleConfigChange() {
 
 // Log returns the common library global logger
 func Log() *Logger {
-	if global == nil {
-		lock.Lock()
-		defer lock.Unlock()
-		if global == nil {
-			global = log()
-		}
+	global, unlock := globalPtr.LockIfNil()
+	if unlock != nil {
+		global = log()
+		unlock(global)
 	}
 	return global
 }

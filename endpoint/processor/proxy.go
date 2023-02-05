@@ -4,16 +4,14 @@ import (
 	"context"
 	"reflect"
 	"relayer2-base/endpoint"
-	"sync"
+	"relayer2-base/syncutils"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"golang.org/x/exp/slices"
 )
 
-var lock = &sync.Mutex{}
-
 type Proxy struct {
-	client *rpc.Client
+	clientPtr syncutils.LockablePtr[rpc.Client]
 }
 
 func NewProxy() endpoint.Processor {
@@ -24,15 +22,13 @@ func (p *Proxy) Pre(ctx context.Context, name string, endpoint *endpoint.Endpoin
 	if endpoint.Config.ProxyEndpoints[name] {
 		endpoint.Logger.Info().Msgf("relaying request: [%s] to remote server", name)
 		var err error
-		if p.client == nil {
-			lock.Lock()
-			defer lock.Unlock()
-			if p.client == nil {
-				p.client, err = clientConnection(ctx, endpoint.Config.ProxyUrl)
-				if err != nil {
-					return ctx, true, err
-				}
-			}
+		client, unlock := p.clientPtr.LockIfNil()
+		if unlock != nil {
+			client, err = clientConnection(ctx, endpoint.Config.ProxyUrl)
+			unlock(client)
+		}
+		if err != nil {
+			return ctx, true, err
 		}
 		// Delete nil values (empty optional parameters) from the parameter array
 		for i, v := range args {
@@ -41,7 +37,7 @@ func (p *Proxy) Pre(ctx context.Context, name string, endpoint *endpoint.Endpoin
 				args = slices.Delete(args, i, i+1)
 			}
 		}
-		err = p.client.CallContext(ctx, response, name, args...)
+		err = client.CallContext(ctx, response, name, args...)
 		if err != nil {
 			endpoint.Logger.Error().Err(err).Msgf("failed to call remote server for request: [%s]", name)
 			return ctx, true, err

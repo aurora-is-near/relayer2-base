@@ -1,45 +1,43 @@
 package core
 
 import (
-	"github.com/dgraph-io/badger/v3"
 	"os"
 	"path"
 	"relayer2-base/log"
-	"sync"
+	"relayer2-base/syncutils"
 	"time"
+
+	"github.com/dgraph-io/badger/v3"
 )
 
-var lock = &sync.Mutex{}
-var bdb *badger.DB
+var bdbPtr syncutils.LockablePtr[badger.DB]
 var gcStop chan bool
 
 func Open(options badger.Options, gcIntervalSeconds int) (*badger.DB, error) {
 	var err error
-	if bdb == nil {
-		lock.Lock()
-		defer lock.Unlock()
-		if bdb == nil {
-			bdb, err = tryOpen(options, gcIntervalSeconds)
-		}
+	bdb, unlock := bdbPtr.LockIfNil()
+	if unlock != nil {
+		bdb, err = tryOpen(options, gcIntervalSeconds)
+		unlock(bdb)
 	}
 	return bdb, err
 }
 
 func Close() error {
-	if bdb != nil {
+	bdb, unlock := bdbPtr.LockIfNotNil()
+	if unlock != nil {
 		gcStop <- true
 		log.Log().Info().Msg("closing database")
-		err := bdb.Close()
-		if err != nil {
+		if err := bdb.Close(); err != nil {
+			unlock(bdb)
 			return err
 		}
-		bdb = nil
+		unlock(nil)
 	}
 	return nil
 }
 
 func tryOpen(options badger.Options, gcIntervalSeconds int) (*badger.DB, error) {
-
 	var err error
 	logger := log.Log()
 
@@ -50,7 +48,7 @@ func tryOpen(options badger.Options, gcIntervalSeconds int) (*badger.DB, error) 
 		options.ValueDir = ""
 		logger.Info().Msg("opening database as in-memory")
 	}
-	bdb, err = badger.Open(options)
+	bdb, err := badger.Open(options)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to tryOpen database")
 		snapshotBaseName := path.Base(options.Dir) + "_" + time.Now().Format("2006-01-02T15-04-05.000000000")
@@ -64,14 +62,14 @@ func tryOpen(options badger.Options, gcIntervalSeconds int) (*badger.DB, error) 
 		bdb, err = badger.Open(options)
 	}
 	if bdb != nil {
-		go runGC(gcIntervalSeconds)
+		gcStop = make(chan bool)
+		go runGC(bdb, gcIntervalSeconds)
 	}
 
 	return bdb, err
 }
 
-func runGC(gcIntervalSeconds int) {
-	gcStop = make(chan bool)
+func runGC(bdb *badger.DB, gcIntervalSeconds int) {
 	ticker := time.NewTicker(time.Duration(gcIntervalSeconds) * time.Second)
 	defer ticker.Stop()
 	for {
