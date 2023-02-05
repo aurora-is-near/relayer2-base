@@ -20,8 +20,7 @@ func (d Data[LD]) Bytes() []byte {
 }
 
 func (d Data[LD]) Hex() string {
-	var ld LD
-	return string(d.WriteHexBytes(make([]byte, 0, 2+ld.GetTinyPackLength()*2)))
+	return string(d.WriteHexBytes(make([]byte, 0, 2+len(d.Content)*2)))
 }
 
 func (d Data[LD]) WriteHexBytes(dst []byte) []byte {
@@ -29,8 +28,7 @@ func (d Data[LD]) WriteHexBytes(dst []byte) []byte {
 }
 
 func (d Data[LD]) MarshalJSON() ([]byte, error) {
-	var ld LD
-	buf := make([]byte, 0, 4+ld.GetTinyPackLength()*2)
+	buf := make([]byte, 0, 4+len(d.Content)*2)
 	buf = append(buf, '"')
 	buf = d.WriteHexBytes(buf)
 	buf = append(buf, '"')
