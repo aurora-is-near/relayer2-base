@@ -1,8 +1,6 @@
 package primitives
 
-import "encoding/hex"
-
-var zeroChar = "0"[0]
+var hextable = "0123456789abcdef"
 
 func alignBytes(b []byte, length int, bigEndian bool) []byte {
 	if length < 0 {
@@ -29,13 +27,39 @@ func alignBytes(b []byte, length int, bigEndian bool) []byte {
 	return b
 }
 
-func bytesToHex(b []byte, trimLeadingZeroes bool) string {
-	hex := hex.EncodeToString(b)
-	i := 0
-	if trimLeadingZeroes {
-		for i < len(hex)-1 && hex[i] == zeroChar {
-			i++
-		}
+func byteToHex(v byte) (byte, byte) {
+	return hextable[v>>4], hextable[v&0x0f]
+}
+
+func writeDataHex(dst []byte, b []byte) []byte {
+	dst = append(dst, '0', 'x')
+	for _, v := range b {
+		l, r := byteToHex(v)
+		dst = append(dst, l, r)
 	}
-	return "0x" + hex[i:]
+	return dst
+}
+
+func writeQuantityHex(dst []byte, b []byte) []byte {
+	dst = append(dst, '0', 'x')
+	i := 0
+
+	for ; i < len(b) && b[i] == 0; i++ {
+	}
+	if i == len(b) {
+		return append(dst, '0')
+	}
+
+	l, r := byteToHex(b[i])
+	if l != '0' {
+		dst = append(dst, l)
+	}
+	dst = append(dst, r)
+
+	for i++; i < len(b); i++ {
+		l, r := byteToHex(b[i])
+		dst = append(dst, l, r)
+	}
+
+	return dst
 }
