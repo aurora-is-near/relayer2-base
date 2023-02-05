@@ -6,11 +6,14 @@ Key results:
 - [Jettison](https://github.com/wI2L/jettison) and [Jsoniter](https://github.com/json-iterator/go) are winners speed-wise (4.5x faster than std). Reason of that is obviously their support of custom marshal-to-writer functions.
 - [Jettison](https://github.com/wI2L/jettison) also performs surprisingly small amount of allocations.
 - [Jsoniter](https://github.com/json-iterator/go) however has Encoder API (marshal entire output to stream), which could be useful for direct output to http, [Jettison](https://github.com/wI2L/jettison) doesn't have this feature.
-- [Sonic](https://github.com/bytedance/sonic) implementation looks very promising, but it doesn't have custom marshal-to-writer functions support ([see issue](https://github.com/bytedance/sonic/issues/356)), hence low results.
+- [Sonic](https://github.com/bytedance/sonic) implementation looks very promising, but it doesn't have custom marshal-to-writer functions support ([see issue](https://github.com/bytedance/sonic/issues/356)), hence low results. Support of such feature would most probably be a game-changer here.
 
 ```
-GOARCH=amd64 go test -v -bench=. -benchtime=10s
-
+>GOARCH=amd64 go test -v -bench=. -benchtime=10s
+goos: darwin
+goarch: amd64
+pkg: relayer2-base/jsonbench
+cpu: VirtualApple @ 2.50GHz
 BenchmarkStdMarshal
 BenchmarkStdMarshal-10                	   10000	   1148144 ns/op	  452311 B/op	    5151 allocs/op
 BenchmarkStdEncode
