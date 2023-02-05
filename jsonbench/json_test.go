@@ -227,8 +227,9 @@ func BenchmarkSonicEncodeFastest(b *testing.B) {
 }
 
 func TestValidateJettison(t *testing.T) {
+	r := NewRandom()
 	for i := 0; i < 1000; i++ {
-		payloads := generatePayloads(NewRandom())
+		payloads := generatePayloads(r)
 		for _, payload := range payloads {
 			stdData, err := json.Marshal(payload)
 			if err != nil {
