@@ -55,6 +55,13 @@ func (q Quantity) MarshalJSON() ([]byte, error) {
 	return buf, nil
 }
 
+func (q Quantity) AppendJSON(buf []byte) ([]byte, error) {
+	buf = append(buf, '"')
+	buf = q.WriteHexBytes(buf)
+	buf = append(buf, '"')
+	return buf, nil
+}
+
 func (q *Quantity) UnmarshalJSON(b []byte) error {
 
 	if len(b) < 2 || b[0] != '"' || b[len(b)-1] != '"' {

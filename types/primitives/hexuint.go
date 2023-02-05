@@ -27,6 +27,13 @@ func (h HexUint) MarshalJSON() ([]byte, error) {
 	return buf, nil
 }
 
+func (h HexUint) AppendJSON(buf []byte) ([]byte, error) {
+	buf = append(buf, '"')
+	buf = h.WriteHexBytes(buf)
+	buf = append(buf, '"')
+	return buf, nil
+}
+
 func (h *HexUint) UnmarshalJSON(b []byte) error {
 	ui64, err := hexutil.DecodeUint64(string(b[1 : len(b)-1]))
 	if err != nil {

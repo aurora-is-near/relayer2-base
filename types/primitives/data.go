@@ -35,6 +35,13 @@ func (d Data[LD]) MarshalJSON() ([]byte, error) {
 	return buf, nil
 }
 
+func (d Data[LD]) AppendJSON(buf []byte) ([]byte, error) {
+	buf = append(buf, '"')
+	buf = d.WriteHexBytes(buf)
+	buf = append(buf, '"')
+	return buf, nil
+}
+
 func (d *Data[LD]) UnmarshalJSON(b []byte) error {
 	var err error
 	if len(b) < 2 || b[0] != '"' || b[len(b)-1] != '"' {
