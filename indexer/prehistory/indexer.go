@@ -26,7 +26,7 @@ type Indexer struct {
 	dbh     db.Handler
 	config  *Config
 	logger  *log.Logger
-	lock    *sync.Mutex
+	lock    sync.Mutex
 	started bool
 	stopCh  chan bool
 	reader  PreHistoryReader
@@ -69,7 +69,6 @@ func New(dbh db.Handler) (*Indexer, error) {
 		dbh:    dbh,
 		logger: logger,
 		config: config,
-		lock:   &sync.Mutex{},
 		stopCh: make(chan bool),
 		reader: PreHistoryReader{},
 	}
