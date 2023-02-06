@@ -3,9 +3,9 @@ package core
 import (
 	"errors"
 	"fmt"
-	"sync"
 
 	"github.com/dgraph-io/badger/v3"
+	"github.com/puzpuzpuz/xsync/v2"
 )
 
 var ErrLimited = errors.New("limited")
@@ -14,11 +14,11 @@ var ErrLimited = errors.New("limited")
 type ViewTxn struct {
 	db    *DB
 	txn   *badger.Txn
-	cache sync.Map
+	cache *xsync.MapOf[string, *cachedRead]
 }
 
-type cachedRead[T any] struct {
-	value *T
+type cachedRead struct {
+	value any
 	err   error
 	ready chan struct{}
 }
@@ -50,13 +50,14 @@ func read[T any](txn *ViewTxn, key []byte) (*T, error) {
 }
 
 func readCached[T any](txn *ViewTxn, key []byte) (*T, error) {
-	r, loaded := txn.cache.LoadOrStore(string(key), &cachedRead[T]{ready: make(chan struct{})})
-	cr := r.(*cachedRead[T])
+	r, loaded := txn.cache.LoadOrCompute(string(key), func() *cachedRead {
+		return &cachedRead{ready: make(chan struct{})}
+	})
 	if loaded {
-		<-cr.ready
+		<-r.ready
 	} else {
-		cr.value, cr.err = read[T](txn, key)
-		close(cr.ready)
+		r.value, r.err = read[T](txn, key)
+		close(r.ready)
 	}
-	return cr.value, cr.err
+	return r.value.(*T), r.err
 }

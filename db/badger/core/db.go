@@ -1,8 +1,10 @@
 package core
 
 import (
-	"github.com/dgraph-io/badger/v3"
 	"relayer2-base/db/codec"
+
+	"github.com/dgraph-io/badger/v3"
+	"github.com/puzpuzpuz/xsync/v2"
 )
 
 type DB struct {
@@ -40,8 +42,9 @@ func (db *DB) NewWriter() *Writer {
 func (db *DB) View(fn func(txn *ViewTxn) error) error {
 	return db.core.View(func(txn *badger.Txn) error {
 		return fn(&ViewTxn{
-			db:  db,
-			txn: txn,
+			db:    db,
+			txn:   txn,
+			cache: xsync.NewMapOf[*cachedRead](),
 		})
 	})
 }
@@ -49,8 +52,9 @@ func (db *DB) View(fn func(txn *ViewTxn) error) error {
 func (db *DB) Update(fn func(txn *ViewTxn) error) error {
 	return db.core.Update(func(txn *badger.Txn) error {
 		return fn(&ViewTxn{
-			db:  db,
-			txn: txn,
+			db:    db,
+			txn:   txn,
+			cache: xsync.NewMapOf[*cachedRead](),
 		})
 	})
 }
