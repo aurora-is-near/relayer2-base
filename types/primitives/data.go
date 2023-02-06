@@ -2,13 +2,13 @@ package primitives
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"reflect"
 	"relayer2-base/db/codec"
 	tp "relayer2-base/tinypack"
 	"strconv"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 type Data[LD tp.LengthDescriptor] struct {
@@ -20,12 +20,19 @@ func (d Data[LD]) Bytes() []byte {
 }
 
 func (d Data[LD]) Hex() string {
-	return bytesToHex(d.Content, false)
+	return string(d.WriteHexBytes(make([]byte, 0, 2+len(d.Content)*2)))
 }
 
-// Can (and must) be dramatically optimized
+func (d Data[LD]) WriteHexBytes(dst []byte) []byte {
+	return writeDataHex(dst, d.Content)
+}
+
 func (d Data[LD]) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%v"`, d.Hex())), nil
+	buf := make([]byte, 0, 4+len(d.Content)*2)
+	buf = append(buf, '"')
+	buf = d.WriteHexBytes(buf)
+	buf = append(buf, '"')
+	return buf, nil
 }
 
 func (d *Data[LD]) UnmarshalJSON(b []byte) error {

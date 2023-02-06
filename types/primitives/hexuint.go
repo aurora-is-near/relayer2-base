@@ -1,7 +1,8 @@
 package primitives
 
 import (
-	"fmt"
+	"strconv"
+
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
@@ -10,12 +11,20 @@ import (
 type HexUint uint64
 
 func (h HexUint) Hex() string {
-	return hexutil.EncodeUint64(uint64(h))
+	return string(h.WriteHexBytes(make([]byte, 0, 3)))
 }
 
-// Can (and must) be dramatically optimized
+func (h HexUint) WriteHexBytes(dst []byte) []byte {
+	dst = append(dst, '0', 'x')
+	return strconv.AppendUint(dst, uint64(h), 16)
+}
+
 func (h HexUint) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%v"`, h.Hex())), nil
+	buf := make([]byte, 0, 5)
+	buf = append(buf, '"')
+	buf = h.WriteHexBytes(buf)
+	buf = append(buf, '"')
+	return buf, nil
 }
 
 func (h *HexUint) UnmarshalJSON(b []byte) error {

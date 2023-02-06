@@ -3,13 +3,13 @@ package primitives
 import (
 	"encoding/binary"
 	"encoding/json"
-	"fmt"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/fxamacker/cbor/v2"
 	"math/big"
 	"reflect"
 	tp "relayer2-base/tinypack"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/fxamacker/cbor/v2"
 )
 
 type Quantity struct {
@@ -21,7 +21,11 @@ func (q Quantity) Bytes() []byte {
 }
 
 func (q Quantity) Hex() string {
-	return bytesToHex(q.Content, true)
+	return string(q.WriteHexBytes(make([]byte, 0, 3)))
+}
+
+func (d Quantity) WriteHexBytes(dst []byte) []byte {
+	return writeQuantityHex(dst, d.Content)
 }
 
 func (q Quantity) BigInt() *big.Int {
@@ -43,9 +47,12 @@ func (q Quantity) Uint64() uint64 {
 	return binary.BigEndian.Uint64(q.Content[24:])
 }
 
-// Can (and must) be dramatically optimized
 func (q Quantity) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%v"`, q.Hex())), nil
+	buf := make([]byte, 0, 5)
+	buf = append(buf, '"')
+	buf = q.WriteHexBytes(buf)
+	buf = append(buf, '"')
+	return buf, nil
 }
 
 func (q *Quantity) UnmarshalJSON(b []byte) error {
