@@ -74,6 +74,7 @@ func makeTransactionResponse(
 		S:                data.S,
 		TransactionIndex: primitives.HexUint(index),
 		Value:            data.Value,
+		Type:             primitives.HexUint(data.Type),
 	}
 	if !data.IsContractDeployment {
 		tx.To = data.ToOrContract.Ptr
@@ -93,6 +94,9 @@ func makeTransactionResponse(
 		tx.ChainID = &chainId
 		tx.MaxPriorityFeePerGas = &data.MaxPriorityFeePerGas
 		tx.MaxFeePerGas = &data.MaxFeePerGas
+	}
+	if data.Type > 2 {
+		tx.Type = primitives.HexUint(0)
 	}
 
 	return tx
@@ -147,6 +151,7 @@ func makeTransactionReceiptResponse(
 		NearReceiptHash:   txData.NearReceiptHash,
 		TransactionHash:   txHash,
 		TransactionIndex:  primitives.HexUint(txIndex),
+		Type:              primitives.HexUint(txData.Type),
 	}
 	if txData.IsContractDeployment {
 		txReceipt.ContractAddress = txData.ToOrContract.Ptr
@@ -160,6 +165,9 @@ func makeTransactionReceiptResponse(
 	}
 	if txData.NearHash.Ptr != nil {
 		txReceipt.NearTransactionHash = *txData.NearHash.Ptr
+	}
+	if txData.Type > 2 {
+		txReceipt.Type = primitives.HexUint(0)
 	}
 
 	return txReceipt
