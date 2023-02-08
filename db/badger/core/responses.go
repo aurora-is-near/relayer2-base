@@ -137,17 +137,16 @@ func makeTransactionReceiptResponse(
 	}
 
 	txReceipt := &response.TransactionReceipt{
-		BlockHash:           blockHash,
-		BlockNumber:         primitives.HexUint(height),
-		CumulativeGasUsed:   cumulativeGasUsed,
-		From:                txData.From,
-		GasUsed:             primitives.HexUint(gasUsed),
-		Logs:                Logs,
-		LogsBloom:           txData.LogsBloom,
-		NearReceiptHash:     txData.NearReceiptHash,
-		NearTransactionHash: txData.NearReceiptHash, // Use NearReceiptHash
-		TransactionHash:     txHash,
-		TransactionIndex:    primitives.HexUint(txIndex),
+		BlockHash:         blockHash,
+		BlockNumber:       primitives.HexUint(height),
+		CumulativeGasUsed: cumulativeGasUsed,
+		From:              txData.From,
+		GasUsed:           primitives.HexUint(gasUsed),
+		Logs:              Logs,
+		LogsBloom:         txData.LogsBloom,
+		NearReceiptHash:   txData.NearReceiptHash,
+		TransactionHash:   txHash,
+		TransactionIndex:  primitives.HexUint(txIndex),
 	}
 	if txData.IsContractDeployment {
 		txReceipt.ContractAddress = txData.ToOrContract.Ptr
@@ -158,6 +157,9 @@ func makeTransactionReceiptResponse(
 		txReceipt.Status = 1
 	} else {
 		txReceipt.Status = 0
+	}
+	if txData.NearHash.Ptr != nil {
+		txReceipt.NearTransactionHash = *txData.NearHash.Ptr
 	}
 
 	return txReceipt
