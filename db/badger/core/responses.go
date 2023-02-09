@@ -74,6 +74,7 @@ func makeTransactionResponse(
 		S:                data.S,
 		TransactionIndex: primitives.HexUint(index),
 		Value:            data.Value,
+		Type:             primitives.HexUint(data.Type),
 	}
 	if !data.IsContractDeployment {
 		tx.To = data.ToOrContract.Ptr
@@ -93,6 +94,9 @@ func makeTransactionResponse(
 		tx.ChainID = &chainId
 		tx.MaxPriorityFeePerGas = &data.MaxPriorityFeePerGas
 		tx.MaxFeePerGas = &data.MaxFeePerGas
+	}
+	if data.Type > 2 {
+		tx.Type = primitives.HexUint(0)
 	}
 
 	return tx
@@ -137,17 +141,17 @@ func makeTransactionReceiptResponse(
 	}
 
 	txReceipt := &response.TransactionReceipt{
-		BlockHash:           blockHash,
-		BlockNumber:         primitives.HexUint(height),
-		CumulativeGasUsed:   cumulativeGasUsed,
-		From:                txData.From,
-		GasUsed:             primitives.HexUint(gasUsed),
-		Logs:                Logs,
-		LogsBloom:           txData.LogsBloom,
-		NearReceiptHash:     txData.NearReceiptHash,
-		NearTransactionHash: txData.NearReceiptHash, // Use NearReceiptHash
-		TransactionHash:     txHash,
-		TransactionIndex:    primitives.HexUint(txIndex),
+		BlockHash:         blockHash,
+		BlockNumber:       primitives.HexUint(height),
+		CumulativeGasUsed: cumulativeGasUsed,
+		From:              txData.From,
+		GasUsed:           primitives.HexUint(gasUsed),
+		Logs:              Logs,
+		LogsBloom:         txData.LogsBloom,
+		NearReceiptHash:   txData.NearReceiptHash,
+		TransactionHash:   txHash,
+		TransactionIndex:  primitives.HexUint(txIndex),
+		Type:              primitives.HexUint(txData.Type),
 	}
 	if txData.IsContractDeployment {
 		txReceipt.ContractAddress = txData.ToOrContract.Ptr
@@ -158,6 +162,12 @@ func makeTransactionReceiptResponse(
 		txReceipt.Status = 1
 	} else {
 		txReceipt.Status = 0
+	}
+	if txData.NearHash.Ptr != nil {
+		txReceipt.NearTransactionHash = *txData.NearHash.Ptr
+	}
+	if txData.Type > 2 {
+		txReceipt.Type = primitives.HexUint(0)
 	}
 
 	return txReceipt

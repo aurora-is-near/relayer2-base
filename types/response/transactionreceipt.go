@@ -19,6 +19,7 @@ type TransactionReceipt struct {
 	NearTransactionHash primitives.Data32   `json:"nearTransactionHash"`
 	Status              primitives.HexUint  `json:"status"`
 	To                  *primitives.Data20  `json:"to"`
+	Type                primitives.HexUint  `json:"type"`
 	TransactionHash     primitives.Data32   `json:"transactionHash"`
 	TransactionIndex    primitives.HexUint  `json:"transactionIndex"`
 }
