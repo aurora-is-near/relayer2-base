@@ -74,8 +74,8 @@ type AccessList struct {
 }
 
 type NearTransaction struct {
-	Hash        *NearHash `cbor:"hash"         json:"hash"`
-	ReceiptHash NearHash  `cbor:"receipt_hash" json:"receipt_hash"`
+	Hash        *NearHash `cbor:"transaction_hash" json:"transaction_hash"`
+	ReceiptHash NearHash  `cbor:"receipt_hash"     json:"receipt_hash"`
 }
 
 type Log struct {
