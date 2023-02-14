@@ -13,7 +13,9 @@ func Process[T any](ctx context.Context, name string, endpoint *Endpoint, handle
 	var resp any
 	var err error
 	var stop bool
-	var childCtx context.Context
+
+	childCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	for _, p := range endpoint.Processors {
 		childCtx, stop, err = p.Pre(ctx, name, endpoint, &resp, args...)
