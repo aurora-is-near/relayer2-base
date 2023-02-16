@@ -446,9 +446,16 @@ func (h *BlockHandler) getLogs(ctx context.Context, txn *core.ViewTxn, filter *d
 			if err == core.ErrLimited {
 				var err error
 				if limit == int(h.config.Core.MaxScanIterators) {
-					err = fmt.Errorf("log response size exceeded. You can make eth_getLogs requests with up to a %d block range, or you can request any block range with a cap of %d logs in the response", int(h.config.Core.ScanRangeThreshold), int(h.config.Core.MaxScanIterators))
+					err = &errs.LogResponseRangeLimitError{
+						Err: fmt.Errorf("log response size exceeded. You can make eth_getLogs requests with "+
+							"up to a %d block range, or you can request any block range with a cap of %d logs in the response",
+							int(h.config.Core.ScanRangeThreshold), int(h.config.Core.MaxScanIterators)),
+					}
 				} else {
-					err = fmt.Errorf("log response size exceeded. Your requests can not exceed the maximum capacity of %d logs in the response", limit)
+					err = &errs.LogResponseRangeLimitError{
+						Err: fmt.Errorf("log response size exceeded. Your requests can not exceed the maximum "+
+							"capacity of %d logs in the response", limit),
+					}
 				}
 				return resp, lastKey, err
 			}

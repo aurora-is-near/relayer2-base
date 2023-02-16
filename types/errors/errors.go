@@ -7,9 +7,10 @@ const (
 	TxsStatus = 3
 
 	// -32768 to -32000 are reserved for pre-defined errors by JSON-RPC standart.
-	Generic        = -32000
-	MethodNotFound = -32601
-	InvalidParams  = -32602
+	Generic               = -32000
+	LogRangeLimitExceeded = -32005
+	MethodNotFound        = -32601
+	InvalidParams         = -32602
 
 	// -32999 to -32900 space is reserved for Aurora Relayer application specific errors.
 	KeyNotFound = -32900
@@ -36,7 +37,13 @@ func (e *InvalidParamsError) Error() string { return e.Message }
 
 type GenericError struct{ Err error }
 
-func (e *GenericError) ErrorCode() int { return Generic }
+func (e *GenericError) ErrorCode() int {
+	err, ok := e.Err.(Error)
+	if ok {
+		return err.ErrorCode()
+	}
+	return Generic
+}
 
 func (e *GenericError) Error() string { return e.Err.Error() }
 
@@ -47,6 +54,12 @@ func (e *KeyNotFoundError) ErrorCode() int { return KeyNotFound }
 func (e *KeyNotFoundError) Error() string {
 	return "record not found in DB"
 }
+
+type LogResponseRangeLimitError struct{ Err error }
+
+func (e *LogResponseRangeLimitError) ErrorCode() int { return LogRangeLimitExceeded }
+
+func (e *LogResponseRangeLimitError) Error() string { return e.Err.Error() }
 
 type TxsStatusError struct{ Message string }
 
