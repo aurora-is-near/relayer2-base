@@ -2,9 +2,9 @@ package primitives
 
 import (
 	"encoding/json"
+	"github.com/aurora-is-near/relayer2-base/db/codec"
+	tp "github.com/aurora-is-near/relayer2-base/tinypack"
 	"reflect"
-	"relayer2-base/db/codec"
-	tp "relayer2-base/tinypack"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"

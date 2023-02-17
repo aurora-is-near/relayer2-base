@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	errs "relayer2-base/types/errors"
-	"relayer2-base/utils"
+	errs "github.com/aurora-is-near/relayer2-base/types/errors"
+	"github.com/aurora-is-near/relayer2-base/utils"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto"

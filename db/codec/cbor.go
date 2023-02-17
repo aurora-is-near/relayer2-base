@@ -1,8 +1,8 @@
 package codec
 
 import (
+	"github.com/aurora-is-near/relayer2-base/log"
 	"github.com/fxamacker/cbor/v2"
-	"relayer2-base/log"
 )
 
 type CborCodec struct {

@@ -1,7 +1,7 @@
 package log
 
 import (
-	"relayer2-base/cmd"
+	"github.com/aurora-is-near/relayer2-base/cmd"
 
 	"github.com/spf13/viper"
 )

@@ -1,6 +1,6 @@
 package utils
 
-import "relayer2-base/types/common"
+import "github.com/aurora-is-near/relayer2-base/types/common"
 
 type constants struct {
 	clientVersion  string

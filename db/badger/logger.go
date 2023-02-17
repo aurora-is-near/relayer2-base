@@ -2,7 +2,7 @@ package badger
 
 import (
 	"fmt"
-	"relayer2-base/log"
+	"github.com/aurora-is-near/relayer2-base/log"
 )
 
 type Logger struct {

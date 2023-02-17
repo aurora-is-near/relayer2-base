@@ -1,7 +1,7 @@
 package response
 
 import (
-	"relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
 )
 
 // https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_gettransactionbyhash

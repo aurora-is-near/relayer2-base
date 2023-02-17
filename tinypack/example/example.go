@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	tp "github.com/aurora-is-near/relayer2-base/tinypack"
 	"github.com/davecgh/go-spew/spew"
-	tp "relayer2-base/tinypack"
 )
 
 type Person struct {

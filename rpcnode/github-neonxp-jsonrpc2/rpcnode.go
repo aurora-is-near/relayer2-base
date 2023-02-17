@@ -3,9 +3,9 @@ package github_neonxp_jsonrpc2
 import (
 	"context"
 	"fmt"
+	"github.com/aurora-is-near/relayer2-base/log"
 	"go.neonxp.dev/jsonrpc2/rpc"
 	"go.neonxp.dev/jsonrpc2/transport"
-	"relayer2-base/log"
 )
 
 type JsonRpc2 struct {

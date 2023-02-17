@@ -2,8 +2,8 @@ package endpoint
 
 import (
 	"encoding/json"
-	"relayer2-base/db"
-	"relayer2-base/log"
+	"github.com/aurora-is-near/relayer2-base/db"
+	"github.com/aurora-is-near/relayer2-base/log"
 
 	"golang.org/x/net/context"
 )

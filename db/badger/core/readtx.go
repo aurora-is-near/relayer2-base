@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	dbt "relayer2-base/types/db"
-	"relayer2-base/types/primitives"
-	"relayer2-base/types/response"
+	dbt "github.com/aurora-is-near/relayer2-base/types/db"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/types/response"
 
+	"github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
 	"github.com/dgraph-io/badger/v3"
-	"relayer2-base/db/badger/core/dbkey"
 )
 
 func (txn *ViewTxn) ReadTxKey(chainId uint64, hash primitives.Data32) (*dbt.TransactionKey, error) {

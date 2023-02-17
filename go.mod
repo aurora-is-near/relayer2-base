@@ -1,4 +1,4 @@
-module relayer2-base
+module github.com/aurora-is-near/relayer2-base
 
 go 1.18
 

@@ -1,8 +1,8 @@
 package broker
 
 import (
-	"relayer2-base/types/event"
-	"relayer2-base/types/request"
+	"github.com/aurora-is-near/relayer2-base/types/event"
+	"github.com/aurora-is-near/relayer2-base/types/request"
 )
 
 type SubID string

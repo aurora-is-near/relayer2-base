@@ -2,9 +2,9 @@ package processor
 
 import (
 	"context"
+	"github.com/aurora-is-near/relayer2-base/endpoint"
+	"github.com/aurora-is-near/relayer2-base/syncutils"
 	"reflect"
-	"relayer2-base/endpoint"
-	"relayer2-base/syncutils"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"golang.org/x/exp/slices"

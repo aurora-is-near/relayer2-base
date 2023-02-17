@@ -3,12 +3,12 @@ package badger
 import (
 	"context"
 	"errors"
-	dbh "relayer2-base/db"
-	"relayer2-base/db/badger/core"
-	"relayer2-base/db/codec"
-	dbt "relayer2-base/types/db"
-	"relayer2-base/types/primitives"
-	"relayer2-base/utils"
+	dbh "github.com/aurora-is-near/relayer2-base/db"
+	"github.com/aurora-is-near/relayer2-base/db/badger/core"
+	"github.com/aurora-is-near/relayer2-base/db/codec"
+	dbt "github.com/aurora-is-near/relayer2-base/types/db"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/utils"
 )
 
 type FilterHandler struct {

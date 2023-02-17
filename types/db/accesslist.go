@@ -1,8 +1,8 @@
 package db
 
 import (
-	tp "relayer2-base/tinypack"
-	"relayer2-base/types/primitives"
+	tp "github.com/aurora-is-near/relayer2-base/tinypack"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
 )
 
 type AccessListEntry struct {

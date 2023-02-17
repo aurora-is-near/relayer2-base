@@ -2,11 +2,11 @@ package events
 
 import (
 	"bytes"
-	"relayer2-base/broker"
-	"relayer2-base/log"
-	"relayer2-base/types/common"
-	"relayer2-base/types/event"
-	"relayer2-base/types/request"
+	"github.com/aurora-is-near/relayer2-base/broker"
+	"github.com/aurora-is-near/relayer2-base/log"
+	"github.com/aurora-is-near/relayer2-base/types/common"
+	"github.com/aurora-is-near/relayer2-base/types/event"
+	"github.com/aurora-is-near/relayer2-base/types/request"
 	"strings"
 	"time"
 

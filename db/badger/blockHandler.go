@@ -3,17 +3,17 @@ package badger
 import (
 	"context"
 	"fmt"
-	dbh "relayer2-base/db"
-	"relayer2-base/db/badger/core"
-	"relayer2-base/db/badger/core/dbkey"
-	"relayer2-base/db/codec"
-	"relayer2-base/types/common"
-	dbt "relayer2-base/types/db"
-	errs "relayer2-base/types/errors"
-	"relayer2-base/types/indexer"
-	"relayer2-base/types/primitives"
-	"relayer2-base/types/response"
-	"relayer2-base/utils"
+	dbh "github.com/aurora-is-near/relayer2-base/db"
+	"github.com/aurora-is-near/relayer2-base/db/badger/core"
+	"github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
+	"github.com/aurora-is-near/relayer2-base/db/codec"
+	"github.com/aurora-is-near/relayer2-base/types/common"
+	dbt "github.com/aurora-is-near/relayer2-base/types/db"
+	errs "github.com/aurora-is-near/relayer2-base/types/errors"
+	"github.com/aurora-is-near/relayer2-base/types/indexer"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/types/response"
+	"github.com/aurora-is-near/relayer2-base/utils"
 )
 
 type BlockHandler struct {

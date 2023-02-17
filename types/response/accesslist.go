@@ -1,6 +1,6 @@
 package response
 
-import "relayer2-base/types/primitives"
+import "github.com/aurora-is-near/relayer2-base/types/primitives"
 
 // https://openethereum.github.io/JSONRPC
 type AccessListEntry struct {

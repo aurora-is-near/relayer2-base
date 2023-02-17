@@ -17,14 +17,14 @@
 package github_ethereum_go_ethereum
 
 import (
+	"github.com/aurora-is-near/relayer2-base/broker"
+	"github.com/aurora-is-near/relayer2-base/log"
+	eventbroker "github.com/aurora-is-near/relayer2-base/rpcnode/github-ethereum-go-ethereum/events"
 	"github.com/ethereum/go-ethereum/rpc"
 	"golang.org/x/net/context"
 	"io"
 	"net/http"
 	"os"
-	"relayer2-base/broker"
-	"relayer2-base/log"
-	eventbroker "relayer2-base/rpcnode/github-ethereum-go-ethereum/events"
 	"time"
 
 	gel "github.com/ethereum/go-ethereum/log"

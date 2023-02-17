@@ -1,8 +1,8 @@
 package core
 
 import (
-	"relayer2-base/db/badger/core/dbkey"
-	"relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
 )
 
 func (txn *ViewTxn) ReadIndexerState(chainId uint64) ([]byte, error) {
