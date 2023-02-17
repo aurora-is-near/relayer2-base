@@ -2,9 +2,9 @@ package db
 
 import (
 	"fmt"
-	"relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
 
-	tp "relayer2-base/tinypack"
+	tp "github.com/aurora-is-near/relayer2-base/tinypack"
 )
 
 //

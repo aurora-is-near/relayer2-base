@@ -6,15 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/aurora-is-near/relayer2-base/log"
+	error2 "github.com/aurora-is-near/relayer2-base/types/errors"
+	"github.com/aurora-is-near/relayer2-base/utils"
 	"regexp"
-	"relayer2-base/log"
-	error2 "relayer2-base/types/errors"
-	"relayer2-base/utils"
 	"strings"
 
 	"github.com/near/borsh-go"
 
-	cc "relayer2-base/types/common"
+	cc "github.com/aurora-is-near/relayer2-base/types/common"
 
 	"github.com/ethereum/go-ethereum/common"
 )

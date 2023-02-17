@@ -3,9 +3,9 @@ package core
 import (
 	"bytes"
 	"container/heap"
-	"relayer2-base/db/badger/core/dbkey"
-	"relayer2-base/db/badger/core/logscan"
-	"relayer2-base/types/db"
+	"github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
+	"github.com/aurora-is-near/relayer2-base/db/badger/core/logscan"
+	"github.com/aurora-is-near/relayer2-base/types/db"
 	"sync"
 
 	"github.com/dgraph-io/badger/v3"

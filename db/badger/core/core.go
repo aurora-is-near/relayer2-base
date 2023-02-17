@@ -1,10 +1,10 @@
 package core
 
 import (
+	"github.com/aurora-is-near/relayer2-base/log"
+	"github.com/aurora-is-near/relayer2-base/syncutils"
 	"os"
 	"path"
-	"relayer2-base/log"
-	"relayer2-base/syncutils"
 	"time"
 
 	"github.com/dgraph-io/badger/v3"

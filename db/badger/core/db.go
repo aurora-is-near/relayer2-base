@@ -1,7 +1,7 @@
 package core
 
 import (
-	"relayer2-base/db/codec"
+	"github.com/aurora-is-near/relayer2-base/db/codec"
 
 	"github.com/dgraph-io/badger/v3"
 	"github.com/puzpuzpuz/xsync/v2"

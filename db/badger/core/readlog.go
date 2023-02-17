@@ -3,12 +3,12 @@ package core
 import (
 	"context"
 	"fmt"
-	"relayer2-base/db/badger/core/dbkey"
-	"relayer2-base/db/badger/core/logscan"
-	tp "relayer2-base/tinypack"
-	"relayer2-base/types/db"
-	"relayer2-base/types/primitives"
-	"relayer2-base/types/response"
+	"github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
+	"github.com/aurora-is-near/relayer2-base/db/badger/core/logscan"
+	tp "github.com/aurora-is-near/relayer2-base/tinypack"
+	"github.com/aurora-is-near/relayer2-base/types/db"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/types/response"
 
 	badger "github.com/dgraph-io/badger/v3"
 )

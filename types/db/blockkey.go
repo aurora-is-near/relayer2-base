@@ -1,6 +1,6 @@
 package db
 
-import "relayer2-base/db/badger/core/dbkey"
+import "github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
 
 type BlockKey struct {
 	Height uint64

@@ -1,6 +1,6 @@
 package primitives
 
-import "relayer2-base/tinypack"
+import "github.com/aurora-is-near/relayer2-base/tinypack"
 
 type VarLen = tinypack.VariadicLength
 

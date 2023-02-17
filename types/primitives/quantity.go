@@ -3,9 +3,9 @@ package primitives
 import (
 	"encoding/binary"
 	"encoding/json"
+	tp "github.com/aurora-is-near/relayer2-base/tinypack"
 	"math/big"
 	"reflect"
-	tp "relayer2-base/tinypack"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"

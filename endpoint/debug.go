@@ -2,9 +2,9 @@ package endpoint
 
 import (
 	"errors"
-	"relayer2-base/types/common"
-	errs "relayer2-base/types/errors"
-	"relayer2-base/types/response"
+	"github.com/aurora-is-near/relayer2-base/types/common"
+	errs "github.com/aurora-is-near/relayer2-base/types/errors"
+	"github.com/aurora-is-near/relayer2-base/types/response"
 
 	"golang.org/x/net/context"
 )

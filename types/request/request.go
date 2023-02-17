@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"relayer2-base/types/common"
+	"github.com/aurora-is-near/relayer2-base/types/common"
 )
 
 type Topics [][][]byte

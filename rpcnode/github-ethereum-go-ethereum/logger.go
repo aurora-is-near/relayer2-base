@@ -1,8 +1,8 @@
 package github_ethereum_go_ethereum
 
 import (
+	"github.com/aurora-is-near/relayer2-base/log"
 	gel "github.com/ethereum/go-ethereum/log"
-	"relayer2-base/log"
 )
 
 type Logger struct {

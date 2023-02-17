@@ -3,13 +3,13 @@ package tar
 import (
 	"bytes"
 	"fmt"
+	"github.com/aurora-is-near/relayer2-base/db"
+	"github.com/aurora-is-near/relayer2-base/db/codec"
+	"github.com/aurora-is-near/relayer2-base/types/indexer"
 	"github.com/aurora-is-near/stream-backup/messagebackup"
 	"github.com/fxamacker/cbor/v2"
-	"relayer2-base/db"
-	"relayer2-base/db/codec"
-	"relayer2-base/types/indexer"
 )
-import "relayer2-base/log"
+import "github.com/aurora-is-near/relayer2-base/log"
 import "github.com/aurora-is-near/stream-backup/chunks"
 
 type Indexer struct {

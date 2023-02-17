@@ -1,9 +1,9 @@
 package tar
 
 import (
+	"github.com/aurora-is-near/relayer2-base/cmd"
+	"github.com/aurora-is-near/relayer2-base/log"
 	"github.com/spf13/viper"
-	"relayer2-base/cmd"
-	"relayer2-base/log"
 )
 
 const (

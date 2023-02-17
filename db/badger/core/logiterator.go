@@ -2,8 +2,8 @@ package core
 
 import (
 	"bytes"
-	"relayer2-base/db/badger/core/dbkey"
-	dbt "relayer2-base/types/db"
+	"github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
+	dbt "github.com/aurora-is-near/relayer2-base/types/db"
 	"sync"
 
 	"github.com/dgraph-io/badger/v3"

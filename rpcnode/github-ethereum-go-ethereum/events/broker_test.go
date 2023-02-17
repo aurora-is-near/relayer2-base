@@ -2,12 +2,12 @@ package events_test
 
 import (
 	"crypto/rand"
-	"relayer2-base/broker"
-	"relayer2-base/rpcnode/github-ethereum-go-ethereum/events"
-	"relayer2-base/types/event"
-	"relayer2-base/types/primitives"
-	"relayer2-base/types/request"
-	"relayer2-base/types/response"
+	"github.com/aurora-is-near/relayer2-base/broker"
+	"github.com/aurora-is-near/relayer2-base/rpcnode/github-ethereum-go-ethereum/events"
+	"github.com/aurora-is-near/relayer2-base/types/event"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/types/request"
+	"github.com/aurora-is-near/relayer2-base/types/response"
 	"testing"
 	"time"
 

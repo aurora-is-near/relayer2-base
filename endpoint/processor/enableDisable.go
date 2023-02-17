@@ -2,8 +2,8 @@ package processor
 
 import (
 	"context"
-	"relayer2-base/endpoint"
-	errs "relayer2-base/types/errors"
+	"github.com/aurora-is-near/relayer2-base/endpoint"
+	errs "github.com/aurora-is-near/relayer2-base/types/errors"
 )
 
 type EnableDisable struct{}

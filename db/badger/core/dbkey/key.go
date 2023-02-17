@@ -1,8 +1,8 @@
 package dbkey
 
 import (
-	dbs "relayer2-base/db/badger/core/dbkey/dbschema"
-	"relayer2-base/db/badger/core/logscan"
+	dbs "github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey/dbschema"
+	"github.com/aurora-is-near/relayer2-base/db/badger/core/logscan"
 )
 
 const (

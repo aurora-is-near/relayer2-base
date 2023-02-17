@@ -1,9 +1,9 @@
 package core
 
 import (
-	"relayer2-base/db/badger/core/dbkey"
-	"relayer2-base/types/db"
-	dbp "relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
+	"github.com/aurora-is-near/relayer2-base/types/db"
+	dbp "github.com/aurora-is-near/relayer2-base/types/primitives"
 )
 
 func (txn *ViewTxn) ReadBlockFilter(chainId uint64, filterId dbp.Data32) (*db.BlockFilter, error) {

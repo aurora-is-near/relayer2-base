@@ -5,11 +5,11 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
-	"relayer2-base/log"
-	"relayer2-base/tinypack"
-	dbt "relayer2-base/types/db"
-	"relayer2-base/types/indexer"
-	"relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/log"
+	"github.com/aurora-is-near/relayer2-base/tinypack"
+	dbt "github.com/aurora-is-near/relayer2-base/types/db"
+	"github.com/aurora-is-near/relayer2-base/types/indexer"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )

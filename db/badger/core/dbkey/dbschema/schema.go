@@ -1,7 +1,7 @@
 package dbschema
 
 import (
-	"relayer2-base/log"
+	"github.com/aurora-is-near/relayer2-base/log"
 )
 
 type SchemaPath struct {

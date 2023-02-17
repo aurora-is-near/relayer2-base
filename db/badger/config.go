@@ -1,9 +1,9 @@
 package badger
 
 import (
-	"relayer2-base/cmd"
-	"relayer2-base/db/badger/core"
-	"relayer2-base/log"
+	"github.com/aurora-is-near/relayer2-base/cmd"
+	"github.com/aurora-is-near/relayer2-base/db/badger/core"
+	"github.com/aurora-is-near/relayer2-base/log"
 
 	"github.com/dgraph-io/badger/v3"
 	"github.com/spf13/viper"

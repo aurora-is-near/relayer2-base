@@ -1,9 +1,9 @@
 package log
 
 import (
+	"github.com/aurora-is-near/relayer2-base/syncutils"
 	"io"
 	"os"
-	"relayer2-base/syncutils"
 
 	"github.com/rs/zerolog"
 )

@@ -1,10 +1,10 @@
 package types
 
 import (
-	"relayer2-base/db/badger/core/dbkey"
-	"relayer2-base/tinypack"
-	"relayer2-base/types/db"
-	"relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
+	"github.com/aurora-is-near/relayer2-base/tinypack"
+	"github.com/aurora-is-near/relayer2-base/types/db"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"time"
 )
 

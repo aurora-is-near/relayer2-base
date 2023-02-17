@@ -3,11 +3,11 @@ package db
 import (
 	"context"
 	"fmt"
-	"relayer2-base/types/common"
-	"relayer2-base/types/db"
-	"relayer2-base/types/indexer"
-	"relayer2-base/types/primitives"
-	"relayer2-base/types/response"
+	"github.com/aurora-is-near/relayer2-base/types/common"
+	"github.com/aurora-is-near/relayer2-base/types/db"
+	"github.com/aurora-is-near/relayer2-base/types/indexer"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/types/response"
 	"strings"
 )
 

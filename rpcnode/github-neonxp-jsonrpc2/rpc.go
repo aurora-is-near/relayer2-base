@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	error2 "relayer2-base/types/errors"
+	error2 "github.com/aurora-is-near/relayer2-base/types/errors"
 
 	"go.neonxp.dev/jsonrpc2/rpc"
 )
