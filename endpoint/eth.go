@@ -3,6 +3,7 @@ package endpoint
 import (
 	"context"
 	"errors"
+
 	"github.com/aurora-is-near/relayer2-base/types"
 	"github.com/aurora-is-near/relayer2-base/types/common"
 	"github.com/aurora-is-near/relayer2-base/types/engine"
@@ -249,7 +250,8 @@ func (e *Eth) NewBlockFilter(ctx context.Context) (*common.Uint256, error) {
 	}
 	fromBlock := uint64(*bn)
 	fid := common.RandomUint256()
-	dbf := types.Filter{FromBlock: &fromBlock}.ToBlockFilter()
+	nFilter := &(types.Filter{FromBlock: &fromBlock})
+	dbf := nFilter.ToBlockFilter()
 	err = e.DbHandler.StoreBlockFilter(ctx, fid.Data32(), dbf)
 	if err != nil {
 		return nil, &errs.GenericError{Err: err}

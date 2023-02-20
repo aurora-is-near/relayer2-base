@@ -1,11 +1,12 @@
 package types
 
 import (
+	"time"
+
 	"github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
 	"github.com/aurora-is-near/relayer2-base/tinypack"
 	"github.com/aurora-is-near/relayer2-base/types/db"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
-	"time"
 )
 
 type Filter struct {
@@ -19,7 +20,7 @@ type Filter struct {
 	Topics    [][]primitives.Data32
 }
 
-func (f Filter) ToLogFilter() *db.LogFilter {
+func (f *Filter) ToLogFilter() *db.LogFilter {
 
 	var fb, tb, ft, tt, fl, tl uint64
 	tt = dbkey.MaxTxIndex
@@ -59,7 +60,7 @@ func (f Filter) ToLogFilter() *db.LogFilter {
 	}
 }
 
-func (f Filter) ToBlockFilter() *db.BlockFilter {
+func (f *Filter) ToBlockFilter() *db.BlockFilter {
 	var fb, tb uint64
 	if f.FromBlock != nil {
 		fb = *f.FromBlock
@@ -75,7 +76,7 @@ func (f Filter) ToBlockFilter() *db.BlockFilter {
 	}
 }
 
-func (f Filter) ToTxnFilter() *db.TransactionFilter {
+func (f *Filter) ToTxnFilter() *db.TransactionFilter {
 	var fb, tb, ft, tt uint64
 	if f.FromBlock != nil {
 		fb = *f.FromBlock
