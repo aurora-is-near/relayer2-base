@@ -17,15 +17,16 @@
 package github_ethereum_go_ethereum
 
 import (
+	"io"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/aurora-is-near/relayer2-base/broker"
 	"github.com/aurora-is-near/relayer2-base/log"
 	eventbroker "github.com/aurora-is-near/relayer2-base/rpcnode/github-ethereum-go-ethereum/events"
 	"github.com/ethereum/go-ethereum/rpc"
 	"golang.org/x/net/context"
-	"io"
-	"net/http"
-	"os"
-	"time"
 
 	gel "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/node"
@@ -92,7 +93,7 @@ func NewWithConf(conf *Config) (*GoEthereum, error) {
 // http.Handler and returning http.Handler. Any request matching the path argument is first processed by this middleware.
 // Middleware should either return response for the request or pass the request to next HTTP handler in the chain.
 // Refer to http.HandlerFunc for middleware creation.
-func (ge GoEthereum) WithMiddleware(name string, path string, middleware func(handler http.Handler) http.Handler) {
+func (ge *GoEthereum) WithMiddleware(name string, path string, middleware func(handler http.Handler) http.Handler) {
 	h, err := ge.RPCHandler()
 	if err != nil {
 		log.Log().Fatal().Err(err).Msg("failed to get rpc handler")
@@ -100,7 +101,7 @@ func (ge GoEthereum) WithMiddleware(name string, path string, middleware func(ha
 	ge.RegisterHandler(name, path, middleware(h))
 }
 
-func (ge GoEthereum) Resolve(_ context.Context, reader io.Reader, writer io.Writer) error {
+func (ge *GoEthereum) Resolve(_ context.Context, reader io.Reader, writer io.Writer) error {
 	rpcHandler, err := ge.RPCHandler()
 	if err != nil {
 		return err

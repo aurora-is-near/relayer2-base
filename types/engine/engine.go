@@ -6,11 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
+
 	"github.com/aurora-is-near/relayer2-base/log"
 	error2 "github.com/aurora-is-near/relayer2-base/types/errors"
 	"github.com/aurora-is-near/relayer2-base/utils"
-	"regexp"
-	"strings"
 
 	"github.com/near/borsh-go"
 
@@ -50,7 +51,7 @@ func (gs *ArgsForGetStorageAt) SetFields(addr cc.Address, sSlot cc.Uint256) *Arg
 
 // Serialize transforms ArgsForGetStorageAt to ArgsForGetStorageAtEngine, calls its Serialize method
 // and returns the received buffer
-func (gs ArgsForGetStorageAt) Serialize() ([]byte, error) {
+func (gs *ArgsForGetStorageAt) Serialize() ([]byte, error) {
 	tmpObj := NewArgsForGetStorageAtEngine().SetFields(gs.Address.Address[:], gs.StorageSlot.Bytes())
 	buff, err := tmpObj.Serialize()
 	if err != nil {

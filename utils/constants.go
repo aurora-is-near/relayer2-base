@@ -16,15 +16,15 @@ type constants struct {
 	zeroUint256    common.Uint256
 }
 
-func (c constants) ClientVersion() *string {
+func (c *constants) ClientVersion() *string {
 	return &c.clientVersion
 }
 
-func (c constants) ZeroStrUint256() *string {
+func (c *constants) ZeroStrUint256() *string {
 	return &c.zeroStrUint256
 }
 
-func (c constants) ZeroStrUint160() *string {
+func (c *constants) ZeroStrUint160() *string {
 	return &c.zeroStrUint160
 }
 
@@ -32,31 +32,31 @@ func (c constants) ZeroStrUint128() *string {
 	return &c.zeroStrUint128
 }
 
-func (c constants) Response0x() *string {
+func (c *constants) Response0x() *string {
 	return &c.response0x
 }
 
-func (c constants) Syncing() *bool {
+func (c *constants) Syncing() *bool {
 	return &c.syncing
 }
 
-func (c constants) Mining() *bool {
+func (c *constants) Mining() *bool {
 	return &c.mining
 }
 
-func (c constants) Full() *bool {
+func (c *constants) Full() *bool {
 	return &c.full
 }
 
-func (c constants) GasLimit() *uint64 {
+func (c *constants) GasLimit() *uint64 {
 	return &c.gasLimit
 }
 
-func (c constants) EmptyArray() *[]string {
+func (c *constants) EmptyArray() *[]string {
 	return &c.emptyArray
 }
 
-func (c constants) ZeroUint256() *common.Uint256 {
+func (c *constants) ZeroUint256() *common.Uint256 {
 	return &c.zeroUint256
 }
 

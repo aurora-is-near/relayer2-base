@@ -5,11 +5,12 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"math/big"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -115,23 +116,23 @@ func (ui256 *Uint256) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (ui256 Uint256) Bytes() []byte {
+func (ui256 *Uint256) Bytes() []byte {
 	return ui256.ToInt().Bytes()
 }
 
-func (ui256 Uint256) Uint64() uint64 {
+func (ui256 *Uint256) Uint64() uint64 {
 	return ui256.ToInt().Uint64()
 }
 
-func (ui256 Uint256) Text(base int) string {
+func (ui256 *Uint256) Text(base int) string {
 	return ui256.ToInt().Text(base)
 }
 
-func (ui256 Uint256) Cmp(test Uint256) int {
+func (ui256 *Uint256) Cmp(test Uint256) int {
 	return ui256.ToInt().Cmp(test.ToInt())
 }
 
-func (ui256 Uint256) Data32() primitives.Data32 {
+func (ui256 *Uint256) Data32() primitives.Data32 {
 	return primitives.Data32FromBytes(ui256.Bytes())
 }
 
