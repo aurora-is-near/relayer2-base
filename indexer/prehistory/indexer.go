@@ -3,13 +3,14 @@ package prehistory
 import (
 	"context"
 	"errors"
+	"sync"
+	"time"
+
 	"github.com/aurora-is-near/relayer2-base/db"
 	"github.com/aurora-is-near/relayer2-base/log"
 	"github.com/aurora-is-near/relayer2-base/types/indexer"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"github.com/aurora-is-near/relayer2-base/utils"
-	"sync"
-	"time"
 
 	"fmt"
 
@@ -113,7 +114,7 @@ func (i *Indexer) index() {
 	quantity := primitives.QuantityFromBytes(emptyBytes)
 	parentHash := primitives.Data32FromBytes(emptyBytes)
 	blockHash := primitives.Data32FromBytes(emptyBytes)
-	chainId := utils.GetChainId(context.Background())
+	chainId := i.config.ChainId
 	from := i.config.From
 	to := i.config.To
 	step := i.config.BatchSize
