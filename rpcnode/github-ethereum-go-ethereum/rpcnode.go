@@ -97,7 +97,10 @@ func (ge *GoEthereum) Resolve(ctx context.Context, reader io.Reader, writer io.W
 	}
 	req.Header.Set("content-type", "application/json")
 	rpcHandler.ServeHTTP(hr, req)
-	writer.Write(hr.Body.Bytes())
+	_, err = writer.Write(hr.Body.Bytes())
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
