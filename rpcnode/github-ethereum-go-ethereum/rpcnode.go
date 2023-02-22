@@ -3,13 +3,13 @@ package github_ethereum_go_ethereum
 import (
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"time"
 
 	"github.com/aurora-is-near/relayer2-base/broker"
 	"github.com/aurora-is-near/relayer2-base/log"
 	eventbroker "github.com/aurora-is-near/relayer2-base/rpcnode/github-ethereum-go-ethereum/events"
-	"github.com/ethereum/go-ethereum/rpc"
 	"golang.org/x/net/context"
 
 	gel "github.com/ethereum/go-ethereum/log"
@@ -85,15 +85,19 @@ func (ge *GoEthereum) WithMiddleware(name string, path string, middleware func(h
 	ge.RegisterHandler(name, path, middleware(h))
 }
 
-func (ge *GoEthereum) Resolve(_ context.Context, reader io.Reader, writer io.Writer) error {
+func (ge *GoEthereum) Resolve(ctx context.Context, reader io.Reader, writer io.Writer) error {
 	rpcHandler, err := ge.RPCHandler()
 	if err != nil {
 		return err
 	}
-	rpcHandler.ServeCodec(rpc.NewCodec(connection{
-		Reader: reader,
-		Writer: writer,
-	}), 0)
+	hr := httptest.NewRecorder()
+	req, err := http.NewRequestWithContext(ctx, "POST", "", reader)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("content-type", "application/json")
+	rpcHandler.ServeHTTP(hr, req)
+	writer.Write(hr.Body.Bytes())
 	return nil
 }
 
