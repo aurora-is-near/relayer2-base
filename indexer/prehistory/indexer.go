@@ -29,7 +29,7 @@ type Indexer struct {
 	logger  *log.Logger
 	lock    sync.Mutex
 	started bool
-	stopCh  chan bool
+	stopCh  chan struct{}
 	reader  PreHistoryReader
 }
 
@@ -70,7 +70,7 @@ func New(dbh db.Handler) (*Indexer, error) {
 		dbh:    dbh,
 		logger: logger,
 		config: config,
-		stopCh: make(chan bool),
+		stopCh: make(chan struct{}),
 		reader: PreHistoryReader{},
 	}
 	return i, nil
@@ -91,7 +91,7 @@ func (i *Indexer) Close() {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 	i.logger.Info().Msgf("Prehistory indexer reveived close signal")
-	i.stopCh <- true
+	close(i.stopCh)
 }
 
 // Start starts the prehistory indexing as a goroutine based on the config file settings
