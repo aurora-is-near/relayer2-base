@@ -2,7 +2,10 @@ package badger
 
 import (
 	"context"
+	"encoding/binary"
+	"errors"
 	"fmt"
+
 	dbh "github.com/aurora-is-near/relayer2-base/db"
 	"github.com/aurora-is-near/relayer2-base/db/badger/core"
 	"github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
@@ -68,7 +71,32 @@ func (h *BlockHandler) GetBlockByHash(ctx context.Context, hash common.H256, isF
 			return err
 		}
 		if key == nil {
-			return &errs.KeyNotFoundError{}
+			// Provided hash not found in DB, check if this is a prehistory hash
+			prehistoryChainId := utils.GetPrehistoryChainId()
+			if chainId == prehistoryChainId {
+				return &errs.KeyNotFoundError{}
+			} else {
+				blockHeight, err := decodeBlockHeight(bh.Content)
+				if blockHeight == nil || *blockHeight > utils.GetPrehistoryHeight() {
+					return &errs.KeyNotFoundError{}
+				}
+				if err != nil {
+					return &errs.InvalidParamsError{Message: err.Error()}
+				}
+
+				key = &dbt.BlockKey{Height: *blockHeight}
+				resp, err = txn.ReadBlock(prehistoryChainId, *key, isFull)
+				if err != nil {
+					return &errs.KeyNotFoundError{}
+				}
+				if resp != nil {
+					resp, err = postProcessPrehistoryBlock(resp, key.Height, chainId)
+					if err != nil {
+						return err
+					}
+				}
+				return nil
+			}
 		}
 		resp, err = txn.ReadBlock(chainId, *key, isFull)
 		return err
@@ -81,23 +109,56 @@ func (h *BlockHandler) GetBlockByNumber(ctx context.Context, number common.BN64,
 	var err error
 	err = h.db.View(func(txn *core.ViewTxn) error {
 		var key *dbt.BlockKey
+		var skipPrehistoryChecks bool
 		bn := number.Uint64()
 		chainId := utils.GetChainId(ctx)
+		prehistoryChainId := utils.GetPrehistoryChainId()
+		if chainId == prehistoryChainId {
+			skipPrehistoryChecks = true
+		}
 		if bn == nil {
 			key, err = txn.ReadLatestBlockKey(chainId)
 			if err != nil {
 				return err
 			}
+			// Check prehistory blocks if latest block key is nil and prehistory has a different chainId
+			if key == nil && !skipPrehistoryChecks {
+				key, err = txn.ReadLatestBlockKey(prehistoryChainId)
+				if err != nil {
+					return err
+				}
+			}
 		} else if *bn == 0 {
-			key, err = txn.ReadEarliestBlockKey(chainId)
-			if err != nil {
-				return err
+			key = nil
+			// Check prehistory blocks first if prehistory has a different chainId
+			if !skipPrehistoryChecks {
+				key, err = txn.ReadEarliestBlockKey(prehistoryChainId)
+				if err != nil {
+					return err
+				}
+			}
+			// If prehistory has the same chain with relayer or key not found in prehistory, then check the relayer chain
+			if key == nil {
+				key, err = txn.ReadEarliestBlockKey(chainId)
+				if err != nil {
+					return err
+				}
 			}
 		} else {
 			key = &dbt.BlockKey{Height: *bn}
 		}
 		if key != nil {
-			resp, err = txn.ReadBlock(chainId, *key, isFull)
+			if key.Height >= utils.GetPrehistoryHeight() || skipPrehistoryChecks {
+				resp, err = txn.ReadBlock(chainId, *key, isFull)
+			} else {
+				resp, err = txn.ReadBlock(prehistoryChainId, *key, isFull)
+				if err != nil {
+					return err
+				}
+				if resp != nil {
+					resp, err = postProcessPrehistoryBlock(resp, key.Height, chainId)
+				}
+			}
 		}
 		return err
 	})
@@ -527,4 +588,67 @@ func (h *BlockHandler) getTransactionHashes(ctx context.Context, txn *core.ViewT
 		return resp, lastKey, nil
 	}
 	return resp, lastKey, err
+}
+
+// postProcessPrehistoryBlock updates the block hash and parent hash fields of the prehistory block according to the prehistory chainId
+func postProcessPrehistoryBlock(preBlock *response.Block, blockHeight, chainId uint64) (*response.Block, error) {
+	var err error
+	preBlock.Hash.Content, err = encodeBlockHeight(preBlock.Hash.Content, blockHeight)
+	if err != nil {
+		return nil, err
+	}
+	if blockHeight != 0 {
+		preBlock.ParentHash.Content, err = encodeBlockHeight(preBlock.ParentHash.Content, blockHeight-1)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return preBlock, nil
+}
+
+// encodeBlockHeight embeds the height to the provided byte slice
+func encodeBlockHeight(hash []byte, height uint64) ([]byte, error) {
+	if len(hash) < 32 {
+		return nil, fmt.Errorf("hash retrieved from block [%d] is invalid", height)
+	}
+
+	bufHeightBE := make([]byte, 8)
+	bufHeightLE := make([]byte, 8)
+	binary.BigEndian.PutUint64(bufHeightBE, height)
+	binary.LittleEndian.PutUint64(bufHeightLE, height)
+	hashBaseSection1 := hash[8:16]
+	hashSection1ToEncode := hash[0:8]
+	hashBaseSection2 := hash[24:32]
+	hashSection2ToEncode := hash[16:24]
+	for i := 0; i < 8; i++ {
+		hashSection1ToEncode[i] = bufHeightBE[i] ^ hashBaseSection1[i]
+		hashSection2ToEncode[i] = bufHeightLE[i] ^ hashBaseSection2[i]
+	}
+
+	return hash, nil
+}
+
+// decodeBlockHeight decodes the embedded height from the provided
+func decodeBlockHeight(hash []byte) (*uint64, error) {
+	if len(hash) < 32 {
+		return nil, errors.New("received hash is invalid")
+	}
+
+	bufHeightBE := make([]byte, 8)
+	bufHeightLE := make([]byte, 8)
+	hashBaseSection1 := hash[8:16]
+	hashSection1ToDecode := hash[0:8]
+	hashBaseSection2 := hash[24:32]
+	hashSection2ToDecode := hash[16:24]
+	for i := 0; i < 8; i++ {
+		bufHeightBE[i] = hashSection1ToDecode[i] ^ hashBaseSection1[i]
+		bufHeightLE[i] = hashSection2ToDecode[i] ^ hashBaseSection2[i]
+	}
+	heightBE := binary.BigEndian.Uint64(bufHeightBE)
+	heightLE := binary.LittleEndian.Uint64(bufHeightLE)
+
+	if heightLE != heightBE {
+		return nil, nil
+	}
+	return &heightBE, nil
 }

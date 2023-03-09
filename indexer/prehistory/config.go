@@ -11,7 +11,7 @@ const (
 	defaultIndexFromPrehistory = false
 	defaultFromBlock           = 0
 	defaultBatchSize           = 10000
-	defaultChainId             = 1313161554
+	defaultPrehistoryChainId   = 1313161554
 
 	configPath = "prehistoryIndexer"
 )
@@ -23,7 +23,7 @@ type Config struct {
 	To                  uint64 `mapstructure:"to"`
 	ArchiveURL          string `mapstructure:"archiveURL"`
 	BatchSize           uint64 `mapstructure:"batchSize"`
-	ChainId             uint64 `mapstructure:"chainId"`
+	PrehistoryChainId   uint64 `mapstructure:"prehistoryChainId"`
 }
 
 func defaultConfig() *Config {
@@ -31,7 +31,7 @@ func defaultConfig() *Config {
 		IndexFromPrehistory: defaultIndexFromPrehistory,
 		From:                defaultFromBlock,
 		BatchSize:           defaultBatchSize,
-		ChainId:             defaultChainId,
+		PrehistoryChainId:   defaultPrehistoryChainId,
 	}
 }
 

@@ -114,7 +114,7 @@ func (i *Indexer) index() {
 	quantity := primitives.QuantityFromBytes(emptyBytes)
 	parentHash := primitives.Data32FromBytes(emptyBytes)
 	blockHash := primitives.Data32FromBytes(emptyBytes)
-	chainId := i.config.ChainId
+	chainId := i.config.PrehistoryChainId
 	from := i.config.From
 	to := i.config.To
 	step := i.config.BatchSize
