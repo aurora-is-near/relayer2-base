@@ -8,12 +8,17 @@ import (
 )
 
 const (
-	chainIdConfigPath = "endpoint.chainID"
+	chainIdConfigPath           = "endpoint.chainID"
+	prehistoryChainIdConfigPath = "prehistoryIndexer.prehistoryChainID"
+	prehsitoryHeightConfigPath  = "prehistoryIndexer.prehistoryHeight"
 )
 
 var (
-	defaultChainId uint64 = 1313161554
-	chainId        *uint64
+	defaultChainId          uint64 = 1313161554
+	chainId                 *uint64
+	prehistoryChainId       *uint64
+	defaultPrehistoryHeight uint64 = 37157758
+	prehistoryHeight        *uint64
 )
 
 type chainIdKey struct{}
@@ -51,4 +56,50 @@ func getChainId() *uint64 {
 		cid = &defaultChainId
 	}
 	return cid
+}
+
+// GetPrehistoryChainId returns the chainId config that the prehistory was indexed for;
+//	1. returns prehistoryChainId if exists in relayer configuration .yml file
+//	2. returns defaultChainId=1313161554
+func GetPrehistoryChainId() uint64 {
+	if prehistoryChainId == nil {
+		prehistoryChainId = getPrehistoryChainId()
+	}
+	return *prehistoryChainId
+}
+
+func getPrehistoryChainId() *uint64 {
+	var pcid *uint64
+	sub := viper.GetUint64(prehistoryChainIdConfigPath)
+	if sub != 0 {
+		pcid = &sub
+	} else {
+		log.Log().Warn().Msgf("failed to parse configuration [%s] from [%s], "+
+			"falling back to defaults", prehistoryChainIdConfigPath, viper.ConfigFileUsed())
+		pcid = &defaultChainId
+	}
+	return pcid
+}
+
+// GetPrehistoryHeight returns the height of the prehistory given in relayer configuration .yml file
+//	1. returns prehistoryHeight if exists in relayer configuration .yml file
+//	2. returns defaultPrehistoryHeight=37157758 that is for mainnet
+func GetPrehistoryHeight() uint64 {
+	if prehistoryHeight == nil {
+		prehistoryHeight = getPrehistoryHeight()
+	}
+	return *prehistoryHeight
+}
+
+func getPrehistoryHeight() *uint64 {
+	var ph *uint64
+	sub := viper.GetUint64(prehsitoryHeightConfigPath)
+	if sub != 0 {
+		ph = &sub
+	} else {
+		log.Log().Warn().Msgf("failed to parse configuration [%s] from [%s], "+
+			"falling back to defaults", prehsitoryHeightConfigPath, viper.ConfigFileUsed())
+		ph = &defaultPrehistoryHeight
+	}
+	return ph
 }
