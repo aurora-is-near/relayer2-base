@@ -11,24 +11,17 @@ import (
 
 func PrintDBInfo(db *core.DB, w io.Writer) error {
 	return db.BadgerDB().View(func(txn *badger.Txn) error {
-		it := txn.NewIterator(badger.IteratorOptions{
-			PrefetchValues: false,
-			Prefix:         dbkey.Chains.Get(),
-		})
-
-		chainIDs := make(map[uint64]bool, 0)
-		for it.Rewind(); it.Valid(); it.Next() {
-			chainID := dbkey.Chain.ReadUintVar(it.Item().Key(), 0)
-			chainIDs[chainID] = true
+		chainIDs, err := getChainIDs(txn)
+		if err != nil {
+			return err
 		}
-		it.Close()
 
 		fmt.Fprintln(w, "Found ChainIDs:")
-		for cid := range chainIDs {
-			fmt.Fprintf(w, " - %d / 0x%x\n", cid, cid)
+		for _, chainID := range chainIDs {
+			fmt.Fprintf(w, " - %d / 0x%x\n", chainID, chainID)
 		}
 
-		for chainID := range chainIDs {
+		for _, chainID := range chainIDs {
 			fmt.Fprintf(w, "\nFound for ChainID %d / 0x%x:\n", chainID, chainID)
 			it := txn.NewIterator(badger.IteratorOptions{
 				PrefetchValues: false,
@@ -66,4 +59,26 @@ func PrintDBInfo(db *core.DB, w io.Writer) error {
 
 		return nil
 	})
+}
+
+func getChainIDs(txn *badger.Txn) ([]uint64, error) {
+	it := txn.NewIterator(badger.IteratorOptions{
+		PrefetchValues: false,
+		Prefix:         dbkey.Chains.Get(),
+	})
+	defer it.Close()
+
+	chainIDs := make([]uint64, 0)
+	nextChainID := uint64(0)
+
+	for it.Rewind(); it.Valid(); it.Seek(dbkey.Chain.Get(nextChainID)) {
+		currentChainId := dbkey.Chain.ReadUintVar(it.Item().Key(), 0)
+		if len(chainIDs) > 0 && currentChainId == chainIDs[len(chainIDs)-1] {
+			break
+		}
+		chainIDs = append(chainIDs, currentChainId)
+		nextChainID = currentChainId + 1
+	}
+
+	return chainIDs, nil
 }
