@@ -37,17 +37,17 @@ func NewArchiver(fs afero.Fs, codec codec.Codec) (Archiver, error) {
 type fileID uint64
 
 const (
-	blockData fileID = iota
-	blockHash
-	blockHeight
-	txData
-	txHash
-	txIndex
-	txHeight
-	logData
-	logIndex
-	logTxIndex
-	logHeight
+	blockData   fileID = 0
+	blockHash   fileID = 1
+	blockHeight fileID = 2
+	txData      fileID = 3
+	txHash      fileID = 4
+	txIndex     fileID = 5
+	txHeight    fileID = 6
+	logData     fileID = 7
+	logIndex    fileID = 8
+	logTxIndex  fileID = 9
+	logHeight   fileID = 10
 )
 
 func fileIDs() []fileID {
