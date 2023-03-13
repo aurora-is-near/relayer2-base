@@ -3,9 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/binary"
-	"errors"
 	"io"
-	"os"
 
 	"github.com/aurora-is-near/relayer2-base/db/codec"
 	dbt "github.com/aurora-is-near/relayer2-base/types/db"
@@ -21,10 +19,7 @@ func NewArchiver(fs afero.Fs, codec codec.Codec) (Archiver, error) {
 		codec:    codec,
 	}
 	for _, id := range ids {
-		f, err := fs.OpenFile(id.String(), os.O_TRUNC|os.O_WRONLY, 0666)
-		if errors.Is(err, afero.ErrFileNotFound) {
-			f, err = fs.Create(id.String())
-		}
+		f, err := fs.Create(id.String())
 		if err != nil {
 			return nil, err
 		}
@@ -104,58 +99,70 @@ func (a *archiver) Close() error {
 }
 
 func (a *archiver) WriteBlock(bl *dbt.Block) error {
-	return a.writeWithLen(bl, blockData)
+	return a.writeWithLongLen(bl, blockData)
 }
 
 func (a *archiver) WriteBlockHash(hash *primitives.Data32) error {
-	return a.writeWithLen(hash, blockHash)
+	return a.writeWithShortLen(hash, blockHash)
 }
 
 func (a *archiver) WriteBlockHeight(height uint64) error {
-	return a.writeWithLen(&height, blockHeight)
+	return a.writeWithShortLen(&height, blockHeight)
 }
 
 func (a *archiver) WriteLog(log *dbt.Log) error {
-	return a.writeWithLen(log, logData)
+	return a.writeWithLongLen(log, logData)
 }
 
 func (a *archiver) WriteLogHeight(height uint64) error {
-	return a.writeWithLen(&height, logHeight)
+	return a.writeWithShortLen(&height, logHeight)
 }
 
 func (a *archiver) WriteLogIndex(index uint64) error {
-	return a.writeWithLen(&index, logIndex)
+	return a.writeWithShortLen(&index, logIndex)
 }
 
 func (a *archiver) WriteLogTxIndex(txIndex uint64) error {
-	return a.writeWithLen(&txIndex, logTxIndex)
+	return a.writeWithShortLen(&txIndex, logTxIndex)
 }
 
 func (a *archiver) WriteTx(tx *dbt.Transaction) error {
-	return a.writeWithLen(tx, txData)
+	return a.writeWithLongLen(tx, txData)
 }
 
 func (a *archiver) WriteTxHash(hash *primitives.Data32) error {
-	return a.writeWithLen(hash, txHash)
+	return a.writeWithShortLen(hash, txHash)
 }
 
 func (a *archiver) WriteTxHeight(height uint64) error {
-	return a.writeWithLen(&height, txHeight)
+	return a.writeWithShortLen(&height, txHeight)
 }
 
 func (a *archiver) WriteTxIndex(index uint64) error {
-	return a.writeWithLen(&index, txIndex)
+	return a.writeWithShortLen(&index, txIndex)
 }
 
-func (a *archiver) writeWithLen(data any, file fileID) error {
+func (a *archiver) writeWithShortLen(data any, file fileID) error {
 	b, err := a.codec.Marshal(data)
 	if err != nil {
 		return err
 	}
-	err = binary.Write(a.files[file], binary.BigEndian, uint16(len(b)))
+	return write[uint8](b, a.files[file])
+}
+
+func (a *archiver) writeWithLongLen(data any, file fileID) error {
+	b, err := a.codec.Marshal(data)
 	if err != nil {
 		return err
 	}
-	_, err = a.files[file].Write(b)
+	return write[uint32](b, a.files[file])
+}
+
+func write[LenT uint8 | uint16 | uint32](data []byte, w io.Writer) error {
+	err := binary.Write(w, binary.BigEndian, LenT(len(data)))
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(data)
 	return err
 }
