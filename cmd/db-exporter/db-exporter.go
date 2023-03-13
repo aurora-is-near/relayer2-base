@@ -30,7 +30,7 @@ func main() {
 	pflag.BoolVarP(&doImport, "import", "i", false, "import data to the given database")
 	pflag.BoolVar(&doInpect, "inspect", false, "inspect data in the given database")
 	pflag.StringVar(&dbPath, "db", "", "the badgerDB database's directory")
-	pflag.Uint64Var(&startHeight, "height", 0, "start export and specific block height")
+	pflag.Uint64Var(&startHeight, "height", 0, "start export at specific block height")
 	pflag.Uint64VarP(&chainID, "chainid", "c", 0, "export/import data for this chainID")
 	pflag.StringVarP(&archivePath, "archive", "a", "", "directory location for the exported data")
 	pflag.Parse()
@@ -40,7 +40,10 @@ func main() {
 		os.Exit(0)
 	}
 
-	if info, err := os.Stat(dbPath); err != nil {
+	if dbPath == "" {
+		fmt.Println("path for DB can't be empty")
+		os.Exit(1)
+	} else if info, err := os.Stat(dbPath); err != nil {
 		panic(err)
 	} else if !info.IsDir() {
 		fmt.Println("path for DB", dbPath, "is not a directory")
