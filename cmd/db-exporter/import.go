@@ -101,8 +101,8 @@ func (i *Importer) importBlocks() error {
 			if err != nil {
 				break
 			}
-			L.Println("committed", pendingCount, "blocks to the DB")
 			writer = i.DB.NewWriter()
+			L.Println("committed", pendingCount, "blocks to the DB")
 			pendingCount = 0
 		}
 	}
@@ -157,8 +157,8 @@ func (i *Importer) importTxs() error {
 			if err != nil {
 				break
 			}
-			L.Println("committed", pendingCount, "transactions to the DB")
 			writer = i.DB.NewWriter()
+			L.Println("committed", pendingCount, "transactions to the DB")
 			pendingCount = 0
 		}
 	}
@@ -213,8 +213,8 @@ func (i *Importer) importLogs() error {
 			if err != nil {
 				break
 			}
-			L.Println("committed", pendingCount, "logs to the DB")
 			writer = i.DB.NewWriter()
+			L.Println("committed", pendingCount, "logs to the DB")
 			pendingCount = 0
 		}
 	}

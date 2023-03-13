@@ -51,14 +51,10 @@ func main() {
 		MaxScanIterators:   1,
 		ScanRangeThreshold: 1,
 		FilterTtlMinutes:   1,
-		GcIntervalSeconds: 1e9, // don't do GC
+		GcIntervalSeconds:  600,
 		BadgerConfig: badger.DefaultOptions(dbPath).
 			WithDetectConflicts(false).
-			WithNumCompactors(2).
-			WithMemTableSize(64 << 15).
-			WithNumMemtables(3).
-			WithValueThreshold(3e5).
-			WithValueLogFileSize(1<<28 - 1).
+			// WithNumCompactors(2).
 			WithLoggingLevel(badger.INFO),
 	}
 
