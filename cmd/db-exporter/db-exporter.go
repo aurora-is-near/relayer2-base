@@ -78,7 +78,7 @@ func main() {
 	} else if doExport {
 		log.Printf(`exporting relayer DB at %q to directory %q`, dbPath, archivePath)
 		if info, err := os.Stat(archivePath); errors.Is(err, os.ErrNotExist) {
-			err := os.MkdirAll(archivePath, 0)
+			err := os.MkdirAll(archivePath, 0777)
 			if err != nil {
 				panic(err)
 			}
