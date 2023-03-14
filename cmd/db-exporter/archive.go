@@ -8,6 +8,7 @@ import (
 	"github.com/aurora-is-near/relayer2-base/db/codec"
 	dbt "github.com/aurora-is-near/relayer2-base/types/db"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
@@ -21,7 +22,7 @@ func NewArchiver(fs afero.Fs, codec codec.Codec) (Archiver, error) {
 	for _, id := range ids {
 		f, err := fs.Create(id.String())
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to create file for exporting")
 		}
 		u.rawFiles[id] = f
 		u.files[id] = bufio.NewWriterSize(f, 10*1024*1024)
@@ -87,7 +88,7 @@ type archiver struct {
 func (a *archiver) Close() error {
 	for _, f := range a.files {
 		if err := f.Flush(); err != nil {
-			return err
+			return errors.Wrap(err, "failed to flush data to disk")
 		}
 	}
 	for _, f := range a.rawFiles {

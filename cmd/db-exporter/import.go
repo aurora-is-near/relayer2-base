@@ -2,7 +2,7 @@ package main
 
 import (
 	"io"
-	L "log"
+	"log"
 
 	"github.com/aurora-is-near/relayer2-base/db/badger/core"
 	dbt "github.com/aurora-is-near/relayer2-base/types/db"
@@ -25,16 +25,6 @@ type Unarchiver interface {
 	ReadLogHeight() (uint64, error)
 
 	Close() error
-}
-
-type Writer interface {
-	InsertBlock(chainId, height uint64, hash primitives.Data32, data *dbt.Block) error
-	InsertTransaction(
-		chainId, height, index uint64,
-		hash primitives.Data32,
-		data *dbt.Transaction,
-	) error
-	InsertLog(chainId, height, txIndex, logIndex uint64, data *dbt.Log) error
 }
 
 type Importer struct {
@@ -63,16 +53,25 @@ func (i *Importer) Import() error {
 }
 
 func (i *Importer) importBlocks() error {
-	writer := i.DB.NewWriter()
-	defer writer.Cancel()
-	pendingCount := uint64(0)
-
 	var (
-		block  *dbt.Block
-		hash   *primitives.Data32
-		height uint64
-		err    error
+		writer       = i.DB.NewWriter()
+		pendingCount uint64
+		total        uint64
+		block        *dbt.Block
+		hash         *primitives.Data32
+		height       uint64
+		err          error
 	)
+
+	commit := func() error {
+		err := writer.Flush()
+		if err != nil {
+			return err
+		}
+		log.Println("committed", pendingCount, "blocks to the DB, total", total)
+		pendingCount = 0
+		return nil
+	}
 
 	for {
 		block, err = i.Unarchiver.ReadBlock()
@@ -95,35 +94,44 @@ func (i *Importer) importBlocks() error {
 			break
 		}
 
+		total++
 		pendingCount++
 		if pendingCount >= i.PendingLimit {
-			err = writer.Flush()
+			err = commit()
 			if err != nil {
 				break
 			}
 			writer = i.DB.NewWriter()
-			L.Println("committed", pendingCount, "blocks to the DB")
-			pendingCount = 0
 		}
 	}
 	if err != nil && err != io.EOF {
+		writer.Cancel()
 		return err
 	}
-	return writer.Flush()
+	return commit()
 }
 
 func (i *Importer) importTxs() error {
-	writer := i.DB.NewWriter()
-	defer writer.Cancel()
-	pendingCount := uint64(0)
-
 	var (
-		tx     *dbt.Transaction
-		hash   *primitives.Data32
-		index  uint64
-		height uint64
-		err    error
+		writer       = i.DB.NewWriter()
+		pendingCount uint64
+		total        uint64
+		tx           *dbt.Transaction
+		hash         *primitives.Data32
+		index        uint64
+		height       uint64
+		err          error
 	)
+
+	commit := func() error {
+		err := writer.Flush()
+		if err != nil {
+			return err
+		}
+		log.Println("committed", pendingCount, "transactions to the DB, total", total)
+		pendingCount = 0
+		return nil
+	}
 
 	for {
 		tx, err = i.Unarchiver.ReadTx()
@@ -151,38 +159,47 @@ func (i *Importer) importTxs() error {
 			break
 		}
 
+		total++
 		pendingCount++
 		if pendingCount >= i.PendingLimit {
-			err = writer.Flush()
+			err = commit()
 			if err != nil {
 				break
 			}
 			writer = i.DB.NewWriter()
-			L.Println("committed", pendingCount, "transactions to the DB")
-			pendingCount = 0
 		}
 	}
 	if err != nil && err != io.EOF {
+		writer.Cancel()
 		return err
 	}
-	return writer.Flush()
+	return commit()
 }
 
 func (i *Importer) importLogs() error {
-	writer := i.DB.NewWriter()
-	defer writer.Cancel()
-	pendingCount := uint64(0)
-
 	var (
-		log     *dbt.Log
-		index   uint64
-		txIndex uint64
-		height  uint64
-		err     error
+		writer       = i.DB.NewWriter()
+		pendingCount uint64
+		total        uint64
+		lg           *dbt.Log
+		index        uint64
+		txIndex      uint64
+		height       uint64
+		err          error
 	)
 
+	commit := func() error {
+		err := writer.Flush()
+		if err != nil {
+			return err
+		}
+		log.Println("committed", pendingCount, "logs to the DB, total", total)
+		pendingCount = 0
+		return nil
+	}
+
 	for {
-		log, err = i.Unarchiver.ReadLog()
+		lg, err = i.Unarchiver.ReadLog()
 		if err != nil {
 			break
 		}
@@ -202,24 +219,24 @@ func (i *Importer) importLogs() error {
 			break
 		}
 
-		err = writer.InsertLog(i.ChainID, height, txIndex, index, log)
+		err = writer.InsertLog(i.ChainID, height, txIndex, index, lg)
 		if err != nil {
 			break
 		}
 
+		total++
 		pendingCount++
 		if pendingCount >= i.PendingLimit {
-			err = writer.Flush()
+			err = commit()
 			if err != nil {
 				break
 			}
 			writer = i.DB.NewWriter()
-			L.Println("committed", pendingCount, "logs to the DB")
-			pendingCount = 0
 		}
 	}
 	if err != nil && err != io.EOF {
+		writer.Cancel()
 		return err
 	}
-	return writer.Flush()
+	return commit()
 }

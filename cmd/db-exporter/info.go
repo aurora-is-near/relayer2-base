@@ -7,13 +7,14 @@ import (
 	"github.com/aurora-is-near/relayer2-base/db/badger/core"
 	"github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
 	"github.com/dgraph-io/badger/v3"
+	"github.com/pkg/errors"
 )
 
 func PrintDBInfo(db *core.DB, w io.Writer) error {
 	return db.BadgerDB().View(func(txn *badger.Txn) error {
 		chainIDs, err := getChainIDs(txn)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to get chainIDs from database")
 		}
 
 		fmt.Fprintln(w, "Found ChainIDs:")

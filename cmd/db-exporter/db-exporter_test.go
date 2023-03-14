@@ -62,9 +62,10 @@ func TestExportImport(t *testing.T) {
 	defer importDB.Close()
 
 	i := Importer{
-		DB:         importDB,
-		Unarchiver: unarchiver,
-		ChainID:    chainID,
+		DB:           importDB,
+		Unarchiver:   unarchiver,
+		ChainID:      chainID,
+		PendingLimit: 10,
 	}
 	err = i.Import()
 	require.NoError(t, err)

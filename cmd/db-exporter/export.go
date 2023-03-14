@@ -1,13 +1,12 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
 	"github.com/aurora-is-near/relayer2-base/db/codec"
 	dbt "github.com/aurora-is-near/relayer2-base/types/db"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"github.com/dgraph-io/badger/v3"
+	"github.com/pkg/errors"
 )
 
 type Archiver interface {
@@ -79,7 +78,6 @@ func (e *Exporter) exportBlocks(txn *badger.Txn) error {
 		if err := e.Archiver.WriteBlockHash(hash); err != nil {
 			return err
 		}
-
 	}
 	return nil
 }
@@ -183,7 +181,7 @@ func exportHelper[T any](
 func readItem[T any](dec codec.Decoder, item *badger.Item, res *T) error {
 	return item.Value(func(val []byte) error {
 		if err := dec.Unmarshal(val, res); err != nil {
-			return fmt.Errorf("can't unmarshal value of type %T: %v", res, err)
+			return errors.Wrapf(err, "can't unmarshal value of type %T", res)
 		}
 		return nil
 	})

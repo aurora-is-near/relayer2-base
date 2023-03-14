@@ -8,6 +8,7 @@ import (
 	"github.com/aurora-is-near/relayer2-base/db/codec"
 	dbt "github.com/aurora-is-near/relayer2-base/types/db"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
@@ -21,7 +22,7 @@ func NewUnarchiver(fs afero.Fs, codec codec.Codec) (Unarchiver, error) {
 	for _, id := range ids {
 		f, err := fs.Open(id.String())
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to open file for importing")
 		}
 
 		u.rawFiles[id] = f
