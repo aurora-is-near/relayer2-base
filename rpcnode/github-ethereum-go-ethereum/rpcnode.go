@@ -82,7 +82,8 @@ func (ge *GoEthereum) WithMiddleware(name string, path string, middleware func(h
 	if err != nil {
 		log.Log().Fatal().Err(err).Msg("failed to get rpc handler")
 	}
-	ge.RegisterHandler(name, path, middleware(h))
+	handlerT := node.NewHTTPHandlerStack(h, ge.Node.Config().HTTPCors, ge.Node.Config().HTTPVirtualHosts, []byte{})
+	ge.RegisterHandler(name, path, middleware(handlerT))
 }
 
 func (ge *GoEthereum) Resolve(ctx context.Context, reader io.Reader, writer io.Writer) error {
