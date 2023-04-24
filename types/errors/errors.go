@@ -1,6 +1,8 @@
 package errors
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const (
 	// Use the same error code with Aurora Plus infra

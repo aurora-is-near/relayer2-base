@@ -8,8 +8,9 @@ import (
 	"github.com/aurora-is-near/relayer2-base/db/codec"
 	"github.com/aurora-is-near/relayer2-base/tinypack"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/types/utils"
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/ethereum/go-ethereum/common/hexutil"
+	"math/big"
 	"strconv"
 	"strings"
 )
@@ -145,12 +146,12 @@ func (t *Topic) UnmarshalCBOR(b []byte) error {
 }
 
 func (s *Size) UnmarshalJSON(b []byte) error {
-	var bi hexutil.Big
+	var bi big.Int
 	err := json.Unmarshal(b, &bi)
 	if err != nil {
 		return err
 	}
-	*s = Size(bi.ToInt().Uint64())
+	*s = Size(bi.Uint64())
 	return nil
 }
 
@@ -160,7 +161,8 @@ func (s *Size) UnmarshalCBOR(b []byte) error {
 	if err != nil {
 		return err
 	}
-	ui64, err := hexutil.DecodeUint64(in)
+
+	ui64, err := utils.HexStringToUint64(in)
 	if err != nil {
 		return err
 	}

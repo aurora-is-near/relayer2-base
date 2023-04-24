@@ -6,25 +6,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/aurora-is-near/relayer2-base/log"
+	"github.com/aurora-is-near/relayer2-base/types/common"
+	error2 "github.com/aurora-is-near/relayer2-base/types/errors"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/utils"
+	"github.com/near/borsh-go"
 	"regexp"
 	"strings"
-
-	"github.com/aurora-is-near/relayer2-base/log"
-	error2 "github.com/aurora-is-near/relayer2-base/types/errors"
-	"github.com/aurora-is-near/relayer2-base/utils"
-
-	"github.com/near/borsh-go"
-
-	cc "github.com/aurora-is-near/relayer2-base/types/common"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 const (
-	// storageSlotLength is the max length of the storage slot argument
-	storageSlotLength = 32
-	// ValueLength is the max length of the value argument
-	ValueLength = 32
+	addrLength   = 20
+	raw256Length = 32
 
 	// Engine TxsStatus errors
 	errStackOverflow = "ERR_STACK_OVERFLOW"
@@ -33,54 +27,39 @@ const (
 
 // ArgsForGetStorageAt is used to process GetStorageAt endpoint arguments
 type ArgsForGetStorageAt struct {
-	Address     cc.Address
-	StorageSlot cc.Uint256
+	address     primitives.Data20
+	storageSlot primitives.Quantity
 }
 
 // NewArgsForGetStorageAt allocates and returns a new empty ArgsForGetStorageAt
-func NewArgsForGetStorageAt() *ArgsForGetStorageAt {
-	return &ArgsForGetStorageAt{}
+func NewArgsForGetStorageAt(addr common.Address, sSlot common.Uint256) *ArgsForGetStorageAt {
+	return &ArgsForGetStorageAt{
+		address:     primitives.Data20FromBytes(addr.Bytes()),
+		storageSlot: primitives.QuantityFromBytes(sSlot.Bytes()),
+	}
 }
 
-// SetFields sets the Address and StorageSlot fields and returns a pointer of the object
-func (gs *ArgsForGetStorageAt) SetFields(addr cc.Address, sSlot cc.Uint256) *ArgsForGetStorageAt {
-	gs.Address = addr
-	gs.StorageSlot = sSlot
-	return gs
-}
-
-// Serialize transforms ArgsForGetStorageAt to ArgsForGetStorageAtEngine, calls its Serialize method
+// Serialize transforms ArgsForGetStorageAt to argsForGetStorageAtEngine, calls its Serialize method
 // and returns the received buffer
 func (gs *ArgsForGetStorageAt) Serialize() ([]byte, error) {
-	tmpObj := NewArgsForGetStorageAtEngine().SetFields(gs.Address.Address[:], gs.StorageSlot.Bytes())
-	buff, err := tmpObj.Serialize()
+	args := argsForGetStorageAtEngine{}
+	copy(args.Address[:], gs.address.Bytes())
+	copy(args.Key[:], gs.storageSlot.Bytes())
+	buff, err := args.serialize()
 	if err != nil {
 		return nil, err
 	}
 	return buff, nil
 }
 
-// ArgsForGetStorageAtEngine is the data format accepted by engine for GetStorageAt endpoint
-type ArgsForGetStorageAtEngine struct {
-	Address [common.AddressLength]uint8
-	Key     [storageSlotLength]uint8
+// argsForGetStorageAtEngine is the data format accepted by engine for GetStorageAt endpoint
+type argsForGetStorageAtEngine struct {
+	Address [addrLength]byte
+	Key     [raw256Length]byte
 }
 
-// NewArgsForGetStorageAtEngine allocates and returns a new empty ArgsForGetStorageAtEngine
-func NewArgsForGetStorageAtEngine() *ArgsForGetStorageAtEngine {
-	return &ArgsForGetStorageAtEngine{}
-}
-
-// SetFields sets the Address and StorageSlot buffers and returns a pointer of the object
-func (gse *ArgsForGetStorageAtEngine) SetFields(addrBuf, keyBuf []byte) *ArgsForGetStorageAtEngine {
-	startIndex := storageSlotLength - len(keyBuf)
-	copy(gse.Address[:], addrBuf)
-	copy(gse.Key[startIndex:], keyBuf)
-	return gse
-}
-
-// Serialize ArgsForGetStorageAtEngine to a buffer using borsh so to communicate with engine
-func (gse ArgsForGetStorageAtEngine) Serialize() ([]byte, error) {
+// serialize argsForGetStorageAtEngine to a buffer using borsh so to communicate with engine
+func (gse argsForGetStorageAtEngine) serialize() ([]byte, error) {
 	buff, err := borsh.Serialize(gse)
 	if err != nil {
 		return nil, err
@@ -90,17 +69,12 @@ func (gse ArgsForGetStorageAtEngine) Serialize() ([]byte, error) {
 
 // TransactionForCall is the type used to serialize eth_call input
 type TransactionForCall struct {
-	From     *cc.Address `json:"from,omitempty"`
-	To       *cc.Address `json:"to,omitempty"`
-	Gas      *cc.Uint256 `json:"gas,omitempty"`
-	GasPrice *cc.Uint256 `json:"gasPrice,omitempty"`
-	Value    *cc.Uint256 `json:"value,omitempty"`
-	Data     cc.DataVec  `json:"data,omitempty"`
-}
-
-// NewTransactionForCall allocates and returns a new empty TransactionForCall
-func NewTransactionForCall() *TransactionForCall {
-	return new(TransactionForCall)
+	From     *primitives.Data20   `json:"from,omitempty"`
+	To       *primitives.Data20   `json:"to,omitempty"`
+	Gas      *primitives.Quantity `json:"gas,omitempty"`
+	GasPrice *primitives.Quantity `json:"gasPrice,omitempty"`
+	Value    *primitives.Quantity `json:"value,omitempty"`
+	Data     *primitives.VarData  `json:"data,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler
@@ -117,61 +91,49 @@ func (tc *TransactionForCall) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Serialize transforms TransactionForCall to TransactionForCallEngine, calls its Serialize method
+// Serialize transforms TransactionForCall to transactionForCallEngine, calls its Serialize method
 // and returns the received buffer
-func (tc TransactionForCall) Serialize() ([]byte, error) {
-	to := cc.HexStringToAddress("0x0")
-	if tc.To != nil {
-		to = *tc.To
-	}
-	from := cc.HexStringToAddress("0x0")
-	if tc.From != nil {
-		from = *tc.From
-	}
-	var value [ValueLength]uint8
-	if tc.Value != nil {
-		startIndexForValue := ValueLength - len(tc.Value.Bytes())
-		copy(value[startIndexForValue:], tc.Value.Bytes())
-	}
-	var data []uint8
-	if tc.Data != nil {
-		data = make([]uint8, len(tc.Data))
-		copy(data, tc.Data)
+func (tc *TransactionForCall) Serialize() ([]byte, error) {
+
+	tce := transactionForCallEngine{}
+
+	if tc.To == nil {
+		copy(tce.To[:], primitives.Data20FromHex("0x0").Bytes())
+	} else {
+		copy(tce.To[:], tc.To.Bytes())
 	}
 
-	tmpObj := NewTransactionForCallEngine().SetFields(to.Address, from.Address, value, data)
-	buff, err := tmpObj.Serialize()
+	if tc.From == nil {
+		copy(tce.From[:], primitives.Data20FromHex("0x0").Bytes())
+	} else {
+		copy(tce.From[:], tc.From.Bytes())
+	}
+
+	if tc.Value != nil {
+		copy(tce.Value[:], tc.Value.Bytes())
+	}
+	if tc.Data != nil {
+		tce.Data = make([]byte, len(tc.Data.Bytes()))
+		copy(tce.Data[:], tc.Data.Bytes())
+	}
+
+	buff, err := tce.Serialize()
 	if err != nil {
 		return nil, err
 	}
 	return buff, nil
 }
 
-// TransactionForCallEngine is the type send to engine for eth_call endpoint
-type TransactionForCallEngine struct {
-	From  [common.AddressLength]uint8
-	To    [common.AddressLength]uint8
-	Value [32]uint8
-	Data  []uint8
+// transactionForCallEngine is the type send to engine for eth_call endpoint
+type transactionForCallEngine struct {
+	From  [addrLength]byte
+	To    [addrLength]byte
+	Value [raw256Length]byte
+	Data  []byte
 }
 
-// NewTransactionForCallEngine allocates and returns a new empty TransactionForCall
-func NewTransactionForCallEngine() *TransactionForCallEngine {
-	return new(TransactionForCallEngine)
-}
-
-// SetFields sets the Address and StorageSlot buffers and returns a pointer of the object
-func (tce *TransactionForCallEngine) SetFields(to, from [common.AddressLength]uint8, value [32]uint8, data []uint8) *TransactionForCallEngine {
-	copy(tce.To[:], to[:])
-	copy(tce.From[:], from[:])
-	copy(tce.Value[:], value[:])
-	tce.Data = make([]uint8, len(data))
-	copy(tce.Data, data)
-	return tce
-}
-
-// Serialize TransactionForCallEngine to a buffer using borsh so to communicate with engine
-func (tce TransactionForCallEngine) Serialize() ([]byte, error) {
+// Serialize transactionForCallEngine to a buffer using borsh so to communicate with engine
+func (tce transactionForCallEngine) Serialize() ([]byte, error) {
 	buff, err := borsh.Serialize(tce)
 	if err != nil {
 		return nil, err
@@ -186,7 +148,7 @@ type QueryResult struct {
 
 // NewQueryResult allocates and returns a new QueryResult object
 func NewQueryResult(resp interface{}) (*QueryResult, error) {
-	result, ok := resp.((map[string]interface{}))["result"].([]interface{})
+	result, ok := resp.(map[string]interface{})["result"].([]interface{})
 	if !ok {
 		log.Log().Error().Msgf("query response is not in correct format: %s", result)
 		return nil, errors.New("query response is not in correct format")
@@ -195,9 +157,9 @@ func NewQueryResult(resp interface{}) (*QueryResult, error) {
 }
 
 // ToUint256Response processes the engine query response, retrieves the `result` map and converts it to Uint256 response
-func (r *QueryResult) ToUint256Response() (*cc.Uint256, error) {
+func (r *QueryResult) ToUint256Response() (*common.Uint256, error) {
 	buf := r.resultToByteBuffer()
-	ui256 := cc.Uint256FromBytes(buf)
+	ui256 := common.Uint256FromBytes(buf)
 	return &ui256, nil
 }
 
@@ -242,14 +204,14 @@ func (sr *SubmitResultV2) Validate() error {
 
 // LogEventWithAddress is the type used to handle engine's SubmitResultV2 response
 type LogEventWithAddress struct {
-	Address [common.AddressLength]uint8
+	Address [addrLength]uint8
 	Topics  []RawU256
 	Data    []uint8
 }
 
 // RawU256 is the type used to handle engine's LogEventWithAddress response
 type RawU256 struct {
-	Value [32]uint8
+	Value [raw256Length]uint8
 }
 
 // TransactionStatus is the type used to handle engine's SubmitResultV2 response
@@ -275,9 +237,9 @@ type TransactionRevertStatus struct {
 
 // NewTransactionStatus allocates and returns a new TransactionStatus object
 func NewTransactionStatus(respArg interface{}) (*TransactionStatus, error) {
-	resp, ok := respArg.((map[string]interface{}))["result"].([]interface{})
+	resp, ok := respArg.(map[string]interface{})["result"].([]interface{})
 	if !ok {
-		err, ok := respArg.((map[string]interface{}))["error"].(string)
+		err, ok := respArg.(map[string]interface{})["error"].(string)
 		if !ok {
 			return nil, errors.New("call response is not in correct format")
 		}
@@ -374,13 +336,13 @@ type SubmitStatus struct {
 
 // NewSubmitStatus allocates and returns a new SubmitStatus object
 func NewSubmitStatus(respArg interface{}, txsHash string) (*SubmitStatus, error) {
-	resp, ok := respArg.((map[string]interface{}))
+	resp, ok := respArg.(map[string]interface{})
 	if !ok {
 		log.Log().Error().Msgf("submit response is not in correct format: %s", respArg)
 		return nil, errors.New("submit response is not in correct format")
 	}
 
-	status, ok := resp["status"].((map[string]interface{}))
+	status, ok := resp["status"].(map[string]interface{})
 	if !ok {
 		log.Log().Error().Msgf("submit status is not in correct format: %s", status)
 		return nil, errors.New("submit status is not in correct format")
@@ -398,7 +360,7 @@ func (ss *SubmitStatus) Validate() error {
 	// Check if any errors returned
 	fail, ok := ss.StatusMap["Failure"]
 	if ok {
-		failTypeMap, ok := fail.((map[string]interface{}))["ActionError"].((map[string]interface{}))["kind"].((map[string]interface{}))
+		failTypeMap, ok := fail.(map[string]interface{})["ActionError"].(map[string]interface{})["kind"].(map[string]interface{})
 		if !ok {
 			logger.Error().Msgf("submit request failure while parsing `Failure` object, txs hash: %s", ss.ResponseHash)
 			return errors.New("submit request failure while parsing `Failure` object")
@@ -413,7 +375,7 @@ func (ss *SubmitStatus) Validate() error {
 		}
 		switch failType {
 		case "FunctionCallError":
-			execErr, ok := failTypeMap["FunctionCallError"].((map[string]interface{}))["ExecutionError"].(string)
+			execErr, ok := failTypeMap["FunctionCallError"].(map[string]interface{})["ExecutionError"].(string)
 			if ok {
 				errMsg := strings.Replace(execErr, "Smart contract panicked: ", "", 1)
 				logger.Debug().Msgf("submit request failed with ExecutionError: %s, txs hash: %s", errMsg, ss.ResponseHash)
@@ -438,7 +400,7 @@ func (ss *SubmitStatus) Validate() error {
 			logger.Error().Msgf("submit request failed with MethodNotFound: %s, txs hash: %s", jsnStr, ss.ResponseHash)
 			return fmt.Errorf("failure: %s", jsnStr)
 		default:
-			jsn, err := json.Marshal(fail.((map[string]interface{}))["ActionError"].((map[string]interface{}))["kind"])
+			jsn, err := json.Marshal(fail.(map[string]interface{})["ActionError"].(map[string]interface{})["kind"])
 			if err != nil {
 				logger.Error().Msgf("submit request failed while marshalling Default case: %s, txs hash: %s", err.Error(), ss.ResponseHash)
 				return err
