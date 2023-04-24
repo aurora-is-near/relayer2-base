@@ -2,13 +2,10 @@ package primitives
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/aurora-is-near/relayer2-base/db/codec"
 	tp "github.com/aurora-is-near/relayer2-base/tinypack"
 	"reflect"
-	"strconv"
-
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 type Data[LD tp.LengthDescriptor] struct {
@@ -55,23 +52,6 @@ func (d *Data[LD]) UnmarshalCBOR(b []byte) error {
 	return err
 }
 
-func hexStringToData[LD tp.LengthDescriptor](in string) (Data[LD], error) {
-	if len(in) == 2 && in[0] == '0' && (in[1] == 'x' || in[2] == 'X') {
-		return Data[LD]{}, nil
-	}
-	var ld LD
-	l := ld.GetTinyPackLength()
-	if l < 0 {
-		l = len(in[2:]) / 2 // remove heading heading '0x'
-	}
-	out := make([]byte, l, l)
-	err := hexutil.UnmarshalFixedText("Data"+strconv.Itoa(l), []byte(in), out)
-	if err != nil {
-		return Data[LD]{}, err
-	}
-	return DataFromBytes[LD](out), nil
-}
-
 func DataFromBytes[LD tp.LengthDescriptor](b []byte) Data[LD] {
 	var ld LD
 	var d Data[LD]
@@ -80,5 +60,22 @@ func DataFromBytes[LD tp.LengthDescriptor](b []byte) Data[LD] {
 }
 
 func DataFromHex[LD tp.LengthDescriptor](s string) Data[LD] {
-	return DataFromBytes[LD](common.FromHex(s))
+	data, _ := hexStringToData[LD](s)
+	return data
+}
+
+func hexStringToData[LD tp.LengthDescriptor](in string) (Data[LD], error) {
+	if len(in) == 2 && in[0] == '0' && (in[1] == 'x' || in[2] == 'X') {
+		return Data[LD]{}, nil
+	}
+	bytes, err := hexToByte(in)
+	if err != nil {
+		return Data[LD]{}, err
+	}
+	var ld LD
+	l := ld.GetTinyPackLength()
+	if l > 0 && l != len(bytes) {
+		return Data[LD]{}, fmt.Errorf("hex string of length [%d] is expected, found [%d]", l, len(bytes))
+	}
+	return DataFromBytes[LD](bytes), nil
 }
