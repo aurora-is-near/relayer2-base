@@ -1,9 +1,8 @@
 package primitives
 
 import (
+	"github.com/aurora-is-near/relayer2-base/types/utils"
 	"strconv"
-
-	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 // Special type for convenient uint64-to-hex conversion
@@ -28,7 +27,7 @@ func (h HexUint) MarshalJSON() ([]byte, error) {
 }
 
 func (h *HexUint) UnmarshalJSON(b []byte) error {
-	ui64, err := hexutil.DecodeUint64(string(b[1 : len(b)-1]))
+	ui64, err := utils.HexStringToUint64(string(b[1 : len(b)-1]))
 	if err != nil {
 		return err
 	}

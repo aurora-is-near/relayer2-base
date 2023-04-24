@@ -5,21 +5,24 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/types/utils"
+	"github.com/holiman/uint256"
+	"math"
 	"math/big"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/aurora-is-near/relayer2-base/types/primitives"
-
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/rpc"
 )
 
 const (
 	FilterIdByteSize = 16
+
+	SafeBlockNumber      = BN64(-4)
+	FinalizedBlockNumber = BN64(-3)
+	PendingBlockNumber   = BN64(-2)
+	LatestBlockNumber    = BN64(-1)
+	EarliestBlockNumber  = BN64(0)
 )
 
 type Uinteger interface {
@@ -30,23 +33,27 @@ type Integer interface {
 	~int | ~int16 | ~int32 | ~int64
 }
 
+type Uint256 big.Int
+
+type BN64 int64
+
 type Uint64 struct{ uint64 }
 
-type DataVec []uint8
+type DataVec struct{ primitives.VarData }
 
-type Uint256 struct{ hexutil.Big }
+type H256 struct{ primitives.Data32 }
 
-type H256 struct{ common.Hash }
+type Address struct{ primitives.Data20 }
 
-type BN64 struct{ rpc.BlockNumber }
-
-type Address struct{ common.Address }
+func (h256 H256) String() string {
+	return h256.Hex()
+}
 
 func (ui64 *Uint64) UnmarshalJSON(data []byte) error {
 	input := strings.TrimSpace(string(data))
 	if len(input) >= 2 && input[0] == '"' && input[len(input)-1] == '"' {
 		if len(input) >= 3 && input[1:3] == "0x" {
-			value, err := hexutil.DecodeUint64(input[1 : len(input)-1])
+			value, err := strconv.ParseUint(input[3:len(input)-1], 10, 64)
 			if err != nil {
 				return err
 			}
@@ -75,85 +82,47 @@ func (ui64 *Uint64) Uint64() uint64 {
 	return ui64.uint64
 }
 
-func (dv *DataVec) UnmarshalJSON(data []byte) error {
-	input := strings.TrimSpace(string(data))
-	if len(input) > 2 && input[0] == '"' && input[len(input)-1] == '"' {
-		if len(input) >= 3 && input[1:3] == "0x" {
-			buf, err := hex.DecodeString(input[3 : len(input)-1])
-			if err != nil {
-				return err
-			}
-			*dv = buf
-		} else {
-			buf, err := hex.DecodeString(input[1 : len(input)-1])
-			if err != nil {
-				return err
-			}
-			*dv = buf
-		}
-	}
-	return nil
-}
-
-// Can (and must) be dramatically optimized
-func (dv DataVec) MarshalText() ([]byte, error) {
-	return []byte(fmt.Sprintf("0x%v", hex.EncodeToString([]byte(dv)))), nil
-}
-
-func (ui256 *Uint256) UnmarshalJSON(data []byte) error {
-	input := strings.Trim(string(data), "\"")
-	numPart := strings.TrimPrefix(input, "0x")
-	if len(input) >= 1 {
-		trimmed := strings.TrimLeft(numPart[:len(numPart)-1], "0")
-		hexNum := "\"0x" + trimmed + numPart[len(numPart)-1:] + "\""
-		err := ui256.Big.UnmarshalJSON([]byte(hexNum))
-		if err != nil {
-			return err
-		}
-	} else {
-		return fmt.Errorf("%s not valid", string(data))
-	}
-	return nil
-}
-
-func (ui256 *Uint256) Bytes() []byte {
-	return ui256.ToInt().Bytes()
-}
-
-func (ui256 *Uint256) Uint64() uint64 {
-	return ui256.ToInt().Uint64()
-}
-
-func (ui256 *Uint256) Text(base int) string {
-	return ui256.ToInt().Text(base)
-}
-
-func (ui256 *Uint256) Cmp(test Uint256) int {
-	return ui256.ToInt().Cmp(test.ToInt())
-}
-
-func (ui256 *Uint256) Data32() primitives.Data32 {
-	return primitives.Data32FromBytes(ui256.Bytes())
-}
-
 func (n *BN64) UnmarshalJSON(data []byte) error {
 	input := strings.TrimSpace(string(data))
 	if len(input) >= 2 && input[0] == '"' && input[len(input)-1] == '"' {
-		value, err := strconv.ParseUint(input[1:len(input)-1], 10, 64)
+		input = input[1 : len(input)-1]
+		value, err := strconv.ParseUint(input, 10, 64)
 		if err != nil {
-			err = n.BlockNumber.UnmarshalJSON(data)
-			if err != nil {
-				return err
+			switch input {
+			case "earliest":
+				*n = EarliestBlockNumber
+				break
+			case "latest":
+				*n = LatestBlockNumber
+				break
+			case "pending":
+				*n = PendingBlockNumber
+				break
+			case "finalized":
+				*n = FinalizedBlockNumber
+				break
+			case "safe":
+				*n = SafeBlockNumber
+				break
+			default:
+				ui64, err := utils.HexStringToUint64(input)
+				if err != nil {
+					return err
+				}
+				if ui64 > math.MaxInt64 {
+					return fmt.Errorf("hex number [%s] is greater than max int64 [%d]", input, math.MaxInt64)
+				}
+				*n = BN64(ui64)
 			}
 		} else {
-			n.BlockNumber = rpc.BlockNumber(value)
+			*n = BN64(value)
 		}
 	} else {
 		value, err := strconv.ParseUint(input, 10, 64)
 		if err != nil {
 			return err
 		}
-		n.BlockNumber = rpc.BlockNumber(value)
+		*n = BN64(value)
 	}
 	return nil
 }
@@ -163,8 +132,8 @@ func (n *BN64) UnmarshalJSON(data []byte) error {
 //  If BN64 contains the Earliest tag, it returns 0
 func (n *BN64) Uint64() *uint64 {
 	i := n.Int64()
-	if i >= 0 {
-		ui := uint64(i)
+	if *i >= 0 {
+		ui := uint64(*i)
 		return &ui
 	}
 	return nil
@@ -172,17 +141,50 @@ func (n *BN64) Uint64() *uint64 {
 
 // Int64 returns block number as *int64. If BN64 contains following tags; Earliest, Latest, Pending, Finalized, Safe
 // it returns; 0, -1, -2, -3, -4 respectively
-func (n *BN64) Int64() int64 {
-	return n.BlockNumber.Int64()
+func (n *BN64) Int64() *int64 {
+	return (*int64)(n)
 }
 
-func BN64ToInt64(n *BN64) *int64 {
-	var number *int64
-	if n != nil {
-		bn := n.Int64()
-		number = &bn
+// MarshalText implements encoding.TextMarshaler
+func (ui256 Uint256) MarshalText() ([]byte, error) {
+	bigint := (big.Int)(ui256)
+	if sign := bigint.Sign(); sign == 0 {
+		return []byte("0x0"), nil
+	} else if sign > 0 {
+		return []byte("0x" + bigint.Text(16)), nil
+	} else {
+		return []byte("-0x" + bigint.Text(16)[1:]), nil
 	}
-	return number
+}
+
+func (ui256 *Uint256) UnmarshalJSON(data []byte) error {
+	number := utils.SanitizeStringForNumber(string(data))
+	i, err := uint256.FromHex(number)
+	if err != nil {
+		return err
+	}
+	*ui256 = Uint256(*i.ToBig())
+	return nil
+}
+
+func (ui256 *Uint256) Bytes() []byte {
+	return ((*big.Int)(ui256)).Bytes()
+}
+
+func (ui256 *Uint256) Uint64() uint64 {
+	return ((*big.Int)(ui256)).Uint64()
+}
+
+func (ui256 *Uint256) Text(base int) string {
+	return ((*big.Int)(ui256)).Text(base)
+}
+
+func (ui256 *Uint256) Cmp(test Uint256) int {
+	return ((*big.Int)(ui256)).Cmp((*big.Int)(&test))
+}
+
+func (ui256 *Uint256) Data32() primitives.Data32 {
+	return primitives.Data32FromBytes(ui256.Bytes())
 }
 
 func UintToUint64[T Uinteger](i T) Uint64 {
@@ -199,45 +201,54 @@ func RandomUint256() Uint256 {
 	t := make([]byte, FilterIdByteSize)
 	binary.BigEndian.PutUint64(t[:8], uint64(time.Now().UnixNano()))
 	_, _ = rand.Read(t[8:])
-	return Uint256{Big: hexutil.Big(*big.NewInt(0).SetBytes(t))}
+	big := *big.NewInt(0).SetBytes(t)
+	return (Uint256)(big)
 }
 
 func IntToUint256[T Integer](i T) Uint256 {
-	return Uint256{Big: hexutil.Big(*big.NewInt(0).SetInt64(int64(i)))}
+	big := *big.NewInt(0).SetInt64(int64(i))
+	return (Uint256)(big)
 }
 
 func UintToUint256[T Uinteger](i T) Uint256 {
-	return Uint256{Big: hexutil.Big(*big.NewInt(0).SetUint64(uint64(i)))}
+	big := *big.NewInt(0).SetUint64(uint64(i))
+	return (Uint256)(big)
 }
 
 func IntToBN64[T Integer](i T) BN64 {
-	return BN64{BlockNumber: rpc.BlockNumber(i)}
+	return BN64(i)
 }
 
 func UintToBN64[T Uinteger](i T) BN64 {
-	return BN64{BlockNumber: rpc.BlockNumber(i)}
+	return BN64(i)
 }
 
 func BytesToAddress(b []byte) Address {
-	return Address{Address: common.BytesToAddress(b)}
+	return Address{primitives.Data20FromBytes(b)}
 }
 
 func HexStringToAddress(s string) Address {
-	return Address{Address: common.HexToAddress(s)}
+	return Address{primitives.Data20FromHex(s)}
+}
+
+func HexStringToDataVec(s string) DataVec {
+	data, _ := hex.DecodeString(s[2:])
+	return DataVec{primitives.VarDataFromBytes(data)}
 }
 
 func HexStringToHash(s string) H256 {
-	return H256{Hash: common.HexToHash(s)}
+	return H256{primitives.Data32FromHex(s)}
 }
 
 func Uint256FromBytes(b []byte) Uint256 {
-	return Uint256{Big: hexutil.Big(*big.NewInt(0).SetBytes(b))}
+	big := *big.NewInt(0).SetBytes(b)
+	return (Uint256)(big)
 }
 
 func Uint256FromHex(s string) (*Uint256, error) {
-	big, err := hexutil.DecodeBig(s)
+	big, err := utils.HexStringToBigInt(s)
 	if err != nil {
 		return nil, err
 	}
-	return &Uint256{Big: hexutil.Big(*big)}, nil
+	return (*Uint256)(big), nil
 }

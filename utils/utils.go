@@ -10,7 +10,6 @@ import (
 	dbt "github.com/aurora-is-near/relayer2-base/types/db"
 	"github.com/aurora-is-near/relayer2-base/types/indexer"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 
