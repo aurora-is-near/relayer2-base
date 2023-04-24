@@ -1,5 +1,9 @@
 package primitives
 
+import (
+	"encoding/hex"
+)
+
 var hextable = "0123456789abcdef"
 
 func alignBytes(b []byte, length int, bigEndian bool) []byte {
@@ -62,4 +66,14 @@ func writeQuantityHex(dst []byte, b []byte) []byte {
 	}
 
 	return dst
+}
+
+func hexToByte(s string) ([]byte, error) {
+	if len(s) >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X') {
+		s = s[2:]
+	}
+	if len(s)%2 == 1 {
+		s = "0" + s
+	}
+	return hex.DecodeString(s)
 }
