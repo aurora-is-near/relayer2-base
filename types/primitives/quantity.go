@@ -7,8 +7,6 @@ import (
 	"math/big"
 	"reflect"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/fxamacker/cbor/v2"
 )
 
@@ -61,7 +59,7 @@ func (q *Quantity) UnmarshalJSON(b []byte) error {
 		return &json.UnmarshalTypeError{Value: "non-string", Type: reflect.ValueOf(Quantity{}).Type()}
 	}
 
-	var bi hexutil.Big
+	var bi big.Int
 	err := json.Unmarshal(b, &bi)
 	if err != nil {
 		return err
@@ -102,7 +100,8 @@ func QuantityFromBytes(b []byte) Quantity {
 }
 
 func QuantityFromHex(s string) Quantity {
-	return QuantityFromBytes(common.FromHex(s))
+	b, _ := hexToByte(s)
+	return QuantityFromBytes(b)
 }
 
 func QuantityFromBigInt(v *big.Int) Quantity {

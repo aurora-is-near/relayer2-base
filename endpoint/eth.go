@@ -3,6 +3,7 @@ package endpoint
 import (
 	"context"
 	"errors"
+	utils2 "github.com/aurora-is-near/relayer2-base/types/utils"
 
 	"github.com/aurora-is-near/relayer2-base/types"
 	"github.com/aurora-is-near/relayer2-base/types/common"
@@ -12,9 +13,6 @@ import (
 	"github.com/aurora-is-near/relayer2-base/types/request"
 	"github.com/aurora-is-near/relayer2-base/types/response"
 	"github.com/aurora-is-near/relayer2-base/utils"
-
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/rpc"
 )
 
 type Eth struct {
@@ -140,10 +138,11 @@ func (e *Eth) GetBlockTransactionCountByHash(ctx context.Context, hash common.H2
 // 	On DB failure or number not found, returns errors code '-32000' with custom message.
 // 	On missing or invalid param returns errors code '-32602' with custom message.
 func (e *Eth) GetBlockTransactionCountByNumber(ctx context.Context, number *common.BN64) (*primitives.HexUint, error) {
-	if number == nil {
-		number = &common.BN64{BlockNumber: rpc.LatestBlockNumber}
+	bn := common.LatestBlockNumber
+	if number != nil {
+		bn = *number
 	}
-	cnt, err := e.DbHandler.GetBlockTransactionCountByNumber(ctx, *number)
+	cnt, err := e.DbHandler.GetBlockTransactionCountByNumber(ctx, bn)
 	if err != nil {
 		return nil, &errs.GenericError{Err: err}
 	}
@@ -452,7 +451,7 @@ func (e *Eth) parseRequestFilter(ctx context.Context, filter *request.Filter) (*
 		} else {
 			bn, err := e.DbHandler.BlockNumber(ctx)
 			if err == nil && bn != nil {
-				bn64, err := hexutil.DecodeUint64(bn.Hex())
+				bn64, err := utils2.HexStringToUint64(bn.Hex())
 				if err == nil {
 					f.FromBlock = &bn64
 				}
@@ -474,13 +473,13 @@ func (e *Eth) parseRequestFilter(ctx context.Context, filter *request.Filter) (*
 
 	f.Addresses = make([]primitives.Data20, 0)
 	if filter.Addresses != nil {
-		seen := make(map[common.Address]bool)
+		seen := make(map[string]bool)
 		for _, a := range filter.Addresses {
-			if seen[a] {
+			if seen[a.Hex()] {
 				continue
 			}
 			f.Addresses = append(f.Addresses, primitives.Data20FromBytes(a.Bytes()))
-			seen[a] = true
+			seen[a.Hex()] = true
 		}
 	}
 
