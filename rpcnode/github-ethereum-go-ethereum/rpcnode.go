@@ -119,6 +119,12 @@ func configureGoEthRootLogger() {
 		gLvl = gel.LvlError
 		log.Log().Error().Err(err).Msgf("error while setting the go-eth root.Logger Level: %s ", logConf.Level)
 	}
+	if logConf.Level == "debug" || logConf.Level == "trace" {
+		gLvl = gel.LvlDebug
+	} else {
+		// set log level to error, otherwise logs are too detailed
+		gLvl = gel.LvlError
+	}
 
 	var consoleHandler gel.Handler
 	var fileHandler gel.Handler
