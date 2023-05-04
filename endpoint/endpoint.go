@@ -2,14 +2,14 @@ package endpoint
 
 import (
 	"encoding/json"
-	"github.com/aurora-is-near/relayer2-base/db"
-	"github.com/aurora-is-near/relayer2-base/log"
 
 	"golang.org/x/net/context"
+
+	"github.com/aurora-is-near/relayer2-base/db"
+	"github.com/aurora-is-near/relayer2-base/log"
 )
 
 func Process[T any](ctx context.Context, name string, endpoint *Endpoint, handler func(ctx context.Context) (*T, error), args ...any) (*T, error) {
-
 	var resp any
 	var err error
 	var stop bool
@@ -62,14 +62,14 @@ type Endpoint struct {
 	Processors    []Processor
 }
 
-func New(dbh db.Handler) *Endpoint {
+func New(config *Config, dbh db.Handler) *Endpoint {
 	if dbh == nil {
 		log.Log().Fatal().Msg("DB Handler should be initialized")
 	}
 	ep := Endpoint{
 		DbHandler:  dbh,
 		Logger:     log.Log(),
-		Config:     GetConfig(),
+		Config:     config,
 		Processors: []Processor{},
 	}
 
@@ -84,6 +84,6 @@ func withProcessor(e *Endpoint, p Processor) {
 	e.Processors = append(e.Processors, p)
 }
 
-func (e *Endpoint) HandleConfigChange() {
-	e.Config = GetConfig()
+func (e *Endpoint) HandleConfigChange(config *Config) {
+	e.Config = config
 }

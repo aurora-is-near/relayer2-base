@@ -1,18 +1,10 @@
 package probe
 
-import (
-	"github.com/aurora-is-near/relayer2-base/cmd"
-	"github.com/aurora-is-near/relayer2-base/log"
-	"github.com/spf13/viper"
-)
-
 const (
 	defaultAddress   = "127.0.0.1:28080"
 	defaultNamespace = "Aurora"
 	defaultSubsystem = "Relayer2"
 	defaultEnabled   = false
-
-	configPath = "probe"
 )
 
 type ServerConfig struct {
@@ -37,7 +29,7 @@ type Config struct {
 	MetricConfigs *[]MetricConfig `mapstructure:"metrics"`
 }
 
-func defaultConfig() *Config {
+func DefaultConfig() *Config {
 	return &Config{
 		Enabled: defaultEnabled,
 		ServerConfig: &ServerConfig{
@@ -47,18 +39,4 @@ func defaultConfig() *Config {
 		},
 		MetricConfigs: &[]MetricConfig{},
 	}
-}
-
-func GetConfig() *Config {
-	config := defaultConfig()
-	sub := viper.Sub(configPath)
-	if sub != nil {
-		cmd.BindSubViper(sub, configPath)
-		if err := sub.Unmarshal(&config); err != nil {
-			log.Log().Warn().Err(err).Msgf("failed to parse configuration [%s] from [%s], "+
-				"falling back to defaults", configPath, viper.ConfigFileUsed())
-		}
-	}
-
-	return config
 }

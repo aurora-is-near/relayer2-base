@@ -1,19 +1,10 @@
 package prehistory
 
-import (
-	"github.com/aurora-is-near/relayer2-base/cmd"
-	"github.com/aurora-is-near/relayer2-base/log"
-
-	"github.com/spf13/viper"
-)
-
 const (
 	defaultIndexFromPrehistory = false
 	defaultFromBlock           = 0
 	defaultBatchSize           = 10000
 	defaultPrehistoryChainId   = 1313161554
-
-	configPath = "prehistoryIndexer"
 )
 
 type Config struct {
@@ -26,24 +17,11 @@ type Config struct {
 	PrehistoryChainId   uint64 `mapstructure:"prehistoryChainId"`
 }
 
-func defaultConfig() *Config {
+func DefaultConfig() *Config {
 	return &Config{
 		IndexFromPrehistory: defaultIndexFromPrehistory,
 		From:                defaultFromBlock,
 		BatchSize:           defaultBatchSize,
 		PrehistoryChainId:   defaultPrehistoryChainId,
 	}
-}
-
-func GetConfig() *Config {
-	config := defaultConfig()
-	sub := viper.Sub(configPath)
-	if sub != nil {
-		cmd.BindSubViper(sub, configPath)
-		if err := sub.Unmarshal(&config); err != nil {
-			log.Log().Warn().Err(err).Msgf("failed to parse configuration [%s] from [%s], "+
-				"falling back to defaults", configPath, viper.ConfigFileUsed())
-		}
-	}
-	return config
 }

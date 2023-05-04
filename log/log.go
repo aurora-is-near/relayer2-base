@@ -1,11 +1,12 @@
 package log
 
 import (
-	"github.com/aurora-is-near/relayer2-base/syncutils"
 	"io"
 	"os"
 
 	"github.com/rs/zerolog"
+
+	"github.com/aurora-is-near/relayer2-base/syncutils"
 )
 
 var globalPtr syncutils.LockablePtr[Logger]
@@ -14,11 +15,10 @@ type Logger struct {
 	zerolog.Logger
 }
 
-func (l *Logger) HandleConfigChange() {
+func (l *Logger) HandleConfigChange(config *Config) {
 	oldLvl := zerolog.GlobalLevel()
-	cfg := GetConfig()
-	if cfg.Level != oldLvl.String() {
-		lvl, err := zerolog.ParseLevel(cfg.Level)
+	if config.Level != oldLvl.String() {
+		lvl, err := zerolog.ParseLevel(config.Level)
 		if err != nil {
 			lvl = oldLvl
 		}
@@ -26,23 +26,32 @@ func (l *Logger) HandleConfigChange() {
 	}
 }
 
+func Initialize(config *Config) *Logger {
+	l := log(config)
+	if _, unlock := globalPtr.LockIfNil(); unlock != nil {
+		unlock(l)
+	} else if _, unlock := globalPtr.LockIfNotNil(); unlock != nil {
+		unlock(l)
+	}
+	return l
+}
+
 // Log returns the common library global logger
 func Log() *Logger {
 	global, unlock := globalPtr.LockIfNil()
 	if unlock != nil {
-		global = log()
+		global = log(DefaultConfig())
 		unlock(global)
 	}
 	return global
 }
 
-func log() *Logger {
-	config := GetConfig()
-	l, err := zerolog.ParseLevel(config.Level)
+func log(config *Config) *Logger {
+	lvl, err := zerolog.ParseLevel(config.Level)
 	if err != nil {
-		l = zerolog.InfoLevel
+		lvl = zerolog.InfoLevel
 	}
-	zerolog.SetGlobalLevel(l)
+	zerolog.SetGlobalLevel(lvl)
 	var writers []io.Writer
 	if config.LogToConsole {
 		writers = append(writers, NewLevelWriter(os.Stdout, os.Stderr))

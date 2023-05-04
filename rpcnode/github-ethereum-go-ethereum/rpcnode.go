@@ -7,14 +7,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/aurora-is-near/relayer2-base/broker"
-	"github.com/aurora-is-near/relayer2-base/log"
-	eventbroker "github.com/aurora-is-near/relayer2-base/rpcnode/github-ethereum-go-ethereum/events"
-	"golang.org/x/net/context"
-
 	gel "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/jinzhu/copier"
+	"golang.org/x/net/context"
+
+	"github.com/aurora-is-near/relayer2-base/broker"
+	"github.com/aurora-is-near/relayer2-base/log"
+	eventbroker "github.com/aurora-is-near/relayer2-base/rpcnode/github-ethereum-go-ethereum/events"
 )
 
 const (
@@ -42,15 +42,9 @@ func (nc connection) Close() error {
 
 func (nc connection) SetWriteDeadline(time.Time) error { return nil }
 
-// New creates a new node with default conf
-func New() (*GoEthereum, error) {
-	conf := GetConfig()
-	return NewWithConf(conf)
-}
-
-// NewWithConf creates a new node with given config and the types broker if node supports websocket comm
-func NewWithConf(conf *Config) (*GoEthereum, error) {
-	ethConf := convertConfigurationToEthNode(conf)
+// New creates a new node with given config and the types broker if node supports websocket comm
+func New(config *Config, logConfig *log.Config) (*GoEthereum, error) {
+	ethConf := convertConfigurationToEthNode(config)
 	n, err := node.New(ethConf)
 	if err != nil {
 		return nil, err
@@ -59,11 +53,11 @@ func NewWithConf(conf *Config) (*GoEthereum, error) {
 	n.Server().Config.NoDial = true
 	n.Server().Config.NoDiscovery = true
 	n.Server().Config.EnableMsgEvents = false
-	configureGoEthRootLogger()
+	configureGoEthRootLogger(logConfig)
 
 	// Start eventbroker if WS configured
 	eb := eventbroker.NewEventBroker()
-	if conf.WSHost != "" && conf.WSPort > 0 {
+	if config.WSHost != "" && config.WSPort > 0 {
 		go eb.Start()
 	}
 
@@ -106,20 +100,19 @@ func (ge *GoEthereum) Resolve(ctx context.Context, reader io.Reader, writer io.W
 }
 
 // HandleConfigChange re-configures the go-eth root.Logger if needed
-func (ge *GoEthereum) HandleConfigChange() {
-	configureGoEthRootLogger()
+func (ge *GoEthereum) HandleConfigChange(logConfig *log.Config) {
+	configureGoEthRootLogger(logConfig)
 }
 
 // configureGoEthRootLogger configures the go-eth root.Logger that used by its internal packages
-func configureGoEthRootLogger() {
-	logConf := log.GetConfig()
-	gLvl, err := gel.LvlFromString(logConf.Level)
+func configureGoEthRootLogger(logConfig *log.Config) {
+	gLvl, err := gel.LvlFromString(logConfig.Level)
 	if err != nil {
 		// go-eth doesn't support fatal and panic log levels. Therefore, LvlError is assigned when there is error
 		gLvl = gel.LvlError
-		log.Log().Error().Err(err).Msgf("error while setting the go-eth root.Logger Level: %s ", logConf.Level)
+		log.Log().Error().Err(err).Msgf("error while setting the go-eth root.Logger Level: %s ", logConfig.Level)
 	}
-	if logConf.Level == "debug" || logConf.Level == "trace" {
+	if logConfig.Level == "debug" || logConfig.Level == "trace" {
 		gLvl = gel.LvlDebug
 	} else {
 		// set log level to error, otherwise logs are too detailed
@@ -128,22 +121,22 @@ func configureGoEthRootLogger() {
 
 	var consoleHandler gel.Handler
 	var fileHandler gel.Handler
-	if logConf.LogToConsole {
+	if logConfig.LogToConsole {
 		consoleHandler = gel.LvlFilterHandler(
 			gLvl,
 			gel.StreamHandler(os.Stderr, gel.JSONFormatEx(false, true)))
 	}
-	if logConf.LogToFile {
+	if logConfig.LogToFile {
 		fileHandler = gel.LvlFilterHandler(
 			gLvl,
-			gel.Must.FileHandler(logConf.FilePath, gel.JSONFormatEx(false, true)))
+			gel.Must.FileHandler(logConfig.FilePath, gel.JSONFormatEx(false, true)))
 	}
 
-	if logConf.LogToConsole && logConf.LogToFile {
+	if logConfig.LogToConsole && logConfig.LogToFile {
 		gel.Root().SetHandler(gel.MultiHandler(consoleHandler, fileHandler))
-	} else if logConf.LogToConsole {
+	} else if logConfig.LogToConsole {
 		gel.Root().SetHandler(consoleHandler)
-	} else if logConf.LogToFile {
+	} else if logConfig.LogToFile {
 		gel.Root().SetHandler(fileHandler)
 	} else {
 		gel.Root().SetHandler(gel.DiscardHandler())

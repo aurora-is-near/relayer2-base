@@ -24,12 +24,11 @@ type BlockHandler struct {
 	config *Config
 }
 
-func NewBlockHandler() (dbh.BlockHandler, error) {
-	return NewBlockHandlerWithCodec(codec.NewTinypackCodec())
+func NewBlockHandler(config *Config) (dbh.BlockHandler, error) {
+	return NewBlockHandlerWithCodec(config, codec.NewTinypackCodec())
 }
 
-func NewBlockHandlerWithCodec(codec codec.Codec) (dbh.BlockHandler, error) {
-	config := GetConfig()
+func NewBlockHandlerWithCodec(config *Config, codec codec.Codec) (dbh.BlockHandler, error) {
 	db, err := core.NewDB(config.Core, codec)
 	if err != nil {
 		return nil, err
@@ -307,7 +306,6 @@ func (h *BlockHandler) GetFilterLogs(ctx context.Context, filter *dbt.LogFilter)
 }
 
 func (h *BlockHandler) GetFilterChanges(ctx context.Context, filter any) (*[]interface{}, error) {
-
 	var err error
 	filterChanges := make([]interface{}, 0)
 	if bf, ok := filter.(*dbt.BlockFilter); ok {
@@ -408,7 +406,6 @@ func (h *BlockHandler) BlockNumberToHash(ctx context.Context, number common.BN64
 }
 
 func (h *BlockHandler) InsertBlock(block *indexer.Block) error {
-
 	writer := h.db.NewWriter()
 	defer writer.Cancel()
 

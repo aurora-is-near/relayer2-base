@@ -3,6 +3,7 @@ package badger
 import (
 	"context"
 	"errors"
+
 	dbh "github.com/aurora-is-near/relayer2-base/db"
 	"github.com/aurora-is-near/relayer2-base/db/badger/core"
 	"github.com/aurora-is-near/relayer2-base/db/codec"
@@ -16,12 +17,11 @@ type FilterHandler struct {
 	config *Config
 }
 
-func NewFilterHandler() (dbh.FilterHandler, error) {
-	return NewFilterHandlerWithCodec(codec.NewTinypackCodec())
+func NewFilterHandler(config *Config) (dbh.FilterHandler, error) {
+	return NewFilterHandlerWithCodec(config, codec.NewTinypackCodec())
 }
 
-func NewFilterHandlerWithCodec(codec codec.Codec) (dbh.FilterHandler, error) {
-	config := GetConfig()
+func NewFilterHandlerWithCodec(config *Config, codec codec.Codec) (dbh.FilterHandler, error) {
 	db, err := core.NewDB(config.Core, codec)
 	if err != nil {
 		return nil, err
@@ -126,7 +126,6 @@ func (h *FilterHandler) DeleteFilter(ctx context.Context, filterId primitives.Da
 			}
 		}
 		return errors.New("filter not found")
-
 	})
 }
 

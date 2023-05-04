@@ -3,12 +3,10 @@ package github_ethereum_go_ethereum
 import (
 	"time"
 
-	"github.com/aurora-is-near/relayer2-base/cmd"
-	"github.com/aurora-is-near/relayer2-base/log"
-
 	gel "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/spf13/viper"
+
+	"github.com/aurora-is-near/relayer2-base/log"
 )
 
 const (
@@ -16,8 +14,6 @@ const (
 	DefaultHTTPPort   = 8545        // Default TCP port for the HTTP RPC server
 	DefaultWSPort     = 8546        // Default TCP port for the websocket RPC server
 	DefaultPathPrefix = ""          // Default TCP port for the websocket RPC server
-
-	configPath = "rpcNode.geth"
 )
 
 // defaultHTTPTimeouts represents the default timeout values used by the RPC server if further
@@ -33,7 +29,6 @@ var defaultHTTPTimeouts = rpc.HTTPTimeouts{
 // P2P network layer of a protocol stack. These values can be further extended by
 // all registered services.
 type Config struct {
-
 	// HTTPHost is the host interface on which to start the HTTP RPC server. If this
 	// field is empty, no HTTP API endpoint will be started.
 	HTTPHost string
@@ -109,7 +104,7 @@ type Config struct {
 // WSModules: ["net", "web3", "eth"]
 // WSPathPrefix: DefaultPathPrefix
 // WSOrigins: []
-func defaultConfig() *Config {
+func DefaultConfig() *Config {
 	return &Config{
 		HTTPHost:         DefaultHost,
 		HTTPPort:         DefaultHTTPPort,
@@ -120,17 +115,4 @@ func defaultConfig() *Config {
 		HTTPTimeouts:     defaultHTTPTimeouts,
 		Logger:           NewGoEthLogger(log.Log()),
 	}
-}
-
-func GetConfig() *Config {
-	config := defaultConfig()
-	sub := viper.Sub(configPath)
-	if sub != nil {
-		cmd.BindSubViper(sub, configPath)
-		if err := sub.Unmarshal(&config); err != nil {
-			log.Log().Warn().Err(err).Msgf("failed to parse configuration [%s] from [%s], "+
-				"falling back to defaults", configPath, viper.ConfigFileUsed())
-		}
-	}
-	return config
 }

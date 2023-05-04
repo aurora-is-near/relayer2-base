@@ -3,14 +3,16 @@ package tar
 import (
 	"bytes"
 	"fmt"
-	"github.com/aurora-is-near/relayer2-base/db"
-	"github.com/aurora-is-near/relayer2-base/db/codec"
-	"github.com/aurora-is-near/relayer2-base/types/indexer"
+
+	"github.com/aurora-is-near/stream-backup/chunks"
 	"github.com/aurora-is-near/stream-backup/messagebackup"
 	"github.com/fxamacker/cbor/v2"
+
+	"github.com/aurora-is-near/relayer2-base/db"
+	"github.com/aurora-is-near/relayer2-base/db/codec"
+	"github.com/aurora-is-near/relayer2-base/log"
+	"github.com/aurora-is-near/relayer2-base/types/indexer"
 )
-import "github.com/aurora-is-near/relayer2-base/log"
-import "github.com/aurora-is-near/stream-backup/chunks"
 
 type Indexer struct {
 	dbh    db.Handler
@@ -20,10 +22,8 @@ type Indexer struct {
 	mode   cbor.DecMode
 }
 
-func New(dbh db.Handler) (*Indexer, error) {
-
+func New(config *Config, dbh db.Handler) (*Indexer, error) {
 	logger := log.Log()
-	config := GetConfig()
 
 	if !config.IndexFromBackup {
 		return nil, nil
@@ -37,12 +37,12 @@ func New(dbh db.Handler) (*Indexer, error) {
 		reader: chunks.Chunks{
 			Dir:             config.Dir,
 			ChunkNamePrefix: config.NamePrefix,
-		}}
+		},
+	}
 	return i, nil
 }
 
 func (i *Indexer) Start() {
-
 	if !i.config.IndexFromBackup {
 		return
 	}
@@ -91,7 +91,6 @@ func (i *Indexer) Start() {
 }
 
 func (i *Indexer) Close() {
-
 }
 
 func DecodeAugmentedCBOR[T any](input []byte, mode cbor.DecMode) (*T, error) {

@@ -4,32 +4,30 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"testing"
+
+	"github.com/dgraph-io/badger/v3"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/aurora-is-near/relayer2-base/db"
-	"github.com/aurora-is-near/relayer2-base/db/badger"
+	bd "github.com/aurora-is-near/relayer2-base/db/badger"
+	"github.com/aurora-is-near/relayer2-base/db/badger/core"
 	"github.com/aurora-is-near/relayer2-base/types"
 	"github.com/aurora-is-near/relayer2-base/types/common"
 	"github.com/aurora-is-near/relayer2-base/types/indexer"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"github.com/aurora-is-near/relayer2-base/types/request"
-	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
-	"strings"
-	"testing"
 )
 
-const ethTestYaml = `
-db:
-  badger:
-    core:
-      gcIntervalSeconds: 10
-      scanRangeThreshold: 3000
-      maxScanIterators: 10000
-      filterTtlMinutes: 15
-      options:
-        Dir: /tmp/relayer/data
-        InMemory: true
-        DetectConflicts: false
-`
+var ethTestConfig = &bd.Config{
+	Core: core.Config{
+		GcIntervalSeconds:  10,
+		ScanRangeThreshold: 3000,
+		MaxScanIterators:   10000,
+		FilterTtlMinutes:   15,
+		BadgerConfig:       badger.DefaultOptions("/tmp/relayer/data").WithInMemory(true).WithDetectConflicts(false),
+	},
+}
 
 func TestLogFilterUnmarshalJSON(t *testing.T) {
 	data := `{"address":["` +
@@ -55,15 +53,8 @@ func TestLogFilterUnmarshalJSON(t *testing.T) {
 }
 
 func TestFormatFilterOptions(t *testing.T) {
-
 	var eth *Eth
 	ctx := context.Background()
-
-	viper.SetConfigType("yml")
-	err := viper.ReadConfig(strings.NewReader(ethTestYaml))
-	if err != nil {
-		panic(err)
-	}
 
 	ca1 := primitives.Data20FromHex(fmt.Sprintf("0x%040x", 0x2))
 	ca2 := primitives.Data20FromHex(fmt.Sprintf("0x%040x", 0x1))
@@ -84,7 +75,7 @@ func TestFormatFilterOptions(t *testing.T) {
 		ReceiptHash: indexer.NearHash(data32),
 	}
 
-	var blockData = indexer.Block{
+	blockData := indexer.Block{
 		ChainId:          1313161554,
 		Height:           1,
 		Hash:             blockHash,
@@ -129,7 +120,9 @@ func TestFormatFilterOptions(t *testing.T) {
 			data: request.Filter{
 				BlockHash: &filterHash,
 			},
-			wantFrom:    &blockData.Height,
+			wantFrom: &blockData.Height,
+			//  1. returns prehistoryHeight if exists in relayer configuration .yml file
+			//  2. returns
 			wantTo:      &blockData.Height,
 			wantAddress: []primitives.Data20{},
 			wantTopics:  [][]primitives.Data32{},
@@ -178,12 +171,11 @@ func TestFormatFilterOptions(t *testing.T) {
 	}
 	for _, tc := range ttable {
 		t.Run(tc.name, func(t *testing.T) {
-
-			bh, err := badger.NewBlockHandler()
+			bh, err := bd.NewBlockHandler(ethTestConfig)
 			if err != nil {
 				panic(err)
 			}
-			fh, err := badger.NewFilterHandler()
+			fh, err := bd.NewFilterHandler(ethTestConfig)
 			if err != nil {
 				panic(err)
 			}
@@ -197,7 +189,7 @@ func TestFormatFilterOptions(t *testing.T) {
 			err = bh.InsertBlock(&blockData)
 			assert.Nil(t, err)
 
-			baseEndpoint := New(handler)
+			baseEndpoint := New(DefaultConfig(), handler)
 			eth = NewEth(baseEndpoint)
 
 			want := &types.Filter{

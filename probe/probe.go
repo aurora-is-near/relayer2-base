@@ -12,11 +12,10 @@ var probe *_probe
 
 // Start creates a probe which serves metrics via HTTP server, if it is enabled by config and not already started.
 // Start is not thread-safe, caller should use due guards if necessary
-func Start() {
+func Start(config *Config) {
 	if probe != nil {
 		return
 	}
-	config := GetConfig()
 	if config.Enabled {
 		probe = &_probe{
 			config:  config,

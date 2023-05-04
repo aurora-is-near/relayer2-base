@@ -3,20 +3,19 @@ package prehistory
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/aurora-is-near/relayer2-base/db"
 	"github.com/aurora-is-near/relayer2-base/log"
 	"github.com/aurora-is-near/relayer2-base/types/indexer"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"github.com/aurora-is-near/relayer2-base/utils"
-
-	"fmt"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const (
@@ -45,13 +44,12 @@ type queryResultMapping struct {
 
 // New creates the prehistory indexer, the db.Handler should not be nil and
 // configuration file prehistory part should be properly set
-func New(dbh db.Handler) (*Indexer, error) {
+func New(config *Config, dbh db.Handler) (*Indexer, error) {
 	if dbh == nil {
 		return nil, errors.New("db handler is not initialized")
 	}
 
 	logger := log.Log()
-	config := GetConfig()
 	if !config.IndexFromPrehistory {
 		return nil, nil
 	}

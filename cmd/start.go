@@ -10,7 +10,6 @@ const (
 )
 
 func StartCmd(f func(cmd *cobra.Command, args []string)) *cobra.Command {
-
 	startCmd := &cobra.Command{
 		Use:     "start",
 		Aliases: []string{"s"},
@@ -22,17 +21,13 @@ func StartCmd(f func(cmd *cobra.Command, args []string)) *cobra.Command {
 			f(cmd, args)
 		},
 	}
-	startCmd.PersistentFlags().StringP("config", "c", "", "Path of the configuration file (default -> config/testnet.yaml)")
+	startCmd.PersistentFlags().StringP("config", "c", defaultConfigFile, "Path of the configuration file")
 	return startCmd
 }
 
 func bindConfiguration(cmd *cobra.Command) error {
 	configFile, _ := cmd.Flags().GetString("config")
-	if configFile != "" {
-		viper.SetConfigFile(configFile)
-	} else {
-		viper.SetConfigFile(defaultConfigFile)
-	}
+	viper.SetConfigFile(configFile)
 
 	viper.WatchConfig()
 	if err := viper.ReadInConfig(); err != nil {
