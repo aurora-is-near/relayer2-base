@@ -3,47 +3,48 @@ package tar
 import (
 	"bytes"
 	"fmt"
-	"github.com/aurora-is-near/relayer2-base/db"
-	"github.com/aurora-is-near/relayer2-base/db/codec"
-	"github.com/aurora-is-near/relayer2-base/types/indexer"
+
+	"github.com/aurora-is-near/stream-backup/chunks"
 	"github.com/aurora-is-near/stream-backup/messagebackup"
 	"github.com/fxamacker/cbor/v2"
+
+	"github.com/aurora-is-near/relayer2-base/db"
+	"github.com/aurora-is-near/relayer2-base/db/codec"
+	"github.com/aurora-is-near/relayer2-base/log"
+	"github.com/aurora-is-near/relayer2-base/types/indexer"
 )
-import "github.com/aurora-is-near/relayer2-base/log"
-import "github.com/aurora-is-near/stream-backup/chunks"
 
 type Indexer struct {
+	Config *Config
 	dbh    db.Handler
-	config *Config
 	reader chunks.Chunks
 	logger *log.Logger
 	mode   cbor.DecMode
 }
 
 func New(dbh db.Handler) (*Indexer, error) {
-
 	logger := log.Log()
 	config := GetConfig()
 
 	if !config.IndexFromBackup {
-		return nil, nil
+		return &Indexer{Config: config}, nil
 	}
 
 	i := &Indexer{
+		Config: config,
 		dbh:    dbh,
 		logger: logger,
-		config: config,
 		mode:   codec.CborDecoder(),
 		reader: chunks.Chunks{
 			Dir:             config.Dir,
 			ChunkNamePrefix: config.NamePrefix,
-		}}
+		},
+	}
 	return i, nil
 }
 
 func (i *Indexer) Start() {
-
-	if !i.config.IndexFromBackup {
+	if !i.Config.IndexFromBackup {
 		return
 	}
 
@@ -52,7 +53,7 @@ func (i *Indexer) Start() {
 	}
 	defer i.reader.CloseReader()
 
-	if err := i.reader.SeekReader(i.config.From); err != nil {
+	if err := i.reader.SeekReader(i.Config.From); err != nil {
 		i.logger.Fatal().Err(err).Msg("failed to position file reader")
 	}
 
@@ -83,7 +84,7 @@ func (i *Indexer) Start() {
 		if err != nil {
 			i.logger.Fatal().Err(err).Msgf("failed to insert block [%d]", block.Height)
 		}
-		if i.config.To != 0 && i.config.To == seq {
+		if i.Config.To != 0 && i.Config.To == seq {
 			break
 		}
 	}
@@ -91,7 +92,6 @@ func (i *Indexer) Start() {
 }
 
 func (i *Indexer) Close() {
-
 }
 
 func DecodeAugmentedCBOR[T any](input []byte, mode cbor.DecMode) (*T, error) {

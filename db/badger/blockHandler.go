@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	dbh "github.com/aurora-is-near/relayer2-base/db"
 	"github.com/aurora-is-near/relayer2-base/db/badger/core"
 	"github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
 	"github.com/aurora-is-near/relayer2-base/db/codec"
@@ -20,15 +19,15 @@ import (
 )
 
 type BlockHandler struct {
+	Config *Config
 	db     *core.DB
-	config *Config
 }
 
-func NewBlockHandler() (dbh.BlockHandler, error) {
+func NewBlockHandler() (*BlockHandler, error) {
 	return NewBlockHandlerWithCodec(codec.NewTinypackCodec())
 }
 
-func NewBlockHandlerWithCodec(codec codec.Codec) (dbh.BlockHandler, error) {
+func NewBlockHandlerWithCodec(codec codec.Codec) (*BlockHandler, error) {
 	config := GetConfig()
 	db, err := core.NewDB(config.Core, codec)
 	if err != nil {
@@ -36,7 +35,7 @@ func NewBlockHandlerWithCodec(codec codec.Codec) (dbh.BlockHandler, error) {
 	}
 	return &BlockHandler{
 		db:     db,
-		config: config,
+		Config: config,
 	}, nil
 }
 
@@ -307,7 +306,6 @@ func (h *BlockHandler) GetFilterLogs(ctx context.Context, filter *dbt.LogFilter)
 }
 
 func (h *BlockHandler) GetFilterChanges(ctx context.Context, filter any) (*[]interface{}, error) {
-
 	var err error
 	filterChanges := make([]interface{}, 0)
 	if bf, ok := filter.(*dbt.BlockFilter); ok {
@@ -408,7 +406,6 @@ func (h *BlockHandler) BlockNumberToHash(ctx context.Context, number common.BN64
 }
 
 func (h *BlockHandler) InsertBlock(block *indexer.Block) error {
-
 	writer := h.db.NewWriter()
 	defer writer.Cancel()
 
@@ -499,18 +496,18 @@ func (h *BlockHandler) getLogs(ctx context.Context, txn *core.ViewTxn, filter *d
 	} else {
 		limit := int(100_000) // Max limit
 		// If the block range is higher than ScanRangeThreshold, then limit the maximum logs in the response to MaxScanIterators
-		if to.BlockHeight-from.BlockHeight > uint64(h.config.Core.ScanRangeThreshold) {
-			limit = int(h.config.Core.MaxScanIterators)
+		if to.BlockHeight-from.BlockHeight > uint64(h.Config.Core.ScanRangeThreshold) {
+			limit = int(h.Config.Core.MaxScanIterators)
 		}
 		resp, lastKey, err = txn.ReadLogs(ctx, chainId, from, to, addresses, topics, limit)
 		if err != nil {
 			if err == core.ErrLimited {
 				var err error
-				if limit == int(h.config.Core.MaxScanIterators) {
+				if limit == int(h.Config.Core.MaxScanIterators) {
 					err = &errs.LogResponseRangeLimitError{
 						Err: fmt.Errorf("Log response size exceeded. You can make eth_getLogs requests with "+
 							"up to a %d block range, or you can request any block range with a cap of %d logs in the response.",
-							int(h.config.Core.ScanRangeThreshold), int(h.config.Core.MaxScanIterators)),
+							int(h.Config.Core.ScanRangeThreshold), int(h.Config.Core.MaxScanIterators)),
 					}
 				} else {
 					err = &errs.LogResponseRangeLimitError{
