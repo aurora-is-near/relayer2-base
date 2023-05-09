@@ -3,20 +3,19 @@ package prehistory
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/aurora-is-near/relayer2-base/db"
 	"github.com/aurora-is-near/relayer2-base/log"
 	"github.com/aurora-is-near/relayer2-base/types/indexer"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"github.com/aurora-is-near/relayer2-base/utils"
-
-	"fmt"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const (
@@ -24,8 +23,8 @@ const (
 )
 
 type Indexer struct {
+	Config  *Config
 	dbh     db.Handler
-	config  *Config
 	logger  *log.Logger
 	lock    sync.Mutex
 	started bool
@@ -53,7 +52,7 @@ func New(dbh db.Handler) (*Indexer, error) {
 	logger := log.Log()
 	config := GetConfig()
 	if !config.IndexFromPrehistory {
-		return nil, nil
+		return &Indexer{Config: config}, nil
 	}
 
 	if config.To > config.PrehistoryHeight {
@@ -67,9 +66,9 @@ func New(dbh db.Handler) (*Indexer, error) {
 	}
 
 	i := &Indexer{
+		Config: config,
 		dbh:    dbh,
 		logger: logger,
-		config: config,
 		stopCh: make(chan struct{}),
 		reader: PreHistoryReader{},
 	}
@@ -78,6 +77,9 @@ func New(dbh db.Handler) (*Indexer, error) {
 
 // Start starts the prehistory indexing as a goroutine based on the config file settings
 func (i *Indexer) Start() {
+	if !i.Config.IndexFromPrehistory {
+		return
+	}
 	i.lock.Lock()
 	defer i.lock.Unlock()
 	if !i.started {
@@ -88,6 +90,9 @@ func (i *Indexer) Start() {
 
 // Close gracefully stops the prehistory indexer
 func (i *Indexer) Close() {
+	if !i.started {
+		return
+	}
 	i.lock.Lock()
 	defer i.lock.Unlock()
 	i.logger.Info().Msgf("Prehistory indexer reveived close signal")
@@ -97,9 +102,9 @@ func (i *Indexer) Close() {
 // Start starts the prehistory indexing as a goroutine based on the config file settings
 func (i *Indexer) index() {
 	var err error
-	i.reader.dbPool, err = pgxpool.New(context.Background(), i.config.ArchiveURL)
+	i.reader.dbPool, err = pgxpool.New(context.Background(), i.Config.ArchiveURL)
 	if err != nil {
-		i.logger.Error().Msgf("Unable to connect to prehistory database %s: %v\n", i.config.ArchiveURL, err)
+		i.logger.Error().Msgf("Unable to connect to prehistory database %s: %v\n", i.Config.ArchiveURL, err)
 		return
 	}
 	defer i.reader.dbPool.Close()
@@ -114,10 +119,10 @@ func (i *Indexer) index() {
 	quantity := primitives.QuantityFromBytes(emptyBytes)
 	parentHash := primitives.Data32FromBytes(emptyBytes)
 	blockHash := primitives.Data32FromBytes(emptyBytes)
-	chainId := i.config.PrehistoryChainId
-	from := i.config.From
-	to := i.config.To
-	step := i.config.BatchSize
+	chainId := i.Config.PrehistoryChainId
+	from := i.Config.From
+	to := i.Config.To
+	step := i.Config.BatchSize
 
 	i.reader.startTime = time.Now()
 	i.logger.Info().Msgf("prehistory indexing started fromBlock: [%d] toBlock: [%d]", from, to)

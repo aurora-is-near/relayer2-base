@@ -1,17 +1,19 @@
 package log
 
 import (
-	"github.com/aurora-is-near/relayer2-base/syncutils"
 	"io"
 	"os"
 
 	"github.com/rs/zerolog"
+
+	"github.com/aurora-is-near/relayer2-base/syncutils"
 )
 
 var globalPtr syncutils.LockablePtr[Logger]
 
 type Logger struct {
 	zerolog.Logger
+	Config *Config
 }
 
 func (l *Logger) HandleConfigChange() {
@@ -50,5 +52,8 @@ func log() *Logger {
 	if config.LogToFile {
 		writers = append(writers, NewFileWriter(config.FilePath))
 	}
-	return &Logger{zerolog.New(io.MultiWriter(writers...)).With().Timestamp().Logger()}
+	return &Logger{
+		Logger: zerolog.New(io.MultiWriter(writers...)).With().Timestamp().Logger(),
+		Config: config,
+	}
 }
