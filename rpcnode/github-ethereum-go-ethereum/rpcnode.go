@@ -7,14 +7,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/aurora-is-near/relayer2-base/broker"
-	"github.com/aurora-is-near/relayer2-base/log"
-	eventbroker "github.com/aurora-is-near/relayer2-base/rpcnode/github-ethereum-go-ethereum/events"
-	"golang.org/x/net/context"
-
 	gel "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/jinzhu/copier"
+	"golang.org/x/net/context"
+
+	"github.com/aurora-is-near/relayer2-base/broker"
+	"github.com/aurora-is-near/relayer2-base/log"
+	eventbroker "github.com/aurora-is-near/relayer2-base/rpcnode/github-ethereum-go-ethereum/events"
 )
 
 const (
@@ -25,6 +25,7 @@ const (
 type GoEthereum struct {
 	node.Node
 	Broker broker.Broker
+	Config *Config
 }
 
 type connection struct {
@@ -70,6 +71,7 @@ func NewWithConf(conf *Config) (*GoEthereum, error) {
 	return &GoEthereum{
 		Node:   *n,
 		Broker: eb,
+		Config: conf,
 	}, nil
 }
 
