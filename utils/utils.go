@@ -37,8 +37,7 @@ func IndexerBlockToDbBlock(block *indexer.Block) *dbt.Block {
 	return &b
 }
 
-func IndexerTxnToDbTxn(txn *indexer.Transaction) *dbt.Transaction {
-
+func IndexerTxnToDbTxn(txn *indexer.Transaction, cumulativeGas primitives.Quantity) *dbt.Transaction {
 	toOrContract := tinypack.CreateNullable[primitives.Data20](nil)
 	isContractDeployment := false
 	if txn.ContractAddress != nil {
@@ -83,6 +82,7 @@ func IndexerTxnToDbTxn(txn *indexer.Transaction) *dbt.Transaction {
 		GasPrice:             txn.GasPrice,
 		GasLimit:             txn.GasLimit,
 		GasUsed:              txn.GasUsed,
+		CumulativeGasUsed:    cumulativeGas,
 		Value:                txn.Value,
 		Input:                primitives.VarData(txn.Input),
 		NearHash:             nearHash,

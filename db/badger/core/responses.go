@@ -8,15 +8,14 @@ import (
 )
 
 var (
-	sha3Uncles        = primitives.Data32FromHex("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347")
-	nonce             = primitives.Data8FromBytes(nil)
-	difficulty        = primitives.HexUint(0)
-	extraData         = primitives.VarDataFromBytes(nil)
-	uncles            = []primitives.Data[primitives.Len32]{}
-	cumulativeGasUsed = primitives.QuantityFromUint64(0) // TODO: check
-	gasLimit          = primitives.QuantityFromUint64(*utils.Constants.GasLimit())
-	miner             = primitives.Data20FromHex(*utils.Constants.ZeroStrUint160())
-	mixHash           = primitives.Data32FromHex(*utils.Constants.ZeroStrUint256())
+	sha3Uncles = primitives.Data32FromHex("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347")
+	nonce      = primitives.Data8FromBytes(nil)
+	difficulty = primitives.HexUint(0)
+	extraData  = primitives.VarDataFromBytes(nil)
+	uncles     = []primitives.Data[primitives.Len32]{}
+	gasLimit   = primitives.QuantityFromUint64(*utils.Constants.GasLimit())
+	miner      = primitives.Data20FromHex(*utils.Constants.ZeroStrUint160())
+	mixHash    = primitives.Data32FromHex(*utils.Constants.ZeroStrUint256())
 )
 
 func makeBlockResponse(height uint64, hash primitives.Data32, data dbt.Block, txs []any) *response.Block {
@@ -150,7 +149,7 @@ func makeTransactionReceiptResponse(
 	txReceipt := &response.TransactionReceipt{
 		BlockHash:         blockHash,
 		BlockNumber:       primitives.HexUint(height),
-		CumulativeGasUsed: cumulativeGasUsed,
+		CumulativeGasUsed: txData.CumulativeGasUsed,
 		From:              txData.From,
 		GasUsed:           primitives.HexUint(gasUsed),
 		EffectiveGasPrice: txData.GasPrice,

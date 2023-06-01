@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math/big"
 
 	"github.com/aurora-is-near/relayer2-base/db/badger/core"
 	"github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
@@ -417,9 +418,14 @@ func (h *BlockHandler) InsertBlock(block *indexer.Block) error {
 		return err
 	}
 
+	gasUsed := big.NewInt(0)
+	cumulativeGas := big.NewInt(0)
+
 	for i, t := range block.Transactions {
 		txnIndex := uint64(i)
-		err = writer.InsertTransaction(chainId, height, txnIndex, t.Hash, utils.IndexerTxnToDbTxn(t))
+		gasUsed.SetUint64(t.GasUsed)
+		cumulativeGas.Add(cumulativeGas, gasUsed)
+		err = writer.InsertTransaction(chainId, height, txnIndex, t.Hash, utils.IndexerTxnToDbTxn(t, primitives.QuantityFromBigInt(cumulativeGas)))
 		if err != nil {
 			return err
 		}
