@@ -146,6 +146,7 @@ func makeTransactionReceiptResponse(
 		CumulativeGasUsed: cumulativeGasUsed,
 		From:              txData.From,
 		GasUsed:           primitives.HexUint(gasUsed),
+		EffectiveGasPrice: txData.GasPrice,
 		Logs:              Logs,
 		LogsBloom:         txData.LogsBloom,
 		NearReceiptHash:   txData.NearReceiptHash,
