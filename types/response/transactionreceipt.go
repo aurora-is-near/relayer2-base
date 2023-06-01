@@ -13,6 +13,7 @@ type TransactionReceipt struct {
 	CumulativeGasUsed   primitives.Quantity `json:"cumulativeGasUsed"`
 	From                primitives.Data20   `json:"from"`
 	GasUsed             primitives.HexUint  `json:"gasUsed"`
+	EffectiveGasPrice   primitives.Quantity `json:"effectiveGasPrice"`
 	Logs                []*Log              `json:"logs"`
 	LogsBloom           primitives.Data256  `json:"logsBloom"`
 	NearReceiptHash     primitives.Data32   `json:"nearReceiptHash"`
