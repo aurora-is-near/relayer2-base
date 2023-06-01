@@ -19,6 +19,7 @@ type Transaction struct {
 	GasPrice             primitives.Quantity
 	GasLimit             primitives.Quantity
 	GasUsed              uint64
+	CumulativeGasUsed    primitives.Quantity
 	Value                primitives.Quantity
 	Input                primitives.VarData
 	NearHash             tp.Nullable[primitives.Data32]
