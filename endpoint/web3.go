@@ -3,12 +3,10 @@ package endpoint
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
-	errs "github.com/aurora-is-near/relayer2-base/types/errors"
-	"github.com/aurora-is-near/relayer2-base/utils"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/crypto"
+	errs "github.com/aurora-is-near/relayer2-base/types/errors"
+	"github.com/aurora-is-near/relayer2-base/utils"
 )
 
 type Web3 struct {
@@ -39,7 +37,6 @@ func (e *Web3) Sha3(_ context.Context, in string) (*string, error) {
 		e.Logger.Err(err).Msgf("could hex decode [%s]", in)
 		return nil, &errs.GenericError{Err: err}
 	}
-	keccak256 := crypto.Keccak256(dec)
-	hash := fmt.Sprintf("0x%s", hex.EncodeToString(keccak256))
-	return &hash, nil
+	keccak256 := utils.CalculateKeccak256(dec)
+	return &keccak256, nil
 }
