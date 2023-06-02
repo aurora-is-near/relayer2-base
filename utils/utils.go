@@ -4,13 +4,17 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
+	"fmt"
+
 	"github.com/aurora-is-near/relayer2-base/log"
 	"github.com/aurora-is-near/relayer2-base/tinypack"
 	dbt "github.com/aurora-is-near/relayer2-base/types/db"
 	"github.com/aurora-is-near/relayer2-base/types/indexer"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"golang.org/x/crypto/sha3"
 )
 
 const (
@@ -147,4 +151,12 @@ func ParseEVMRevertReason(data []byte) (string, error) {
 		return "invalid txs result", err
 	}
 	return vs[0].(string), nil
+}
+
+// CalculateKeccak256 calculates and returns the Keccak256 hash of the input data
+func CalculateKeccak256(input []byte) string {
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write(input)
+	keccak256 := hash.Sum(nil)
+	return fmt.Sprintf("0x%s", hex.EncodeToString(keccak256))
 }

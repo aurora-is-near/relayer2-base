@@ -1,17 +1,26 @@
 package logscan
 
-import "github.com/ethereum/go-ethereum/crypto"
+import (
+	"hash"
+
+	"golang.org/x/crypto/sha3"
+)
 
 // N = 1e9 (Expected number of entries)
 // P = 0.001 (Desired false-positive probability)
 const HashSize = 5 // ceil(ln(N / P) / ln(256))
+
+type KeccakState interface {
+	hash.Hash
+	Read([]byte) (int, error)
+}
 
 func BitmaskContains(bitmask, v int) bool {
 	return ((1 << v) & bitmask) > 0
 }
 
 func CalcHash(features [][]byte, bitmask int) []byte {
-	hash := crypto.NewKeccakState()
+	hash := sha3.NewLegacyKeccak256().(KeccakState)
 	for i := 0; i < len(features); i++ {
 		if BitmaskContains(bitmask, i) {
 			hash.Write(features[i])
