@@ -3,27 +3,29 @@ package core
 import (
 	"context"
 	"encoding/binary"
-	"github.com/aurora-is-near/relayer2-base/db/codec"
-	"github.com/aurora-is-near/relayer2-base/tinypack"
-	dbt "github.com/aurora-is-near/relayer2-base/types/db"
-	"github.com/aurora-is-near/relayer2-base/types/primitives"
-	"github.com/aurora-is-near/relayer2-base/types/response"
 	"log"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
 
+	"github.com/aurora-is-near/relayer2-base/db/badger/core/logscan"
+	"github.com/aurora-is-near/relayer2-base/db/codec"
+	"github.com/aurora-is-near/relayer2-base/tinypack"
+	dbt "github.com/aurora-is-near/relayer2-base/types/db"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/types/response"
+	"golang.org/x/crypto/sha3"
+
 	"github.com/dgraph-io/badger/v3"
 
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 )
 
 const testChainId = 88005553535
 
 func genBytes(length int, seeds ...uint64) []byte {
-	hash := crypto.NewKeccakState()
+	hash := sha3.NewLegacyKeccak256().(logscan.KeccakState)
 	for _, seed := range seeds {
 		buf := make([]byte, 8)
 		binary.BigEndian.PutUint64(buf, seed)
