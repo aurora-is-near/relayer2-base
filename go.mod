@@ -12,6 +12,7 @@ require (
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/ethereum/go-ethereum v1.10.25
 	github.com/fxamacker/cbor/v2 v2.4.0
+	github.com/holiman/uint256 v1.2.0
 	github.com/jackc/pgx/v5 v5.2.0
 	github.com/jinzhu/copier v0.3.5
 	github.com/near/borsh-go v0.3.1
@@ -22,6 +23,7 @@ require (
 	github.com/spf13/viper v1.13.0
 	github.com/stretchr/testify v1.8.0
 	go.neonxp.dev/jsonrpc2 v1.2.0
+	golang.org/x/crypto v0.0.0-20221012134737-56aed061732a
 	golang.org/x/net v0.8.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
@@ -60,7 +62,6 @@ require (
 	github.com/tklauser/numcpus v0.5.0 // indirect
 	github.com/urfave/cli/v2 v2.19.2 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	golang.org/x/crypto v0.0.0-20221012134737-56aed061732a // indirect
 	golang.org/x/sync v0.0.0-20220929204114-8fcdb60fdcc0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
