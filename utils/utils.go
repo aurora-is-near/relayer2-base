@@ -7,13 +7,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math/big"
 
 	"github.com/aurora-is-near/relayer2-base/log"
 	"github.com/aurora-is-near/relayer2-base/tinypack"
 	dbt "github.com/aurora-is-near/relayer2-base/types/db"
 	"github.com/aurora-is-near/relayer2-base/types/indexer"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -144,13 +144,11 @@ func ParseEVMRevertReason(data []byte) (string, error) {
 		return "txs result not Error(string)", errors.New("txs result not of type Error(string)")
 	}
 
-	// The remaining slice is decoded according to the ABI specification to get the revert message
-	abiString, _ := abi.NewType("string", "", nil)
-	vs, err := abi.Arguments{{Type: abiString}}.UnpackValues(data[4:])
+	reason, err := parseEVMRevertReason(data[4:])
 	if err != nil {
 		return "invalid txs result", err
 	}
-	return vs[0].(string), nil
+	return reason, err
 }
 
 // CalculateKeccak256 calculates and returns the Keccak256 hash of the input data
@@ -159,4 +157,37 @@ func CalculateKeccak256(input []byte) string {
 	hash.Write(input)
 	keccak256 := hash.Sum(nil)
 	return fmt.Sprintf("0x%s", hex.EncodeToString(keccak256))
+}
+
+// parseEVMRevertReason decodes input slice according to ABI, specification, interprets a 32 byte slice as an offset and
+// then determines which indices to look for string start and string length
+func parseEVMRevertReason(input []byte) (reason string, err error) {
+	bigOffsetEnd := new(big.Int).SetBytes(input[:32])
+	bigOffsetEnd.Add(bigOffsetEnd, big.NewInt(32))
+	inputLength := big.NewInt(int64(len(input)))
+
+	if bigOffsetEnd.Cmp(inputLength) > 0 {
+		return "", fmt.Errorf("offset %v would go over slice boundary (len=%v)", bigOffsetEnd, inputLength)
+	}
+
+	if bigOffsetEnd.BitLen() > 63 {
+		return "", fmt.Errorf("offset larger than int64: %v", bigOffsetEnd)
+	}
+
+	offsetEnd := int(bigOffsetEnd.Uint64())
+	bigLength := new(big.Int).SetBytes(input[offsetEnd-32 : offsetEnd])
+
+	totalLength := new(big.Int).Add(bigOffsetEnd, bigLength)
+	if totalLength.BitLen() > 63 {
+		return "", fmt.Errorf("length larger than int64: %v", totalLength)
+	}
+
+	if totalLength.Cmp(inputLength) > 0 {
+		return "", fmt.Errorf("length insufficient %v require %v", inputLength, totalLength)
+	}
+
+	start := int(bigOffsetEnd.Uint64())
+	length := int(bigLength.Uint64())
+
+	return string(input[start : start+length]), nil
 }
