@@ -3,9 +3,10 @@ package primitives
 import (
 	"encoding/binary"
 	"encoding/json"
-	tp "github.com/aurora-is-near/relayer2-base/tinypack"
 	"math/big"
 	"reflect"
+
+	tp "github.com/aurora-is-near/relayer2-base/tinypack"
 
 	"github.com/fxamacker/cbor/v2"
 )
@@ -54,23 +55,21 @@ func (q Quantity) MarshalJSON() ([]byte, error) {
 }
 
 func (q *Quantity) UnmarshalJSON(b []byte) error {
-
 	if len(b) < 2 || b[0] != '"' || b[len(b)-1] != '"' {
 		return &json.UnmarshalTypeError{Value: "non-string", Type: reflect.ValueOf(Quantity{}).Type()}
 	}
 
-	var bi big.Int
-	err := json.Unmarshal(b, &bi)
+	var in string
+	err := json.Unmarshal(b, &in)
 	if err != nil {
 		return err
 	}
 
-	*q = QuantityFromHex(bi.String())
+	*q = QuantityFromHex(in)
 	return nil
 }
 
 func (q *Quantity) UnmarshalCBOR(b []byte) error {
-
 	var in string
 	err := cbor.Unmarshal(b, &in)
 	if err != nil {
