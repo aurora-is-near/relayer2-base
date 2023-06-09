@@ -10,7 +10,6 @@ import (
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"github.com/aurora-is-near/relayer2-base/types/utils"
 	"github.com/btcsuite/btcutil/base58"
-	"math/big"
 	"strconv"
 	"strings"
 )
@@ -146,12 +145,14 @@ func (t *Topic) UnmarshalCBOR(b []byte) error {
 }
 
 func (s *Size) UnmarshalJSON(b []byte) error {
-	var bi big.Int
-	err := json.Unmarshal(b, &bi)
+	var in string
+	err := json.Unmarshal(b, &in)
+
+	ui64, err := utils.HexStringToUint64(in)
 	if err != nil {
 		return err
 	}
-	*s = Size(bi.Uint64())
+	*s = Size(ui64)
 	return nil
 }
 
