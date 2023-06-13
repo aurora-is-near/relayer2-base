@@ -58,12 +58,19 @@ func makeTransactionResponse(
 	hash primitives.Data32,
 	data *dbt.Transaction,
 ) *response.Transaction {
+	// It is not allowed to burn more gas than the gas limit. However, because of an error there were
+	// invalid gas consumption records. Below control is added to support the following fix.
+	// https://github.com/aurora-is-near/aurora-relayer/pull/348/files
+	gas := data.GasLimit.Uint64()
+	if gas > *utils.Constants.GasLimit() {
+		gas = *utils.Constants.GasLimit()
+	}
 
 	tx := &response.Transaction{
 		BlockHash:        blockHash,
 		BlockNumber:      primitives.HexUint(height),
 		From:             data.From,
-		Gas:              primitives.HexUint(data.GasLimit.Uint64()),
+		Gas:              primitives.HexUint(gas),
 		GasPrice:         data.GasPrice,
 		Hash:             hash,
 		Input:            data.Input,
