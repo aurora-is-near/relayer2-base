@@ -113,6 +113,10 @@ func (iod *InputOutputData) UnmarshalCBOR(b []byte) error {
 	return nil
 }
 
+func (t Topic) MarshalJSON() ([]byte, error) {
+	return primitives.Data32.MarshalJSON(primitives.Data[primitives.Len32](t))
+}
+
 func (t *Topic) UnmarshalJSON(b []byte) error {
 	var i []byte
 	err := jsoniter.Unmarshal(b, &i)
