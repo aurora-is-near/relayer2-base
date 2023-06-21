@@ -6,14 +6,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
+
 	"github.com/aurora-is-near/relayer2-base/log"
 	"github.com/aurora-is-near/relayer2-base/types/common"
 	error2 "github.com/aurora-is-near/relayer2-base/types/errors"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"github.com/aurora-is-near/relayer2-base/utils"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/near/borsh-go"
-	"regexp"
-	"strings"
 )
 
 const (
@@ -77,12 +79,12 @@ type TransactionForCall struct {
 	Data     *primitives.VarData  `json:"data,omitempty"`
 }
 
-// UnmarshalJSON implements json.Unmarshaler
+// UnmarshalJSON implements jsoniter.Unmarshaler
 // This method is needed to make `.To` field of the TransactionForCall struct required/mandatory
 func (tc *TransactionForCall) UnmarshalJSON(data []byte) error {
 	type tmpType TransactionForCall
 	tmp := tmpType{}
-	err := json.Unmarshal(data, &tmp)
+	err := jsoniter.Unmarshal(data, &tmp)
 	if err != nil {
 		return err
 	}
@@ -122,6 +124,16 @@ func (tc *TransactionForCall) Serialize() ([]byte, error) {
 		return nil, err
 	}
 	return buff, nil
+}
+
+// Validate checks the incoming object and returns error for incorrect fields
+func (tc *TransactionForCall) Validate() error {
+	// return OutOfGas error if Gas field is "0x0"
+	if tc.Gas != nil && tc.Gas.IsZero() {
+		return &error2.TxsStatusError{Message: "Ok(OutOfGas)"}
+	}
+
+	return nil
 }
 
 // transactionForCallEngine is the type send to engine for eth_call endpoint
@@ -381,7 +393,7 @@ func (ss *SubmitStatus) Validate() error {
 				logger.Debug().Msgf("submit request failed with ExecutionError: %s, txs hash: %s", errMsg, ss.ResponseHash)
 				return errors.New(errMsg)
 			} else {
-				jsn, err := json.Marshal(failTypeMap["FunctionCallError"])
+				jsn, err := jsoniter.Marshal(failTypeMap["FunctionCallError"])
 				if err != nil {
 					logger.Error().Msgf("submit request failed while marshalling FunctionCallError: %s, txs hash: %s", err.Error(), ss.ResponseHash)
 					return err
@@ -391,7 +403,7 @@ func (ss *SubmitStatus) Validate() error {
 				return fmt.Errorf("failure:%s", jsnStr)
 			}
 		case "MethodNotFound":
-			jsn, err := json.Marshal(failTypeMap["MethodNotFound"])
+			jsn, err := jsoniter.Marshal(failTypeMap["MethodNotFound"])
 			if err != nil {
 				logger.Error().Msgf("submit request failed while marshalling MethodNotFound: %s, txs hash: %s", err.Error(), ss.ResponseHash)
 				return err
@@ -400,7 +412,7 @@ func (ss *SubmitStatus) Validate() error {
 			logger.Error().Msgf("submit request failed with MethodNotFound: %s, txs hash: %s", jsnStr, ss.ResponseHash)
 			return fmt.Errorf("failure: %s", jsnStr)
 		default:
-			jsn, err := json.Marshal(fail.(map[string]interface{})["ActionError"].(map[string]interface{})["kind"])
+			jsn, err := jsoniter.Marshal(fail.(map[string]interface{})["ActionError"].(map[string]interface{})["kind"])
 			if err != nil {
 				logger.Error().Msgf("submit request failed while marshalling Default case: %s, txs hash: %s", err.Error(), ss.ResponseHash)
 				return err

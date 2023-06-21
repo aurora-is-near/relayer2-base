@@ -1,10 +1,11 @@
 package request
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/aurora-is-near/relayer2-base/types/common"
+	jsoniter "github.com/json-iterator/go"
 )
 
 type Topics [][][]byte
@@ -25,7 +26,7 @@ type Filter struct {
 
 func (t *Topics) UnmarshalJSON(b []byte) error {
 	tps := [4]interface{}{}
-	err := json.Unmarshal(b, &tps)
+	err := jsoniter.Unmarshal(b, &tps)
 	if err != nil {
 		return err
 	}
@@ -51,7 +52,7 @@ func (t *Topics) UnmarshalJSON(b []byte) error {
 func (a *SingleOrSliceOfAddress) UnmarshalJSON(b []byte) error {
 	type input interface{}
 	var raw input
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := jsoniter.Unmarshal(b, &raw); err != nil {
 		return err
 	}
 

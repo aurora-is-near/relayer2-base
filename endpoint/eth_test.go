@@ -2,8 +2,10 @@ package endpoint
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"strings"
+	"testing"
+
 	"github.com/aurora-is-near/relayer2-base/db"
 	"github.com/aurora-is-near/relayer2-base/db/badger"
 	"github.com/aurora-is-near/relayer2-base/types"
@@ -11,10 +13,9 @@ import (
 	"github.com/aurora-is-near/relayer2-base/types/indexer"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"github.com/aurora-is-near/relayer2-base/types/request"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
-	"strings"
-	"testing"
 )
 
 const ethTestYaml = `
@@ -49,7 +50,7 @@ func TestLogFilterUnmarshalJSON(t *testing.T) {
 		BlockHash: &wantHash,
 	}
 	var result request.Filter
-	err := json.Unmarshal([]byte(data), &result)
+	err := jsoniter.Unmarshal([]byte(data), &result)
 	assert.Nil(t, err)
 	assert.Equal(t, want, result)
 }
@@ -247,7 +248,7 @@ func TestTopicsUnmarshalJSON(t *testing.T) {
 	for _, tc := range ttable {
 		t.Run(tc.data, func(t *testing.T) {
 			var ts request.Topics
-			err := json.Unmarshal([]byte(tc.data), &ts)
+			err := jsoniter.Unmarshal([]byte(tc.data), &ts)
 			if tc.wantErr != "" {
 				assert.ErrorContains(t, err, tc.wantErr)
 			} else {
