@@ -65,7 +65,7 @@ var Constants constants
 func init() {
 	Constants.clientVersion = "Aurora"
 	Constants.zeroStrUint256 = "0x0000000000000000000000000000000000000000000000000000000000000000"
-	Constants.zeroStrUint160 = "0x000000000000000000000000000000000000"
+	Constants.zeroStrUint160 = "0x0000000000000000000000000000000000000000"
 	Constants.zeroStrUint128 = "0x00000000000000000000000000000000"
 	Constants.response0x = "0x"
 	Constants.syncing = false

@@ -1,9 +1,9 @@
 package endpoint
 
 import (
-	"encoding/json"
 	"github.com/aurora-is-near/relayer2-base/db"
 	"github.com/aurora-is-near/relayer2-base/log"
+	jsoniter "github.com/json-iterator/go"
 
 	"golang.org/x/net/context"
 )
@@ -28,11 +28,11 @@ func Process[T any](ctx context.Context, name string, endpoint *Endpoint, handle
 					return &r, nil
 				} else {
 					var buff []byte
-					buff, err = json.Marshal(resp)
+					buff, err = jsoniter.Marshal(resp)
 					if err != nil {
 						return nil, err
 					}
-					err = json.Unmarshal(buff, &r)
+					err = jsoniter.Unmarshal(buff, &r)
 					if err != nil {
 						return nil, err
 					}

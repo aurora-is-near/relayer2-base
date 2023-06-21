@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"net"
+
 	"github.com/aurora-is-near/relayer2-base/log"
 
 	"github.com/spf13/viper"
@@ -102,4 +104,17 @@ func getPrehistoryHeight() *uint64 {
 		ph = &defaultPrehistoryHeight
 	}
 	return ph
+}
+
+type clientIpKey struct{}
+
+// PutClientIpKey is a helper function to put clientIp in the context so that handlers can use it
+func PutClientIpKey(ctx context.Context, ip net.IP) context.Context {
+	return context.WithValue(ctx, clientIpKey{}, ip)
+}
+
+// ClientIpFromContext returns the clientIp value stored in ctx, if any.
+func ClientIpFromContext(ctx context.Context) (*net.IP, bool) {
+	ip, ok := ctx.Value(clientIpKey{}).(net.IP)
+	return &ip, ok
 }

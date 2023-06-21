@@ -3,6 +3,7 @@ package endpoint
 import (
 	"context"
 	"errors"
+
 	utils2 "github.com/aurora-is-near/relayer2-base/types/utils"
 
 	"github.com/aurora-is-near/relayer2-base/types"
