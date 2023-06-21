@@ -7,6 +7,7 @@ import (
 	"reflect"
 
 	tp "github.com/aurora-is-near/relayer2-base/tinypack"
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/fxamacker/cbor/v2"
 )
@@ -46,6 +47,12 @@ func (q Quantity) Uint64() uint64 {
 	return binary.BigEndian.Uint64(q.Content[24:])
 }
 
+func (q Quantity) IsZero() bool {
+	tmpBig := q.BigInt()
+	// length of bits in BigInt for value `0` is 0
+	return len(tmpBig.Bits()) == 0
+}
+
 func (q Quantity) MarshalJSON() ([]byte, error) {
 	buf := make([]byte, 0, 5)
 	buf = append(buf, '"')
@@ -60,7 +67,7 @@ func (q *Quantity) UnmarshalJSON(b []byte) error {
 	}
 
 	var in string
-	err := json.Unmarshal(b, &in)
+	err := jsoniter.Unmarshal(b, &in)
 	if err != nil {
 		return err
 	}

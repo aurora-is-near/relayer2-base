@@ -2,15 +2,16 @@ package events
 
 import (
 	"bytes"
-	"github.com/aurora-is-near/relayer2-base/broker"
-	"github.com/aurora-is-near/relayer2-base/log"
-	"github.com/aurora-is-near/relayer2-base/types/common"
-	"github.com/aurora-is-near/relayer2-base/types/event"
-	"github.com/aurora-is-near/relayer2-base/types/request"
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/aurora-is-near/relayer2-base/broker"
+	"github.com/aurora-is-near/relayer2-base/log"
+	"github.com/aurora-is-near/relayer2-base/rpc"
+	"github.com/aurora-is-near/relayer2-base/types/common"
+	"github.com/aurora-is-near/relayer2-base/types/event"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/types/request"
 )
 
 type Type byte
@@ -74,7 +75,7 @@ type EventBroker struct {
 	DebugInfo         chan int
 }
 
-// NewEventBroker creates a new EventsForGoEth object
+// NewEventBroker creates a new EventBroker object
 func NewEventBroker() *EventBroker {
 	return &EventBroker{
 		l:                 log.Log(),
@@ -100,7 +101,7 @@ func (eb *EventBroker) SubscribeNewHeads(ch chan event.Block) broker.Subscriptio
 		logsCh:     make(chan event.Logs),
 	}
 	eb.subNewHeadsCh <- sub
-	eb.l.Info().Msgf("new subscription request to New Heads with Id: [%s]", sub.id)
+	eb.l.Debug().Msgf("new subscription request to New Heads with Id: [%s]", sub.id)
 	return sub
 }
 
@@ -116,7 +117,7 @@ func (eb *EventBroker) SubscribeLogs(opts request.LogSubscriptionOptions, ch cha
 		logsCh:     ch,
 	}
 	eb.subLogsCh <- sub
-	eb.l.Info().Msgf("new subscription request to Logs with Id: [%s]", sub.id)
+	eb.l.Debug().Msgf("new subscription request to Logs with Id: [%s]", sub.id)
 	return sub
 }
 
@@ -124,14 +125,14 @@ func (eb *EventBroker) SubscribeLogs(opts request.LogSubscriptionOptions, ch cha
 // to delete the subscription
 func (eb *EventBroker) UnsubscribeFromNewHeads(sub broker.Subscription) {
 	eb.unsubNewHeadsCh <- sub
-	eb.l.Info().Msgf("unsubscription request to New Heads with Id: [%s]", sub.GetId())
+	eb.l.Debug().Msgf("unsubscription request to New Heads with Id: [%s]", sub.GetId())
 }
 
 // UnsubscribeFromLogs signals the EventBroker's related channel
 // to delete the subscription
 func (eb *EventBroker) UnsubscribeFromLogs(sub broker.Subscription) {
 	eb.unsubLogsCh <- sub
-	eb.l.Info().Msgf("unsubscription request to Logs with Id: [%s]", sub.GetId())
+	eb.l.Debug().Msgf("unsubscription request to Logs with Id: [%s]", sub.GetId())
 }
 
 // Start main loop of the EventBroker that receives and distributes the events.
@@ -205,15 +206,11 @@ Logs:
 		if len(opts.Address) > 0 && !includes(opts.Address, log.Address.Hex()) {
 			continue
 		}
-
-		// If the number of filtered topics provided is greater than the amount of topics in logs, skip.
-		if len(opts.Topics) > len(log.Topics) {
-			continue
-		}
 		for i, sub := range opts.Topics {
 			match := len(sub) == 0 // empty rule set == wildcard
 			for _, topic := range sub {
-				if bytes.Equal(log.Topics[i].Bytes(), topic) {
+				// empty rule set == wildcard. Otherwise, check if topic index of opts fits in the number of topics in received log and if it fits check topics for equality
+				if len(topic) == 0 || (i < len(log.Topics) && bytes.Equal(log.Topics[i].Bytes(), primitives.Data32FromHex(string(topic)).Bytes())) {
 					match = true
 					break
 				}

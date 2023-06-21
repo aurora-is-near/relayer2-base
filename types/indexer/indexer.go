@@ -2,16 +2,17 @@ package indexer
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/aurora-is-near/relayer2-base/db/codec"
 	"github.com/aurora-is-near/relayer2-base/tinypack"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"github.com/aurora-is-near/relayer2-base/types/utils"
 	"github.com/btcsuite/btcutil/base58"
-	"strconv"
-	"strings"
+	jsoniter "github.com/json-iterator/go"
 )
 
 type NearHash primitives.Data32
@@ -86,7 +87,7 @@ type Log struct {
 
 func (iod *InputOutputData) UnmarshalJSON(b []byte) error {
 	var i []byte
-	err := json.Unmarshal(b, &i)
+	err := jsoniter.Unmarshal(b, &i)
 	if err != nil {
 		return err
 	}
@@ -114,7 +115,7 @@ func (iod *InputOutputData) UnmarshalCBOR(b []byte) error {
 
 func (t *Topic) UnmarshalJSON(b []byte) error {
 	var i []byte
-	err := json.Unmarshal(b, &i)
+	err := jsoniter.Unmarshal(b, &i)
 	if err != nil {
 		return err
 	}
@@ -142,7 +143,7 @@ func (t *Topic) UnmarshalCBOR(b []byte) error {
 
 func (s *Size) UnmarshalJSON(b []byte) error {
 	var in string
-	err := json.Unmarshal(b, &in)
+	err := jsoniter.Unmarshal(b, &in)
 
 	ui64, err := utils.HexStringToUint64(in)
 	if err != nil {
@@ -187,7 +188,7 @@ func (ts *Timestamp) UnmarshalCBOR(b []byte) error {
 
 func (nh *NearHash) UnmarshalJSON(b []byte) error {
 	var in string
-	err := json.Unmarshal(b, &in)
+	err := jsoniter.Unmarshal(b, &in)
 	if err != nil {
 		return err
 	}

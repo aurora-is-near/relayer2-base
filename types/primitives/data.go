@@ -3,9 +3,10 @@ package primitives
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+
 	"github.com/aurora-is-near/relayer2-base/db/codec"
 	tp "github.com/aurora-is-near/relayer2-base/tinypack"
-	"reflect"
 )
 
 type Data[LD tp.LengthDescriptor] struct {
