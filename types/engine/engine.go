@@ -128,8 +128,11 @@ func (tc *TransactionForCall) Serialize() ([]byte, error) {
 
 // Validate checks the incoming object and returns error for incorrect fields
 func (tc *TransactionForCall) Validate() error {
+	if tc.Gas == nil || len(tc.Gas.Bytes()) == 0 {
+		return nil
+	}
 	// return OutOfGas error if Gas field is "0x0"
-	if tc.Gas != nil && tc.Gas.IsZero() {
+	if tc.Gas.IsZero() {
 		return &error2.TxsStatusError{Message: "Ok(OutOfGas)"}
 	}
 

@@ -2,9 +2,10 @@ package utils
 
 import (
 	"errors"
-	"github.com/holiman/uint256"
 	"math/big"
 	"strings"
+
+	"github.com/holiman/uint256"
 )
 
 func HexStringToBigInt(input string) (*big.Int, error) {
@@ -45,6 +46,9 @@ func SanitizeStringForNumber(in string) string {
 	rawString := strings.Trim(in, "\"")
 	rawString = strings.TrimSpace(rawString)
 	numPart := strings.TrimPrefix(rawString, "0x")
+	if len(numPart) == 0 {
+		return "0x"
+	}
 	trimmed := strings.TrimLeft(numPart, "0")
 	if len(trimmed) == 0 {
 		trimmed = "0"

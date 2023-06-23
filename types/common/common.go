@@ -5,14 +5,16 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"github.com/aurora-is-near/relayer2-base/types/primitives"
-	"github.com/aurora-is-near/relayer2-base/types/utils"
-	"github.com/holiman/uint256"
 	"math"
 	"math/big"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
+	"github.com/aurora-is-near/relayer2-base/types/utils"
+	"github.com/holiman/uint256"
+	jsoniter "github.com/json-iterator/go"
 )
 
 const (
@@ -44,6 +46,12 @@ type DataVec struct{ primitives.VarData }
 type H256 struct{ primitives.Data32 }
 
 type Address struct{ primitives.Data20 }
+
+type BlockNumberOrHash struct {
+	BlockNumber      *BN64 `json:"blockNumber,omitempty"`
+	BlockHash        *H256 `json:"blockHash,omitempty"`
+	RequireCanonical bool  `json:"requireCanonical,omitempty"`
+}
 
 func (h256 H256) String() string {
 	return h256.Hex()
@@ -82,28 +90,85 @@ func (ui64 *Uint64) Uint64() uint64 {
 	return ui64.uint64
 }
 
+func (bnh *BlockNumberOrHash) UnmarshalJSON(data []byte) error {
+	type erased BlockNumberOrHash
+	e := erased{}
+	err := jsoniter.Unmarshal(data, &e)
+	if err == nil {
+		if e.BlockNumber != nil && e.BlockHash != nil {
+			return fmt.Errorf("cannot specify both BlockHash and BlockNumber, choose one or the other")
+		}
+		bnh.BlockNumber = e.BlockNumber
+		bnh.BlockHash = e.BlockHash
+		bnh.RequireCanonical = e.RequireCanonical
+		return nil
+	}
+	var input BN64
+	err = jsoniter.Unmarshal(data, &input)
+	if err != nil {
+		return err
+	}
+	bnh.BlockNumber = &input
+	return nil
+}
+
+func (bnh *BlockNumberOrHash) Number() (BN64, bool) {
+	if bnh.BlockNumber != nil {
+		return *bnh.BlockNumber, true
+	}
+	return BN64(0), false
+}
+
+func (bnh *BlockNumberOrHash) String() string {
+	if bnh.BlockNumber != nil {
+		return strconv.Itoa(int(*bnh.BlockNumber))
+	}
+	if bnh.BlockHash != nil {
+		return bnh.BlockHash.String()
+	}
+	return "nil"
+}
+
+func (bnh *BlockNumberOrHash) Hash() (H256, bool) {
+	if bnh.BlockHash != nil {
+		return *bnh.BlockHash, true
+	}
+	return H256{}, false
+}
+
+func BlockNumberOrHashWithBN64(bn BN64) BlockNumberOrHash {
+	return BlockNumberOrHash{
+		BlockNumber:      &bn,
+		BlockHash:        nil,
+		RequireCanonical: false,
+	}
+}
+
+func BlockNumberOrHashWithHash(hash H256, canonical bool) BlockNumberOrHash {
+	return BlockNumberOrHash{
+		BlockNumber:      nil,
+		BlockHash:        &hash,
+		RequireCanonical: canonical,
+	}
+}
+
 func (n *BN64) UnmarshalJSON(data []byte) error {
 	input := strings.TrimSpace(string(data))
 	if len(input) >= 2 && input[0] == '"' && input[len(input)-1] == '"' {
-		input = input[1 : len(input)-1]
+		input = strings.ToLower(input[1 : len(input)-1])
 		value, err := strconv.ParseUint(input, 10, 64)
 		if err != nil {
 			switch input {
 			case "earliest":
 				*n = EarliestBlockNumber
-				break
 			case "latest":
 				*n = LatestBlockNumber
-				break
 			case "pending":
 				*n = PendingBlockNumber
-				break
 			case "finalized":
 				*n = FinalizedBlockNumber
-				break
 			case "safe":
 				*n = SafeBlockNumber
-				break
 			default:
 				ui64, err := utils.HexStringToUint64(input)
 				if err != nil {
