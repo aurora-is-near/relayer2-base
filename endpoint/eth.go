@@ -411,7 +411,7 @@ func (e *Eth) PendingTransactions(_ context.Context) (*[]string, error) {
 //
 // 	If API is disabled, returns error code '-32601' with message 'the method does not exist/is not available'.
 // 	On missing or invalid param returns error code '-32602' with custom message.
-func (e *Eth) EstimateGas(_ context.Context, txs engine.TransactionForCall, number *common.BN64) (*common.Uint256, error) {
+func (e *Eth) EstimateGas(_ context.Context, txs engine.TransactionForCall, bNumOrHash *common.BlockNumberOrHash) (*common.Uint256, error) {
 	return &e.Config.EthConfig.GasEstimate, nil
 }
 
