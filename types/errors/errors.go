@@ -17,7 +17,7 @@ const (
 	Internal              = -32603
 	ParseError            = -32700
 
-	// -32000 to -32999 space is reserved for Aurora Relayer application specific errors.
+	// -32900 to -32999 space is reserved for Aurora Relayer application specific errors.
 	KeyNotFound = -32900
 )
 

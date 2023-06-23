@@ -2,6 +2,7 @@ package endpoint
 
 import (
 	"context"
+
 	"github.com/aurora-is-near/relayer2-base/types/common"
 	"github.com/aurora-is-near/relayer2-base/types/engine"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
@@ -185,10 +186,10 @@ func (e *EthProcessorAware) PendingTransactions(ctx context.Context) (*[]string,
 	})
 }
 
-func (e *EthProcessorAware) EstimateGas(ctx context.Context, txs engine.TransactionForCall, number *common.BN64) (*common.Uint256, error) {
+func (e *EthProcessorAware) EstimateGas(ctx context.Context, txs engine.TransactionForCall, bNumOrHash *common.BlockNumberOrHash) (*common.Uint256, error) {
 	return Process(ctx, "eth_estimateGas", e.Endpoint, func(ctx context.Context) (*common.Uint256, error) {
-		return e.Eth.EstimateGas(ctx, txs, number)
-	}, txs, number)
+		return e.Eth.EstimateGas(ctx, txs, bNumOrHash)
+	}, txs, bNumOrHash)
 }
 
 func (e *EthProcessorAware) GasPrice(ctx context.Context) (*common.Uint256, error) {
