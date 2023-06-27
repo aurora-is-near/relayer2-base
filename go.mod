@@ -10,6 +10,7 @@ require (
 	github.com/aurora-is-near/stream-backup v0.0.0-20221212013533-1e06e263c3f7
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/buger/jsonparser v1.1.1
+	github.com/carlmjohnson/versioninfo v0.22.4
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/fasthttp/websocket v1.5.2
@@ -80,7 +81,7 @@ require (
 	github.com/valyala/fasthttp v1.47.0
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	go.uber.org/atomic v1.10.0 // indirect
+	go.uber.org/atomic v1.10.0
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

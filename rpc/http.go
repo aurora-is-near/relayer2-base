@@ -178,6 +178,8 @@ func (h *HttpServer) handleWebSocketOutput(wsCtx *WebSocketContext) {
 
 // fastHTTPHandler is the handler to serve HTTP requests
 func (h *HttpServer) fastHTTPHandler(ctx *fasthttp.RequestCtx, r *http.Request) {
+	ctx.Response.Header.SetServer("Relayer " + *utils.Constants.RelayerVersion())
+
 	if code, err := validateRequest(r); err != nil {
 		ctx.Error(err.Error(), code)
 		return
