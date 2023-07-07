@@ -5,6 +5,7 @@ import (
 	crand "crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"math/rand"
 	"strings"
 	"sync"
@@ -92,10 +93,7 @@ type Notifier struct {
 	sub *Subscription
 }
 
-// CreateSubscription returns a new subscription that is coupled to the
-// RPC connection. By default subscriptions are inactive and notifications
-// are dropped until the subscription is marked as active. This is done
-// by the RPC server after the subscription ID is send to the client.
+// CreateSubscription returns a new subscription that is coupled to the RPC connection
 func (n *Notifier) CreateSubscription() *Subscription {
 	n.mu.Lock()
 	defer n.mu.Unlock()
@@ -115,10 +113,13 @@ func (n *Notifier) Notify(id ID, data interface{}) error {
 		return err
 	}
 
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
 	if n.sub == nil {
-		panic("can't Notify before subscription is created")
+		return errors.New("can't Notify since subscription is nil")
 	} else if n.sub.ID != id {
-		panic("Notify with wrong ID")
+		return errors.New("Notify with wrong ID")
 	}
 
 	return n.send(n.sub, enc)
@@ -127,7 +128,7 @@ func (n *Notifier) Notify(id ID, data interface{}) error {
 // send generates the response and writes is to the websocket connection's output channel
 func (n *Notifier) send(sub *Subscription, data jsoniter.RawMessage) error {
 	resp := createEventResponse([]byte(sub.ID), data)
-	if resp != nil {
+	if resp != nil && !n.wsCtx.closed.Load() {
 		n.wsCtx.output <- resp
 	}
 
