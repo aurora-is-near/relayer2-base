@@ -31,7 +31,6 @@ type RpcServer struct {
 	logger           *log.Logger
 	middlewares      []Middleware
 	transports       []Transport
-	notifiers        []*Notifier
 	mu               sync.RWMutex
 	maxBatchRequests uint
 }
@@ -117,13 +116,17 @@ func (r *RpcServer) ResolveWs(ctx *context.Context, wsCtx *WebSocketContext, rpc
 }
 
 func (r *RpcServer) CloseWsConn(wsCtx *WebSocketContext) {
-	mu := sync.Mutex{}
-	mu.Lock()
-	defer mu.Unlock()
-	for i := range wsCtx.subscriptions {
-		close(wsCtx.subscriptions[i].err)
+	wsCtx.subscriptionsMtx.Lock()
+	defer wsCtx.subscriptionsMtx.Unlock()
+	// WS connection is closing, if all subscriptions are prevously unsubscribed subsciptions list is empty
+	// if it is not empty, notify err channel of each subscription, so that the records can be cleaned
+	//  from broker notify list
+	for k := range wsCtx.subscriptions {
+		close(wsCtx.subscriptions[k].err)
 	}
-	wsCtx.subscriptions = nil
+	// clear the subscriptions map
+	wsCtx.subscriptions = make(map[ID]*Subscription)
+	wsCtx.ws = nil
 }
 
 // executeBatchRequest runs each json-rpc request in parallel and formats the responses and returns updated RpcContext object with the total response
@@ -229,8 +232,6 @@ func (r *RpcServer) callSubscribe(ctx *context.Context, rpcCtx *RpcContext) *Rpc
 
 	// Add notifier to context so that subscription handler can use it
 	n := &Notifier{h: handler, wsCtx: rpcCtx.wsCtx}
-	r.notifiers = append(r.notifiers, n)
-
 	*ctx = PutNotifierKey(*ctx, n)
 	resp, err := handler.call(ctx, args)
 	if err != nil {
@@ -255,16 +256,21 @@ func (r *RpcServer) callUnsubscribe(ctx *context.Context, rpcCtx *RpcContext) *R
 		return rpcCtx.SetErrorObject(&errs.InvalidParamsError{Message: "subscription ID must be string"})
 	}
 
-	// scan the notifiers to find and remove the subscription
-	for i := range r.notifiers {
-		if r.notifiers[i].sub.ID == ID(subscriptionId) {
-			close(r.notifiers[i].sub.err)
-			// remove the wsCtx.subscription used by the CloseWsConn method
-			delete(r.notifiers[i].wsCtx.subscriptions, ID(subscriptionId))
-			return rpcCtx.setResult([]byte("true"))
-		}
+	rpcCtx.wsCtx.subscriptionsMtx.Lock()
+	defer rpcCtx.wsCtx.subscriptionsMtx.Unlock()
+
+	sub, ok := rpcCtx.wsCtx.subscriptions[ID(subscriptionId)]
+	if !ok {
+		// return false if the subsciptionId couldn't be found
+		return rpcCtx.setResult([]byte("false"))
 	}
-	return rpcCtx.setResult([]byte("false"))
+	// unsubscribe call received, notify err channel of each subscription
+	// so that records can be cleaned from broker notify list
+	close(sub.err)
+	// delete the related subscription from subscriptions list
+	delete(rpcCtx.wsCtx.subscriptions, ID(subscriptionId))
+
+	return rpcCtx.setResult([]byte("true"))
 }
 
 // callMethod processes incoming service methods

@@ -154,7 +154,6 @@ func (h *HttpServer) fastWsHandler(ctx *fasthttp.RequestCtx) {
 
 		wsCtx.closed.Store(true)
 		h.resolver.CloseWsConn(wsCtx)
-		close(wsCtx.output)
 		wsCtx.outputWg.Wait()
 	})
 	if err != nil {
