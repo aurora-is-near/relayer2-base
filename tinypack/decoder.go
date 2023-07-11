@@ -16,7 +16,7 @@ type Decoder struct {
 
 func DefaultDecoder() *Decoder {
 	return &Decoder{
-		MaxVariadicLength: 1_000_000,
+		MaxVariadicLength: 10_000_000,
 	}
 }
 
