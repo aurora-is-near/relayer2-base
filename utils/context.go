@@ -26,9 +26,9 @@ var (
 type chainIdKey struct{}
 
 // GetChainId returns the chainId in the following order;
-// 	1. returns chainId if exists in ctx
-//	2. returns chainId if exists in relayer configuration .yml file
-//	3. returns defaultChainId=1313161554
+//  1. returns chainId if exists in ctx
+//  2. returns chainId if exists in relayer configuration .yml file
+//  3. returns defaultChainId=1313161554
 func GetChainId(ctx context.Context) uint64 {
 	if ctx != nil {
 		if cid, ok := ctx.Value(chainIdKey{}).(*uint64); ok && cid != nil {
@@ -61,8 +61,8 @@ func getChainId() *uint64 {
 }
 
 // GetPrehistoryChainId returns the chainId config that the prehistory was indexed for;
-//	1. returns prehistoryChainId if exists in relayer configuration .yml file
-//	2. returns defaultChainId=1313161554
+//  1. returns prehistoryChainId if exists in relayer configuration .yml file
+//  2. returns defaultChainId=1313161554
 func GetPrehistoryChainId() uint64 {
 	if prehistoryChainId == nil {
 		prehistoryChainId = getPrehistoryChainId()
@@ -84,8 +84,8 @@ func getPrehistoryChainId() *uint64 {
 }
 
 // GetPrehistoryHeight returns the height of the prehistory given in relayer configuration .yml file
-//	1. returns prehistoryHeight if exists in relayer configuration .yml file
-//	2. returns defaultPrehistoryHeight=37157758 that is for mainnet
+//  1. returns prehistoryHeight if exists in relayer configuration .yml file
+//  2. returns defaultPrehistoryHeight=37157758 that is for mainnet
 func GetPrehistoryHeight() uint64 {
 	if prehistoryHeight == nil {
 		prehistoryHeight = getPrehistoryHeight()

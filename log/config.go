@@ -1,6 +1,7 @@
 package log
 
 import (
+	"github.com/aurora-is-near/relayer2-base/cmdutils"
 	"github.com/spf13/viper"
 )
 
@@ -33,7 +34,7 @@ func GetConfig() *Config {
 	config := defaultConfig()
 	sub := viper.Sub(configPath)
 	if sub != nil {
-		// cmd.BindSubViper(sub, configPath)
+		cmdutils.BindSubViper(sub, configPath)
 		_ = sub.Unmarshal(&config)
 	}
 	return config

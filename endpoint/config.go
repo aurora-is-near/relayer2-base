@@ -2,10 +2,11 @@ package endpoint
 
 import (
 	"fmt"
-	"github.com/aurora-is-near/relayer2-base/cmd"
+	"math/big"
+
+	"github.com/aurora-is-near/relayer2-base/cmdutils"
 	"github.com/aurora-is-near/relayer2-base/log"
 	"github.com/aurora-is-near/relayer2-base/types/common"
-	"math/big"
 
 	"github.com/spf13/viper"
 )
@@ -119,7 +120,7 @@ func GetConfig() *Config {
 	c := defaultConfig()
 	sub := viper.Sub(configPath)
 	if sub != nil {
-		cmd.BindSubViper(sub, configPath)
+		cmdutils.BindSubViper(sub, configPath)
 		if err := sub.Unmarshal(&c); err != nil {
 			log.Log().Warn().Err(err).Msgf("failed to parse configuration [%s] from [%s], "+
 				"falling back to defaults", configPath, viper.ConfigFileUsed())
