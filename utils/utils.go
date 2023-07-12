@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+
 	"github.com/aurora-is-near/relayer2-base/log"
 	"github.com/aurora-is-near/relayer2-base/tinypack"
 	dbt "github.com/aurora-is-near/relayer2-base/types/db"
