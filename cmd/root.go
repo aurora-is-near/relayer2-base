@@ -3,12 +3,9 @@ package cmd
 import (
 	"strings"
 
+	"github.com/aurora-is-near/relayer2-base/cmdutils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-)
-
-const (
-	envPrefix = "AURORA_RELAYER"
 )
 
 func RootCmd() *cobra.Command {
@@ -29,14 +26,6 @@ func RootCmd() *cobra.Command {
 
 func bindRootViper() {
 	viper.AutomaticEnv()
-	viper.SetEnvPrefix(envPrefix)
+	viper.SetEnvPrefix(cmdutils.EnvPrefix)
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-}
-
-// BindSubViper is a work around because of a Viper limitation (spf13/viper#507)
-// This work around allows environment variables to be used with sub configs as well.
-func BindSubViper(sub *viper.Viper, subConfigPath string) {
-	sub.AutomaticEnv()
-	sub.SetEnvPrefix(envPrefix + "_" + subConfigPath)
-	sub.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 }

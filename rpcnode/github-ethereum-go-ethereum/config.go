@@ -3,7 +3,7 @@ package github_ethereum_go_ethereum
 import (
 	"time"
 
-	"github.com/aurora-is-near/relayer2-base/cmd"
+	"github.com/aurora-is-near/relayer2-base/cmdutils"
 	"github.com/aurora-is-near/relayer2-base/log"
 
 	gel "github.com/ethereum/go-ethereum/log"
@@ -126,7 +126,7 @@ func GetConfig() *Config {
 	config := defaultConfig()
 	sub := viper.Sub(configPath)
 	if sub != nil {
-		cmd.BindSubViper(sub, configPath)
+		cmdutils.BindSubViper(sub, configPath)
 		if err := sub.Unmarshal(&config); err != nil {
 			log.Log().Warn().Err(err).Msgf("failed to parse configuration [%s] from [%s], "+
 				"falling back to defaults", configPath, viper.ConfigFileUsed())
