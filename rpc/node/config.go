@@ -15,6 +15,9 @@ const (
 )
 
 var (
+	defaultHttpPort           int16         = 8545
+	defaultHttpHost           string        = "localhost"
+	defaultHttpCompress       bool          = true
 	defaultHttpTimeout        time.Duration = 300
 	defaultWsHandshakeTimeout time.Duration = 10
 	defaultMaxBatchRequests   uint          = 1000
@@ -52,7 +55,10 @@ func (c *Config) wsEndpoint() string {
 
 func defaultConfig() *Config {
 	return &Config{
+		HttpPort:           defaultHttpPort,
+		HttpHost:           defaultHttpHost,
 		HttpCors:           []string{},
+		HttpCompress:       defaultHttpCompress,
 		HttpTimeout:        defaultHttpTimeout,
 		WsHandshakeTimeout: defaultWsHandshakeTimeout,
 		MaxBatchRequests:   defaultMaxBatchRequests,
