@@ -16,7 +16,7 @@ var blockType string
 
 func GetLastBlockCmd() *cobra.Command {
 	getLastBlockCmd := &cobra.Command{
-		Use:   "get-last-block",
+		Use:   "get-last-block <dbPath>",
 		Short: "Command to retieve last block height or sequence number from db",
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) == 0 {
