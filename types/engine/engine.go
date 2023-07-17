@@ -450,7 +450,7 @@ func (ss *SubmitStatus) Validate() error {
 	} else if ss.StatusMap["SuccessValue"] != nil {
 		sucStrB64, ok := ss.StatusMap["SuccessValue"].(string)
 		if ok {
-			sucBuf, err := base64.URLEncoding.DecodeString(sucStrB64)
+			sucBuf, err := base64.StdEncoding.DecodeString(sucStrB64)
 			if err != nil {
 				return err
 			}
