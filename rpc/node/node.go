@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/aurora-is-near/relayer2-base/broker"
@@ -26,12 +27,20 @@ func NewWithConf(config *Config) (*RpcNode, error) {
 
 	// If httpEndpoint is not empty, then a HttpServer should be initialized (no matters if it is http only or http and ws)
 	if config.httpEndpoint() != "" {
+		if err := validatePath(config.HttpPathPrefix); err != nil {
+			logger.Fatal().Err(err).Msg("HTTP config err:")
+		} else if err := validatePath(config.WsPathPrefix); err != nil {
+			logger.Fatal().Err(err).Msg("Websocket config err:")
+		}
+
 		httpCfg := rpc.HttpConfig{
 			HttpEndpoint:       config.httpEndpoint(),
+			HttpPathPrefix:     config.HttpPathPrefix,
 			HttpCors:           config.HttpCors,
 			HttpCompress:       config.HttpCompress,
 			HttpTimeout:        config.HttpTimeout,
 			WsEndpoint:         config.wsEndpoint(),
+			WsPathPrefix:       config.WsPathPrefix,
 			WsHandshakeTimeout: config.WsHandshakeTimeout,
 			WsOnly:             false,
 		}
@@ -41,12 +50,18 @@ func NewWithConf(config *Config) (*RpcNode, error) {
 	// If wsEndpoint is not empty and different from httpEndpoint, then another HttpServer should be initialized to
 	// handle ws connections. Please note that WsOnly field is used to understand to case while handling the incoming request
 	if config.wsEndpoint() != "" && !strings.EqualFold(config.httpEndpoint(), config.wsEndpoint()) {
+		if err := validatePath(config.WsPathPrefix); err != nil {
+			logger.Fatal().Err(err).Msg("Websocket config err:")
+		}
+
 		httpCfg := rpc.HttpConfig{
 			HttpEndpoint:       config.wsEndpoint(),
+			HttpPathPrefix:     config.HttpPathPrefix,
 			HttpCors:           []string{},
 			HttpCompress:       false,
 			HttpTimeout:        config.HttpTimeout,
 			WsEndpoint:         config.wsEndpoint(),
+			WsPathPrefix:       config.WsPathPrefix,
 			WsHandshakeTimeout: config.WsHandshakeTimeout,
 			WsOnly:             true,
 		}
@@ -76,4 +91,18 @@ func (n *RpcNode) Start() {
 			log.Log().Fatal().Err(err).Msg("can not start rpc server...")
 		}
 	}()
+}
+
+// validatePath checks if 'path' is a valid configuration value for the RPC prefix option
+func validatePath(path string) error {
+	if path == "*" || path == "" {
+		return nil
+	}
+	if path[0] != '/' {
+		return fmt.Errorf("RPC path prefix %q does not contain leading `/`", path)
+	}
+	if strings.ContainsAny(path, "?#") {
+		return fmt.Errorf("RPC path prefix %q contains URL meta-characters", path)
+	}
+	return nil
 }

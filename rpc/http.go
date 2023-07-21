@@ -43,10 +43,12 @@ type HttpServer struct {
 // HttpConfig holds both http and websocket configuration elements
 type HttpConfig struct {
 	HttpEndpoint       string
+	HttpPathPrefix     string
 	HttpCors           []string
 	HttpCompress       bool
 	HttpTimeout        time.Duration
 	WsEndpoint         string
+	WsPathPrefix       string
 	WsHandshakeTimeout time.Duration
 	WsOnly             bool
 }
@@ -112,14 +114,26 @@ func (h *HttpServer) mainHandler(ctx *fasthttp.RequestCtx) {
 	// The following code differentiates the cases based on the configurations and Config.WsOnly variable
 	if strings.EqualFold(h.Config.HttpEndpoint, h.Config.WsEndpoint) {
 		if isWebsocket(r) {
-			h.fastWsHandler(ctx)
+			if checkPath(r, h.Config.WsPathPrefix) {
+				h.fastWsHandler(ctx)
+			} else {
+				ctx.SetStatusCode(fasthttp.StatusNotFound)
+			}
 		} else if !h.Config.WsOnly {
-			h.fastHTTPHandler(ctx, r)
+			if checkPath(r, h.Config.HttpPathPrefix) {
+				h.fastHTTPHandler(ctx, r)
+			} else {
+				ctx.SetStatusCode(fasthttp.StatusNotFound)
+			}
 		} else {
 			ctx.SetStatusCode(fasthttp.StatusNotFound)
 		}
 	} else {
-		h.fastHTTPHandler(ctx, r)
+		if checkPath(r, h.Config.HttpPathPrefix) {
+			h.fastHTTPHandler(ctx, r)
+		} else {
+			ctx.SetStatusCode(fasthttp.StatusNotFound)
+		}
 	}
 }
 
@@ -249,4 +263,15 @@ func validateRequest(r *http.Request) (int, error) {
 func isWebsocket(r *http.Request) bool {
 	return strings.EqualFold(r.Header.Get("Upgrade"), "websocket") &&
 		strings.Contains(strings.ToLower(r.Header.Get("Connection")), "upgrade")
+}
+
+// checkPath checks whether a given request URL matches a given path prefix
+func checkPath(r *http.Request, path string) bool {
+	if path == "*" { // if prefix is `*`, allow all paths
+		return true
+	} else if path == "" { // if no prefix has been specified, request URL must be on root
+		return r.URL.Path == "/"
+	} else { // otherwise, check to make sure prefix matches
+		return len(r.URL.Path) >= len(path) && r.URL.Path[:len(path)] == path
+	}
 }
