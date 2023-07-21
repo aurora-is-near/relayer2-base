@@ -21,6 +21,7 @@ var (
 	defaultHttpTimeout        time.Duration = 300
 	defaultWsHandshakeTimeout time.Duration = 10
 	defaultMaxBatchRequests   uint          = 1000
+	DefaultPathPrefix         string        = "*"
 )
 
 type Config struct {
@@ -29,8 +30,10 @@ type Config struct {
 	HttpCors           []string      `mapstructure:"httpCors"`
 	HttpCompress       bool          `mapstructure:"httpCompress"`
 	HttpTimeout        time.Duration `mapstructure:"httpTimeout"`
+	HttpPathPrefix     string        `mapstructure:"httpPathPrefix"`
 	WsPort             int16         `mapstructure:"wsPort"`
 	WsHost             string        `mapstructure:"wsHost"`
+	WsPathPrefix       string        `mapstructure:"wsPathPrefix"`
 	WsHandshakeTimeout time.Duration `mapstructure:"wsHandshakeTimeout"`
 	MaxBatchRequests   uint          `mapstructure:"maxBatchRequests"`
 }
@@ -57,9 +60,11 @@ func defaultConfig() *Config {
 	return &Config{
 		HttpPort:           defaultHttpPort,
 		HttpHost:           defaultHttpHost,
+		HttpPathPrefix:     DefaultPathPrefix,
 		HttpCors:           []string{},
 		HttpCompress:       defaultHttpCompress,
 		HttpTimeout:        defaultHttpTimeout,
+		WsPathPrefix:       DefaultPathPrefix,
 		WsHandshakeTimeout: defaultWsHandshakeTimeout,
 		MaxBatchRequests:   defaultMaxBatchRequests,
 	}
