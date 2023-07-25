@@ -235,7 +235,7 @@ func (h *HttpServer) Stop() error {
 
 // validateRequest checks and validates incoming http request
 func validateRequest(r *http.Request) (int, error) {
-	if r.Method != http.MethodPost && r.Method != http.MethodHead && r.Method != http.MethodOptions {
+	if r.Method != http.MethodPost && r.Method != http.MethodGet && r.Method != http.MethodHead && r.Method != http.MethodOptions {
 		return http.StatusMethodNotAllowed, errors.New("method not allowed")
 	}
 	if r.ContentLength > maxRequestContentLength {
