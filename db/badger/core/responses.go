@@ -95,7 +95,7 @@ func makeTransactionResponse(
 		}
 		tx.AccessList = &accessList
 	}
-	if data.Type >= 2 {
+	if data.Type == 2 {
 		chainId := primitives.HexUint(chainId)
 		tx.ChainID = &chainId
 		tx.MaxPriorityFeePerGas = &data.MaxPriorityFeePerGas
