@@ -13,6 +13,8 @@ import (
 
 const (
 	configPath                           = "endpoint"
+	functionKeyPrefixPatternDefault      = "fk*."
+	functionKeyMapperDefault             = "CRC32"
 	asyncSendRawTxsDefault               = true
 	minGasPriceDefault                   = 0
 	minGasLimitDefault                   = 21000
@@ -51,6 +53,8 @@ type EngineConfig struct {
 	NearNodeURL                   string   `mapstructure:"nearNodeURL"`
 	Signer                        string   `mapstructure:"signer"`
 	SignerKey                     string   `mapstructure:"signerKey"`
+	FunctionKeyPrefixPattern      string   `mapstructure:"functionKeyPrefixPattern"`
+	FunctionKeyMapper             string   `mapstructure:"functionKeyMapper"`
 	AsyncSendRawTxs               bool     `mapstructure:"asyncSendRawTxs"`
 	MinGasPrice                   *big.Int `mapstructure:"minGasPrice"`
 	MinGasLimit                   uint64   `mapstructure:"minGasLimit"`
@@ -65,6 +69,8 @@ type engineConfig struct {
 	NearNodeURL                   string `mapstructure:"nearNodeURL"`
 	Signer                        string `mapstructure:"signer"`
 	SignerKey                     string `mapstructure:"signerKey"`
+	FunctionKeyPrefixPattern      string `mapstructure:"functionKeyPrefixPattern"`
+	FunctionKeyMapper             string `mapstructure:"functionKeyMapper"`
 	AsyncSendRawTxs               bool   `mapstructure:"asyncSendRawTxs"`
 	MinGasPrice                   uint64 `mapstructure:"minGasPrice"`
 	MinGasLimit                   uint64 `mapstructure:"minGasLimit"`
@@ -105,6 +111,8 @@ func defaultConfig() *config {
 			NearNodeURL:                   "",
 			Signer:                        "",
 			SignerKey:                     "",
+			FunctionKeyPrefixPattern:      functionKeyPrefixPatternDefault,
+			FunctionKeyMapper:             functionKeyMapperDefault,
 			AsyncSendRawTxs:               asyncSendRawTxsDefault,
 			MinGasPrice:                   minGasPriceDefault,
 			MinGasLimit:                   minGasLimitDefault,
@@ -140,6 +148,8 @@ func GetConfig() *Config {
 			NearNodeURL:                   c.EngineConfig.NearNodeURL,
 			Signer:                        c.EngineConfig.Signer,
 			SignerKey:                     c.EngineConfig.SignerKey,
+			FunctionKeyPrefixPattern:      c.EngineConfig.FunctionKeyPrefixPattern,
+			FunctionKeyMapper:             c.EngineConfig.FunctionKeyMapper,
 			AsyncSendRawTxs:               c.EngineConfig.AsyncSendRawTxs,
 			MinGasPrice:                   big.NewInt(0).SetUint64(c.EngineConfig.MinGasPrice),
 			MinGasLimit:                   c.EngineConfig.MinGasLimit,
