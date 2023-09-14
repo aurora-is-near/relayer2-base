@@ -50,6 +50,7 @@ type ethConfig struct {
 
 type EngineConfig struct {
 	NearNetworkID                 string   `mapstructure:"nearNetworkID"`
+	NearArchivalNodeURL           string   `mapstructure:"nearArchivalNodeURL"`
 	NearNodeURL                   string   `mapstructure:"nearNodeURL"`
 	Signer                        string   `mapstructure:"signer"`
 	SignerKey                     string   `mapstructure:"signerKey"`
@@ -66,6 +67,7 @@ type EngineConfig struct {
 
 type engineConfig struct {
 	NearNetworkID                 string `mapstructure:"nearNetworkID"`
+	NearArchivalNodeURL           string `mapstructure:"nearArchivalNodeURL"`
 	NearNodeURL                   string `mapstructure:"nearNodeURL"`
 	Signer                        string `mapstructure:"signer"`
 	SignerKey                     string `mapstructure:"signerKey"`
@@ -108,6 +110,7 @@ func defaultConfig() *config {
 		},
 		EngineConfig: engineConfig{
 			NearNetworkID:                 "",
+			NearArchivalNodeURL:           "",
 			NearNodeURL:                   "",
 			Signer:                        "",
 			SignerKey:                     "",
@@ -145,6 +148,7 @@ func GetConfig() *Config {
 		},
 		EngineConfig: EngineConfig{
 			NearNetworkID:                 c.EngineConfig.NearNetworkID,
+			NearArchivalNodeURL:           c.EngineConfig.NearArchivalNodeURL,
 			NearNodeURL:                   c.EngineConfig.NearNodeURL,
 			Signer:                        c.EngineConfig.Signer,
 			SignerKey:                     c.EngineConfig.SignerKey,
