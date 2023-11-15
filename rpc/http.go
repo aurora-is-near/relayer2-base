@@ -57,6 +57,9 @@ var upgrader = websocket.FastHTTPUpgrader{
 	ReadBufferSize:  wsReadBuffer,
 	WriteBufferSize: wsWriteBuffer,
 	WriteBufferPool: new(sync.Pool),
+	// CheckOrigin: func(ctx *fasthttp.RequestCtx) bool {
+	// 	return true
+	// },
 }
 
 // Run enables CORS and Compression handlers if enabled on configuration and
