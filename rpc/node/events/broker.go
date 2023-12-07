@@ -177,7 +177,7 @@ func (eb *EventBroker) Start() {
 						// v.logsCh is buffered, use non-blocking send to protect the broker:
 						// timeout preferred instead of default to be able to tolerate slight delays
 						select {
-						case s.GetLogsCh() <- logs:
+						case s.GetLogsCh() <- matchedLogs:
 						case <-time.After(10 * time.Millisecond):
 							eb.l.Warn().Msg("Publishing to Logs channel fall into DEFAULT!")
 						}
