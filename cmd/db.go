@@ -2,11 +2,14 @@ package cmd
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/aurora-is-near/relayer2-base/db/badger/core"
 	"github.com/aurora-is-near/relayer2-base/db/codec"
+	dbt "github.com/aurora-is-near/relayer2-base/types/db"
 	badger "github.com/dgraph-io/badger/v3"
 	"github.com/spf13/cobra"
 )
@@ -66,6 +69,43 @@ func GetLastBlockCmd() *cobra.Command {
 	}
 	getLastBlockCmd.PersistentFlags().Uint64VarP(&chainId, "chain-id", "c", 1313161554, "Chain ID")
 	getLastBlockCmd.PersistentFlags().StringVarP(&blockType, "type", "t", "height", "Type of block head: height or sequence")
+	return getLastBlockCmd
+}
+
+func GetBlockCmd() *cobra.Command {
+	getLastBlockCmd := &cobra.Command{
+		Use:   "get-block <dbPath> <height>",
+		Short: "Command to retrieve block by height from db",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			dbPath := args[0]
+			height := args[1]
+			heightUint64, err := strconv.ParseUint(height, 10, 64)
+			if err != nil {
+				return err
+			}
+
+			return dbView(dbPath, func(txn *core.ViewTxn) error {
+				block, err := txn.ReadBlock(chainId, dbt.BlockKey{Height: heightUint64}, true)
+				if err != nil {
+					return err
+				}
+
+				if block == nil {
+					return fmt.Errorf("no blocks found at height %d, check chain ID and DB path", heightUint64)
+				}
+
+				jsonBlock, err := json.MarshalIndent(block, "", "  ")
+				if err != nil {
+					return err
+				}
+
+				fmt.Println(string(jsonBlock))
+				return nil
+			})
+		},
+	}
+	getLastBlockCmd.PersistentFlags().Uint64VarP(&chainId, "chain-id", "c", 1313161554, "Chain ID")
 	return getLastBlockCmd
 }
 
