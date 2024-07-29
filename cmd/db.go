@@ -4,7 +4,9 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
+	"runtime"
 	"strconv"
 
 	"github.com/aurora-is-near/relayer2-base/db/badger/core"
@@ -107,6 +109,42 @@ func GetBlockCmd() *cobra.Command {
 	}
 	getLastBlockCmd.PersistentFlags().Uint64VarP(&chainId, "chain-id", "c", 1313161554, "Chain ID")
 	return getLastBlockCmd
+}
+
+func FlattenDB() *cobra.Command {
+	return &cobra.Command{
+		Use:   "flatten-db <dbPath>",
+		Short: "Command to flatten db (merge all LSM levels) to improve performance",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			dbPath := args[0]
+
+			log.Printf("Opening database at %s...", dbPath)
+			config := core.Config{
+				BadgerConfig:      badger.DefaultOptions(dbPath),
+				GcIntervalSeconds: 60 * 60 * 24 * 365, // We don't want GC to be running during the flattening
+			}
+			db, err := core.NewDB(config, codec.NewTinypackCodec())
+			if err != nil {
+				return fmt.Errorf("unable to open database: %w", err)
+			}
+
+			defer func() {
+				log.Printf("Closing database")
+				if err := db.Close(); err != nil {
+					log.Printf("Error: unable to close database normally: %v", err)
+				}
+			}()
+
+			log.Printf("Flattening database, that might take some time...")
+			threads := runtime.GOMAXPROCS(0)
+			if err := db.BadgerDB().Flatten(threads); err != nil {
+				return fmt.Errorf("can't flatten database: %w", err)
+			}
+
+			return nil
+		},
+	}
 }
 
 // dbView opens db in read-only mode and calls fn with ViewTxn
