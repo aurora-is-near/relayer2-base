@@ -28,11 +28,12 @@ func defaultConfig() *Config {
 	badgerOptions.Logger = NewBadgerLogger(log.Log())
 	return &Config{
 		Core: core.Config{
-			MaxScanIterators:   defaultLogMaxScanIterators,
-			ScanRangeThreshold: defaultLogScanRangeThreshold,
-			FilterTtlMinutes:   defaultLogFilterTtlMinutes,
-			GcIntervalSeconds:  defaultGcIntervalSeconds,
-			BadgerConfig:       badgerOptions,
+			MaxScanIterators:     defaultLogMaxScanIterators,
+			ScanRangeThreshold:   defaultLogScanRangeThreshold,
+			FilterTtlMinutes:     defaultLogFilterTtlMinutes,
+			GcIntervalSeconds:    defaultGcIntervalSeconds,
+			RecreateOnCorruption: true,
+			BadgerConfig:         badgerOptions,
 		},
 	}
 }
