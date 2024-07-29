@@ -121,8 +121,9 @@ func FlattenDB() *cobra.Command {
 
 			log.Printf("Opening database at %s...", dbPath)
 			config := core.Config{
-				BadgerConfig:      badger.DefaultOptions(dbPath),
-				GcIntervalSeconds: 60 * 60 * 24 * 365, // We don't want GC to be running during the flattening
+				RecreateOnCorruption: false,
+				BadgerConfig:         badger.DefaultOptions(dbPath),
+				GcIntervalSeconds:    60 * 60 * 24 * 365, // We don't want GC to be running during the flattening
 			}
 			db, err := core.NewDB(config, codec.NewTinypackCodec())
 			if err != nil {
@@ -150,8 +151,9 @@ func FlattenDB() *cobra.Command {
 // dbView opens db in read-only mode and calls fn with ViewTxn
 func dbView(dbPath string, fn func(txn *core.ViewTxn) error) error {
 	config := core.Config{
-		BadgerConfig:      badger.DefaultOptions(dbPath).WithLogger(nil).WithReadOnly(true),
-		GcIntervalSeconds: 10,
+		RecreateOnCorruption: false,
+		BadgerConfig:         badger.DefaultOptions(dbPath).WithLogger(nil).WithReadOnly(true),
+		GcIntervalSeconds:    10,
 	}
 	db, err := core.NewDB(config, codec.NewTinypackCodec())
 	if err != nil {

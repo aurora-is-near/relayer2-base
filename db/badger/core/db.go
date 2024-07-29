@@ -17,7 +17,7 @@ type DB struct {
 }
 
 func NewDB(config Config, codec codec.Codec) (*DB, error) {
-	core, err := Open(config.BadgerConfig, config.GcIntervalSeconds)
+	core, err := Open(config.BadgerConfig, config.GcIntervalSeconds, config.RecreateOnCorruption)
 	if err != nil {
 		return nil, err
 	}

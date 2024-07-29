@@ -379,7 +379,7 @@ func initTestDb(t *testing.T) (*DB, *testLogger) {
 
 	opts := badger.DefaultOptions("")
 	opts.InMemory = true
-	core, err := Open(opts, 10)
+	core, err := Open(opts, 10, false)
 	require.NoError(t, err, "DB must tryOpen")
 
 	logger := testLogger{}
