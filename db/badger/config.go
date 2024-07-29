@@ -32,7 +32,7 @@ func defaultConfig() *Config {
 			ScanRangeThreshold:   defaultLogScanRangeThreshold,
 			FilterTtlMinutes:     defaultLogFilterTtlMinutes,
 			GcIntervalSeconds:    defaultGcIntervalSeconds,
-			RecreateOnCorruption: true,
+			RecreateOnCorruption: false,
 			BadgerConfig:         badgerOptions,
 		},
 	}
