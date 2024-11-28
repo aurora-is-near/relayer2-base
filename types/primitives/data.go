@@ -59,8 +59,12 @@ func DataFromBytes[LD tp.LengthDescriptor](b []byte) Data[LD] {
 	return d
 }
 
-func DataFromHex[LD tp.LengthDescriptor](s string) Data[LD] {
-	data, _ := hexStringToData[LD](s)
+func MustDataFromHex[LD tp.LengthDescriptor](s string) Data[LD] {
+	data, err := hexStringToData[LD](s)
+	if err != nil {
+		panic(err)
+	}
+
 	return data
 }
 
@@ -68,7 +72,7 @@ func hexStringToData[LD tp.LengthDescriptor](in string) (Data[LD], error) {
 	if len(in) == 2 && in[0] == '0' && (in[1] == 'x' || in[2] == 'X') {
 		return Data[LD]{}, nil
 	}
-	bytes, err := hexToByte(in)
+	bytes, err := hexToBytes(in)
 	if err != nil {
 		return Data[LD]{}, err
 	}

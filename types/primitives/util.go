@@ -68,7 +68,7 @@ func writeQuantityHex(dst []byte, b []byte) []byte {
 	return dst
 }
 
-func hexToByte(s string) ([]byte, error) {
+func hexToBytes(s string) ([]byte, error) {
 	if len(s) >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X') {
 		s = s[2:]
 	}

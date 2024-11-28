@@ -63,7 +63,7 @@ func (h *BlockHandler) BlockNumber(ctx context.Context) (*primitives.HexUint, er
 func (h *BlockHandler) GetBlockByHash(ctx context.Context, hash common.H256, isFull bool) (*response.Block, error) {
 	var resp *response.Block
 	var err error
-	bh := primitives.DataFromHex[primitives.Len32](hash.String())
+	bh := primitives.MustDataFromHex[primitives.Len32](hash.String())
 	err = h.db.View(func(txn *core.ViewTxn) error {
 		chainId := utils.GetChainId(ctx)
 		key, err := txn.ReadBlockKey(chainId, bh)
@@ -168,7 +168,7 @@ func (h *BlockHandler) GetBlockByNumber(ctx context.Context, number common.BN64,
 func (h *BlockHandler) GetBlockTransactionCountByHash(ctx context.Context, hash common.H256) (*primitives.HexUint, error) {
 	var resp primitives.HexUint
 	var err error
-	bh := primitives.DataFromHex[primitives.Len32](hash.String())
+	bh := primitives.MustDataFromHex[primitives.Len32](hash.String())
 	err = h.db.View(func(txn *core.ViewTxn) error {
 		chainId := utils.GetChainId(ctx)
 		key, err := txn.ReadBlockKey(chainId, bh)
@@ -210,7 +210,7 @@ func (h *BlockHandler) GetBlockTransactionCountByNumber(ctx context.Context, num
 func (h *BlockHandler) GetTransactionByHash(ctx context.Context, hash common.H256) (*response.Transaction, error) {
 	var resp *response.Transaction
 	var err error
-	th := primitives.DataFromHex[primitives.Len32](hash.String())
+	th := primitives.MustDataFromHex[primitives.Len32](hash.String())
 	err = h.db.View(func(txn *core.ViewTxn) error {
 		var key *dbt.TransactionKey
 		chainId := utils.GetChainId(ctx)
@@ -230,7 +230,7 @@ func (h *BlockHandler) GetTransactionByHash(ctx context.Context, hash common.H25
 func (h *BlockHandler) GetTransactionByBlockHashAndIndex(ctx context.Context, hash common.H256, index common.Uint64) (*response.Transaction, error) {
 	var resp *response.Transaction
 	var err error
-	bh := primitives.DataFromHex[primitives.Len32](hash.String())
+	bh := primitives.MustDataFromHex[primitives.Len32](hash.String())
 	err = h.db.View(func(txn *core.ViewTxn) error {
 		chainId := utils.GetChainId(ctx)
 		key, err := txn.ReadBlockKey(chainId, bh)
@@ -275,7 +275,7 @@ func (h *BlockHandler) GetTransactionByBlockNumberAndIndex(ctx context.Context, 
 func (h *BlockHandler) GetTransactionReceipt(ctx context.Context, hash common.H256) (*response.TransactionReceipt, error) {
 	var resp *response.TransactionReceipt
 	var err error
-	th := primitives.DataFromHex[primitives.Len32](hash.String())
+	th := primitives.MustDataFromHex[primitives.Len32](hash.String())
 	err = h.db.View(func(txn *core.ViewTxn) error {
 		var key *dbt.TransactionKey
 		chainId := utils.GetChainId(ctx)
@@ -369,7 +369,7 @@ func (h *BlockHandler) GetIndexerState(chainId uint64) ([]byte, error) {
 func (h *BlockHandler) BlockHashToNumber(ctx context.Context, hash common.H256) (*uint64, error) {
 	var resp uint64
 	var err error
-	bh := primitives.DataFromHex[primitives.Len32](hash.String())
+	bh := primitives.MustDataFromHex[primitives.Len32](hash.String())
 	err = h.db.View(func(txn *core.ViewTxn) error {
 		chainId := utils.GetChainId(ctx)
 		key, err := txn.ReadBlockKey(chainId, bh)

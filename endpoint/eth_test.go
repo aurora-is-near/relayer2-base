@@ -66,19 +66,19 @@ func TestFormatFilterOptions(t *testing.T) {
 		panic(err)
 	}
 
-	ca1 := primitives.Data20FromHex(fmt.Sprintf("0x%040x", 0x2))
-	ca2 := primitives.Data20FromHex(fmt.Sprintf("0x%040x", 0x1))
-	ca3 := primitives.Data20FromHex(fmt.Sprintf("0x%040x", 0x2))
-	ca4 := primitives.Data20FromHex(fmt.Sprintf("0x%040x", 0x1))
-	ca5 := primitives.Data20FromHex(fmt.Sprintf("0x%040x", 0x3))
+	ca1 := primitives.MustData20FromHex(fmt.Sprintf("0x%040x", 0x2))
+	ca2 := primitives.MustData20FromHex(fmt.Sprintf("0x%040x", 0x1))
+	ca3 := primitives.MustData20FromHex(fmt.Sprintf("0x%040x", 0x2))
+	ca4 := primitives.MustData20FromHex(fmt.Sprintf("0x%040x", 0x1))
+	ca5 := primitives.MustData20FromHex(fmt.Sprintf("0x%040x", 0x3))
 
-	blockHash := primitives.Data32FromHex(fmt.Sprintf("0x%064x", 0x2))
-	parentHash := primitives.Data32FromHex(fmt.Sprintf("0x%064x", 0x1))
+	blockHash := primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x2))
+	parentHash := primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x1))
 	filterHash := common.HexStringToHash(blockHash.Hex())
 
-	data20 := primitives.Data20FromHex("0x11")
-	data32 := primitives.Data32FromHex("0x22")
-	data256 := primitives.Data256FromHex("0x33")
+	data20 := primitives.MustData20FromHex("0x11")
+	data32 := primitives.MustData32FromHex("0x22")
+	data256 := primitives.MustData256FromHex("0x33")
 	quantity := primitives.QuantityFromHex("0x44")
 	nearTxn := indexer.NearTransaction{
 		Hash:        nil,
@@ -98,11 +98,11 @@ func TestFormatFilterOptions(t *testing.T) {
 		GasUsed:          quantity,
 		LogsBloom:        data256,
 		Transactions: []*indexer.Transaction{
-			{ContractAddress: &ca1, BlockHash: blockHash, TransactionIndex: 0, Hash: primitives.Data32FromHex("0x1"), From: data20, Nonce: quantity, GasPrice: quantity, GasLimit: quantity, MaxFeePerGas: quantity, MaxPriorityFeePerGas: quantity, Value: quantity, S: quantity, R: quantity, NearTransaction: nearTxn, LogsBloom: data256},
-			{ContractAddress: &ca2, BlockHash: blockHash, TransactionIndex: 1, Hash: primitives.Data32FromHex("0x2"), From: data20, Nonce: quantity, GasPrice: quantity, GasLimit: quantity, MaxFeePerGas: quantity, MaxPriorityFeePerGas: quantity, Value: quantity, S: quantity, R: quantity, NearTransaction: nearTxn, LogsBloom: data256},
-			{ContractAddress: &ca3, BlockHash: blockHash, TransactionIndex: 2, Hash: primitives.Data32FromHex("0x3"), From: data20, Nonce: quantity, GasPrice: quantity, GasLimit: quantity, MaxFeePerGas: quantity, MaxPriorityFeePerGas: quantity, Value: quantity, S: quantity, R: quantity, NearTransaction: nearTxn, LogsBloom: data256},
-			{ContractAddress: &ca4, BlockHash: blockHash, TransactionIndex: 3, Hash: primitives.Data32FromHex("0x4"), From: data20, Nonce: quantity, GasPrice: quantity, GasLimit: quantity, MaxFeePerGas: quantity, MaxPriorityFeePerGas: quantity, Value: quantity, S: quantity, R: quantity, NearTransaction: nearTxn, LogsBloom: data256},
-			{ContractAddress: &ca5, BlockHash: blockHash, TransactionIndex: 4, Hash: primitives.Data32FromHex("0x5"), From: data20, Nonce: quantity, GasPrice: quantity, GasLimit: quantity, MaxFeePerGas: quantity, MaxPriorityFeePerGas: quantity, Value: quantity, S: quantity, R: quantity, NearTransaction: nearTxn, LogsBloom: data256},
+			{ContractAddress: &ca1, BlockHash: blockHash, TransactionIndex: 0, Hash: primitives.MustData32FromHex("0x1"), From: data20, Nonce: quantity, GasPrice: quantity, GasLimit: quantity, MaxFeePerGas: quantity, MaxPriorityFeePerGas: quantity, Value: quantity, S: quantity, R: quantity, NearTransaction: nearTxn, LogsBloom: data256},
+			{ContractAddress: &ca2, BlockHash: blockHash, TransactionIndex: 1, Hash: primitives.MustData32FromHex("0x2"), From: data20, Nonce: quantity, GasPrice: quantity, GasLimit: quantity, MaxFeePerGas: quantity, MaxPriorityFeePerGas: quantity, Value: quantity, S: quantity, R: quantity, NearTransaction: nearTxn, LogsBloom: data256},
+			{ContractAddress: &ca3, BlockHash: blockHash, TransactionIndex: 2, Hash: primitives.MustData32FromHex("0x3"), From: data20, Nonce: quantity, GasPrice: quantity, GasLimit: quantity, MaxFeePerGas: quantity, MaxPriorityFeePerGas: quantity, Value: quantity, S: quantity, R: quantity, NearTransaction: nearTxn, LogsBloom: data256},
+			{ContractAddress: &ca4, BlockHash: blockHash, TransactionIndex: 3, Hash: primitives.MustData32FromHex("0x4"), From: data20, Nonce: quantity, GasPrice: quantity, GasLimit: quantity, MaxFeePerGas: quantity, MaxPriorityFeePerGas: quantity, Value: quantity, S: quantity, R: quantity, NearTransaction: nearTxn, LogsBloom: data256},
+			{ContractAddress: &ca5, BlockHash: blockHash, TransactionIndex: 4, Hash: primitives.MustData32FromHex("0x5"), From: data20, Nonce: quantity, GasPrice: quantity, GasLimit: quantity, MaxFeePerGas: quantity, MaxPriorityFeePerGas: quantity, Value: quantity, S: quantity, R: quantity, NearTransaction: nearTxn, LogsBloom: data256},
 		},
 	}
 
@@ -150,31 +150,31 @@ func TestFormatFilterOptions(t *testing.T) {
 			name: "addresses get added once",
 			data: request.Filter{
 				Addresses: []common.Address{
-					common.BytesToAddress(primitives.Data20FromHex(fmt.Sprintf("0x%040x", 0x2)).Bytes()),
-					common.BytesToAddress(primitives.Data20FromHex(fmt.Sprintf("0x%040x", 0x1)).Bytes()),
-					common.BytesToAddress(primitives.Data20FromHex(fmt.Sprintf("0x%040x", 0x2)).Bytes()),
-					common.BytesToAddress(primitives.Data20FromHex(fmt.Sprintf("0x%040x", 0x1)).Bytes()),
-					common.BytesToAddress(primitives.Data20FromHex(fmt.Sprintf("0x%040x", 0x3)).Bytes()),
+					common.BytesToAddress(primitives.MustData20FromHex(fmt.Sprintf("0x%040x", 0x2)).Bytes()),
+					common.BytesToAddress(primitives.MustData20FromHex(fmt.Sprintf("0x%040x", 0x1)).Bytes()),
+					common.BytesToAddress(primitives.MustData20FromHex(fmt.Sprintf("0x%040x", 0x2)).Bytes()),
+					common.BytesToAddress(primitives.MustData20FromHex(fmt.Sprintf("0x%040x", 0x1)).Bytes()),
+					common.BytesToAddress(primitives.MustData20FromHex(fmt.Sprintf("0x%040x", 0x3)).Bytes()),
 				},
 			},
 			wantFrom: &blockData.Height,
 			wantTo:   nil,
 			wantAddress: []primitives.Data20{
-				primitives.Data20FromHex(fmt.Sprintf("0x%040x", 0x2)),
-				primitives.Data20FromHex(fmt.Sprintf("0x%040x", 0x1)),
-				primitives.Data20FromHex(fmt.Sprintf("0x%040x", 0x3)),
+				primitives.MustData20FromHex(fmt.Sprintf("0x%040x", 0x2)),
+				primitives.MustData20FromHex(fmt.Sprintf("0x%040x", 0x1)),
+				primitives.MustData20FromHex(fmt.Sprintf("0x%040x", 0x3)),
 			},
 			wantTopics: [][]primitives.Data32{},
 		},
 		{
 			name: "topics are added as is", // TODO: add stronger topics validation/restrict the type from []byte when unmarshalling?
 			data: request.Filter{
-				Topics: request.Topics{{[]byte(primitives.Data32FromHex(fmt.Sprintf("0x%064x", 0x1111)).Hex())}, {[]byte(primitives.Data32FromHex(fmt.Sprintf("0x%064x", 0x2222)).Hex())}, {[]byte(primitives.Data32FromHex(fmt.Sprintf("0x%064x", 0x3333)).Hex())}},
+				Topics: request.Topics{{[]byte(primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x1111)).Hex())}, {[]byte(primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x2222)).Hex())}, {[]byte(primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x3333)).Hex())}},
 			},
 			wantFrom:    &blockData.Height,
 			wantTo:      nil,
 			wantAddress: []primitives.Data20{},
-			wantTopics:  [][]primitives.Data32{{primitives.Data32FromHex(fmt.Sprintf("0x%064x", 0x1111))}, {primitives.Data32FromHex(fmt.Sprintf("0x%064x", 0x2222))}, {primitives.Data32FromHex(fmt.Sprintf("0x%064x", 0x3333))}},
+			wantTopics:  [][]primitives.Data32{{primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x1111))}, {primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x2222))}, {primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x3333))}},
 		},
 	}
 	for _, tc := range ttable {
@@ -242,7 +242,7 @@ func TestTopicsUnmarshalJSON(t *testing.T) {
 		{
 			data:    `[`,
 			want:    nil,
-			wantErr: "unexpected end of JSON input",
+			wantErr: "do not know how to skip",
 		},
 	}
 	for _, tc := range ttable {

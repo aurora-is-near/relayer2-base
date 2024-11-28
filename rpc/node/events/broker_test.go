@@ -157,11 +157,11 @@ func TestBrokerReturnsCorrectEventsWithAddressAndTopics(t *testing.T) {
 	}()
 
 	contractAddresses := []common.Address{
-		common.BytesToAddress(primitives.Data20FromHex("0x2f41af687164062f118297ca10751f4b55478ae1").Bytes()),
-		common.BytesToAddress(primitives.Data20FromHex("0x03b666f3488a7992b2385b12df7f35156d7b29cd").Bytes()),
-		common.BytesToAddress(primitives.Data20FromHex("0x20f8aefb5697b77e0bb835a8518be70775cda1b0").Bytes()),
-		common.BytesToAddress(primitives.Data20FromHex("0x63da4db6ef4e7c62168ab03982399f9588fcd198").Bytes()),
-		common.BytesToAddress(primitives.Data20FromHex("0x61c9e05d1cdb1b70856c7a2c53fa9c220830633c").Bytes()),
+		common.BytesToAddress(primitives.MustData20FromHex("0x2f41af687164062f118297ca10751f4b55478ae1").Bytes()),
+		common.BytesToAddress(primitives.MustData20FromHex("0x03b666f3488a7992b2385b12df7f35156d7b29cd").Bytes()),
+		common.BytesToAddress(primitives.MustData20FromHex("0x20f8aefb5697b77e0bb835a8518be70775cda1b0").Bytes()),
+		common.BytesToAddress(primitives.MustData20FromHex("0x63da4db6ef4e7c62168ab03982399f9588fcd198").Bytes()),
+		common.BytesToAddress(primitives.MustData20FromHex("0x61c9e05d1cdb1b70856c7a2c53fa9c220830633c").Bytes()),
 	}
 
 	topics := request.Topics{
@@ -199,15 +199,15 @@ func TestBrokerReturnsCorrectEventsWithAddressAndTopics(t *testing.T) {
 					Removed:          false,
 					LogIndex:         primitives.HexUint(5),
 					TransactionIndex: primitives.HexUint(0),
-					TransactionHash:  primitives.Data32FromHex("0x29d3cd070a26eb34cd1c8abb70cb1e966819a342bc03965a4cd662442f712615"),
-					BlockHash:        primitives.Data32FromHex("0x0579fb6c14a212998fc0e3792c2994f5f0179d8f64aa6e9059edd1f69df05155"),
+					TransactionHash:  primitives.MustData32FromHex("0x29d3cd070a26eb34cd1c8abb70cb1e966819a342bc03965a4cd662442f712615"),
+					BlockHash:        primitives.MustData32FromHex("0x0579fb6c14a212998fc0e3792c2994f5f0179d8f64aa6e9059edd1f69df05155"),
 					BlockNumber:      primitives.HexUint(107219211),
-					Address:          primitives.Data20FromHex("0x63da4db6ef4e7c62168ab03982399f9588fcd198"),
-					Data:             primitives.VarDataFromHex("0x0000000000000000000000000000000000000000000b6afb14c2d46e19ffffc40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000305d9662647959"),
+					Address:          primitives.MustData20FromHex("0x63da4db6ef4e7c62168ab03982399f9588fcd198"),
+					Data:             primitives.MustVarDataFromHex("0x0000000000000000000000000000000000000000000b6afb14c2d46e19ffffc40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000305d9662647959"),
 					Topics: []primitives.Data32{
-						primitives.Data32FromHex("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"),
-						primitives.Data32FromHex("0x0000000000000000000000002cb45edb4517d5947afde3beabf95a582506858b"),
-						primitives.Data32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
+						primitives.MustData32FromHex("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"),
+						primitives.MustData32FromHex("0x0000000000000000000000002cb45edb4517d5947afde3beabf95a582506858b"),
+						primitives.MustData32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
 					},
 				}
 				allLogs = append(allLogs, tmpLog1)
@@ -217,15 +217,15 @@ func TestBrokerReturnsCorrectEventsWithAddressAndTopics(t *testing.T) {
 					Removed:          false,
 					LogIndex:         primitives.HexUint(5),
 					TransactionIndex: primitives.HexUint(0),
-					TransactionHash:  primitives.Data32FromHex("0x29d3cd070a26eb34cd1c8abb70cb1e966819a342bc03965a4cd662442f712615"),
-					BlockHash:        primitives.Data32FromHex("0x0579fb6c14a212998fc0e3792c2994f5f0179d8f64aa6e9059edd1f69df05155"),
+					TransactionHash:  primitives.MustData32FromHex("0x29d3cd070a26eb34cd1c8abb70cb1e966819a342bc03965a4cd662442f712615"),
+					BlockHash:        primitives.MustData32FromHex("0x0579fb6c14a212998fc0e3792c2994f5f0179d8f64aa6e9059edd1f69df05155"),
 					BlockNumber:      primitives.HexUint(107219211),
-					Address:          primitives.Data20FromHex("0x63da4db6ef4e7c62168ab03982399f9588fcd198"),
-					Data:             primitives.VarDataFromHex("0x0000000000000000000000000000000000000000000b6afb14c2d46e19ffffc40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000305d9662647959"),
+					Address:          primitives.MustData20FromHex("0x63da4db6ef4e7c62168ab03982399f9588fcd198"),
+					Data:             primitives.MustVarDataFromHex("0x0000000000000000000000000000000000000000000b6afb14c2d46e19ffffc40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000305d9662647959"),
 					Topics: []primitives.Data32{
-						primitives.Data32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
-						primitives.Data32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
-						primitives.Data32FromHex("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"),
+						primitives.MustData32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
+						primitives.MustData32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
+						primitives.MustData32FromHex("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"),
 					},
 				}
 
@@ -298,15 +298,15 @@ func TestBrokerReturnsCorrectEventsWithTopics(t *testing.T) {
 					Removed:          false,
 					LogIndex:         primitives.HexUint(5),
 					TransactionIndex: primitives.HexUint(0),
-					TransactionHash:  primitives.Data32FromHex("0x29d3cd070a26eb34cd1c8abb70cb1e966819a342bc03965a4cd662442f712615"),
-					BlockHash:        primitives.Data32FromHex("0x0579fb6c14a212998fc0e3792c2994f5f0179d8f64aa6e9059edd1f69df05155"),
+					TransactionHash:  primitives.MustData32FromHex("0x29d3cd070a26eb34cd1c8abb70cb1e966819a342bc03965a4cd662442f712615"),
+					BlockHash:        primitives.MustData32FromHex("0x0579fb6c14a212998fc0e3792c2994f5f0179d8f64aa6e9059edd1f69df05155"),
 					BlockNumber:      primitives.HexUint(107219211),
-					Address:          primitives.Data20FromHex("0x63da4db6ef4e7c62168ab03982399f9588fcd198"),
-					Data:             primitives.VarDataFromHex("0x0000000000000000000000000000000000000000000b6afb14c2d46e19ffffc40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000305d9662647959"),
+					Address:          primitives.MustData20FromHex("0x63da4db6ef4e7c62168ab03982399f9588fcd198"),
+					Data:             primitives.MustVarDataFromHex("0x0000000000000000000000000000000000000000000b6afb14c2d46e19ffffc40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000305d9662647959"),
 					Topics: []primitives.Data32{
-						primitives.Data32FromHex("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"),
-						primitives.Data32FromHex("0x0000000000000000000000002cb45edb4517d5947afde3beabf95a582506858b"),
-						primitives.Data32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
+						primitives.MustData32FromHex("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"),
+						primitives.MustData32FromHex("0x0000000000000000000000002cb45edb4517d5947afde3beabf95a582506858b"),
+						primitives.MustData32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
 					},
 				}
 				allLogs = append(allLogs, tmpLog1)
@@ -316,15 +316,15 @@ func TestBrokerReturnsCorrectEventsWithTopics(t *testing.T) {
 					Removed:          false,
 					LogIndex:         primitives.HexUint(5),
 					TransactionIndex: primitives.HexUint(0),
-					TransactionHash:  primitives.Data32FromHex("0x29d3cd070a26eb34cd1c8abb70cb1e966819a342bc03965a4cd662442f712615"),
-					BlockHash:        primitives.Data32FromHex("0x0579fb6c14a212998fc0e3792c2994f5f0179d8f64aa6e9059edd1f69df05155"),
+					TransactionHash:  primitives.MustData32FromHex("0x29d3cd070a26eb34cd1c8abb70cb1e966819a342bc03965a4cd662442f712615"),
+					BlockHash:        primitives.MustData32FromHex("0x0579fb6c14a212998fc0e3792c2994f5f0179d8f64aa6e9059edd1f69df05155"),
 					BlockNumber:      primitives.HexUint(107219211),
-					Address:          primitives.Data20FromHex("0x63da4db6ef4e7c62168ab03982399f9588fcd198"),
-					Data:             primitives.VarDataFromHex("0x0000000000000000000000000000000000000000000b6afb14c2d46e19ffffc40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000305d9662647959"),
+					Address:          primitives.MustData20FromHex("0x63da4db6ef4e7c62168ab03982399f9588fcd198"),
+					Data:             primitives.MustVarDataFromHex("0x0000000000000000000000000000000000000000000b6afb14c2d46e19ffffc40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000305d9662647959"),
 					Topics: []primitives.Data32{
-						primitives.Data32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
-						primitives.Data32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
-						primitives.Data32FromHex("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"),
+						primitives.MustData32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
+						primitives.MustData32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
+						primitives.MustData32FromHex("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"),
 					},
 				}
 
@@ -366,11 +366,11 @@ func TestBrokerReturnsCorrectEventsWithAddress(t *testing.T) {
 	}()
 
 	contractAddresses := []common.Address{
-		common.BytesToAddress(primitives.Data20FromHex("0x2f41af687164062f118297ca10751f4b55478ae1").Bytes()),
-		common.BytesToAddress(primitives.Data20FromHex("0x03b666f3488a7992b2385b12df7f35156d7b29cd").Bytes()),
-		common.BytesToAddress(primitives.Data20FromHex("0x20f8aefb5697b77e0bb835a8518be70775cda1b0").Bytes()),
-		common.BytesToAddress(primitives.Data20FromHex("0x63da4db6ef4e7c62168ab03982399f9588fcd198").Bytes()),
-		common.BytesToAddress(primitives.Data20FromHex("0x61c9e05d1cdb1b70856c7a2c53fa9c220830633c").Bytes()),
+		common.BytesToAddress(primitives.MustData20FromHex("0x2f41af687164062f118297ca10751f4b55478ae1").Bytes()),
+		common.BytesToAddress(primitives.MustData20FromHex("0x03b666f3488a7992b2385b12df7f35156d7b29cd").Bytes()),
+		common.BytesToAddress(primitives.MustData20FromHex("0x20f8aefb5697b77e0bb835a8518be70775cda1b0").Bytes()),
+		common.BytesToAddress(primitives.MustData20FromHex("0x63da4db6ef4e7c62168ab03982399f9588fcd198").Bytes()),
+		common.BytesToAddress(primitives.MustData20FromHex("0x61c9e05d1cdb1b70856c7a2c53fa9c220830633c").Bytes()),
 	}
 
 	filterParams := request.LogSubscriptionOptions{
@@ -401,15 +401,15 @@ func TestBrokerReturnsCorrectEventsWithAddress(t *testing.T) {
 					Removed:          false,
 					LogIndex:         primitives.HexUint(5),
 					TransactionIndex: primitives.HexUint(0),
-					TransactionHash:  primitives.Data32FromHex("0x29d3cd070a26eb34cd1c8abb70cb1e966819a342bc03965a4cd662442f712615"),
-					BlockHash:        primitives.Data32FromHex("0x0579fb6c14a212998fc0e3792c2994f5f0179d8f64aa6e9059edd1f69df05155"),
+					TransactionHash:  primitives.MustData32FromHex("0x29d3cd070a26eb34cd1c8abb70cb1e966819a342bc03965a4cd662442f712615"),
+					BlockHash:        primitives.MustData32FromHex("0x0579fb6c14a212998fc0e3792c2994f5f0179d8f64aa6e9059edd1f69df05155"),
 					BlockNumber:      primitives.HexUint(107219211),
-					Address:          primitives.Data20FromHex("0x20f8aefb5697b77e0bb835a8518be70775cda1b0"),
-					Data:             primitives.VarDataFromHex("0x0000000000000000000000000000000000000000000b6afb14c2d46e19ffffc40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000305d9662647959"),
+					Address:          primitives.MustData20FromHex("0x20f8aefb5697b77e0bb835a8518be70775cda1b0"),
+					Data:             primitives.MustVarDataFromHex("0x0000000000000000000000000000000000000000000b6afb14c2d46e19ffffc40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000305d9662647959"),
 					Topics: []primitives.Data32{
-						primitives.Data32FromHex("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"),
-						primitives.Data32FromHex("0x0000000000000000000000002cb45edb4517d5947afde3beabf95a582506858b"),
-						primitives.Data32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
+						primitives.MustData32FromHex("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"),
+						primitives.MustData32FromHex("0x0000000000000000000000002cb45edb4517d5947afde3beabf95a582506858b"),
+						primitives.MustData32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
 					},
 				}
 				allLogs = append(allLogs, tmpLog1)
@@ -419,15 +419,15 @@ func TestBrokerReturnsCorrectEventsWithAddress(t *testing.T) {
 					Removed:          false,
 					LogIndex:         primitives.HexUint(5),
 					TransactionIndex: primitives.HexUint(0),
-					TransactionHash:  primitives.Data32FromHex("0x29d3cd070a26eb34cd1c8abb70cb1e966819a342bc03965a4cd662442f712615"),
-					BlockHash:        primitives.Data32FromHex("0x0579fb6c14a212998fc0e3792c2994f5f0179d8f64aa6e9059edd1f69df05155"),
+					TransactionHash:  primitives.MustData32FromHex("0x29d3cd070a26eb34cd1c8abb70cb1e966819a342bc03965a4cd662442f712615"),
+					BlockHash:        primitives.MustData32FromHex("0x0579fb6c14a212998fc0e3792c2994f5f0179d8f64aa6e9059edd1f69df05155"),
 					BlockNumber:      primitives.HexUint(107219211),
-					Address:          primitives.Data20FromHex("0x63da4db6ef4e7c62168ab03982399f9588fcd198"),
-					Data:             primitives.VarDataFromHex("0x0000000000000000000000000000000000000000000b6afb14c2d46e19ffffc40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000305d9662647959"),
+					Address:          primitives.MustData20FromHex("0x63da4db6ef4e7c62168ab03982399f9588fcd198"),
+					Data:             primitives.MustVarDataFromHex("0x0000000000000000000000000000000000000000000b6afb14c2d46e19ffffc40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000305d9662647959"),
 					Topics: []primitives.Data32{
-						primitives.Data32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
-						primitives.Data32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
-						primitives.Data32FromHex("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"),
+						primitives.MustData32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
+						primitives.MustData32FromHex("0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e"),
+						primitives.MustData32FromHex("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"),
 					},
 				}
 
