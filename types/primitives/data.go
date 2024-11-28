@@ -2,7 +2,6 @@ package primitives
 
 import (
 	"encoding/json"
-	"fmt"
 	"reflect"
 
 	"github.com/aurora-is-near/relayer2-base/db/codec"
@@ -72,11 +71,6 @@ func hexStringToData[LD tp.LengthDescriptor](in string) (Data[LD], error) {
 	bytes, err := hexToByte(in)
 	if err != nil {
 		return Data[LD]{}, err
-	}
-	var ld LD
-	l := ld.GetTinyPackLength()
-	if l > 0 && l != len(bytes) {
-		return Data[LD]{}, fmt.Errorf("hex string of length [%d] is expected, found [%d]", l, len(bytes))
 	}
 	return DataFromBytes[LD](bytes), nil
 }
