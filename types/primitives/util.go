@@ -6,6 +6,26 @@ import (
 
 var hextable = "0123456789abcdef"
 
+const nonHexMarker = 100
+
+var reverseHexTable [256]byte
+
+func init() {
+	// Pre-fill the reverseHexTable
+	for i := 0; i < len(reverseHexTable); i++ {
+		switch {
+		case i >= '0' && i <= '9':
+			reverseHexTable[i] = byte(i) - '0'
+		case i >= 'a' && i <= 'f':
+			reverseHexTable[i] = byte(i) - 'a' + 10
+		case i >= 'A' && i <= 'F':
+			reverseHexTable[i] = byte(i) - 'A' + 10
+		default:
+			reverseHexTable[i] = nonHexMarker
+		}
+	}
+}
+
 func alignBytes(b []byte, length int, bigEndian bool) []byte {
 	if length < 0 {
 		if b == nil {
@@ -72,8 +92,22 @@ func hexToBytes(s string) ([]byte, error) {
 	if len(s) >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X') {
 		s = s[2:]
 	}
-	if len(s)%2 == 1 {
-		s = "0" + s
+
+	if len(s)%2 == 0 {
+		return hex.DecodeString(s)
 	}
-	return hex.DecodeString(s)
+
+	dst := make([]byte, hex.DecodedLen(1+len(s)))
+
+	if reverseHexTable[s[0]] == nonHexMarker {
+		return nil, hex.InvalidByteError(s[0])
+	}
+	dst[0] = reverseHexTable[s[0]]
+
+	// Allocation-free string -> []byte conversion there (compiler will optimize it out)
+	if _, err := hex.Decode(dst[1:], []byte(s[1:])); err != nil {
+		return nil, err
+	}
+
+	return dst, nil
 }
