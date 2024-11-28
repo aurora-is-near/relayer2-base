@@ -13,5 +13,5 @@ func TestTopicMarshalJSON(t *testing.T) {
 	topic := Topic(primitives.Data32FromHex("0x1234"))
 	res, err := jsoniter.Marshal(topic)
 	require.NoError(t, err)
-	require.EqualValues(t, `"0x1234000000000000000000000000000000000000000000000000000000000000"`, string(res))
+	require.EqualValues(t, `"0x0000000000000000000000000000000000000000000000000000000000001234"`, string(res))
 }
