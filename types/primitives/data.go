@@ -55,7 +55,7 @@ func (d *Data[LD]) UnmarshalCBOR(b []byte) error {
 func DataFromBytes[LD tp.LengthDescriptor](b []byte) Data[LD] {
 	var ld LD
 	var d Data[LD]
-	d.Content = alignBytes(b, ld.GetTinyPackLength(), false)
+	d.Content = alignBytes(b, ld.GetTinyPackLength(), true)
 	return d
 }
 
