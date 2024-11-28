@@ -100,13 +100,13 @@ func (tc *TransactionForCall) Serialize() ([]byte, error) {
 	tce := transactionForCallEngine{}
 
 	if tc.To == nil {
-		copy(tce.To[:], primitives.Data20FromHex("0x0").Bytes())
+		copy(tce.To[:], primitives.MustData20FromHex("0x0").Bytes())
 	} else {
 		copy(tce.To[:], tc.To.Bytes())
 	}
 
 	if tc.From == nil {
-		copy(tce.From[:], primitives.Data20FromHex("0x0").Bytes())
+		copy(tce.From[:], primitives.MustData20FromHex("0x0").Bytes())
 	} else {
 		copy(tce.From[:], tc.From.Bytes())
 	}

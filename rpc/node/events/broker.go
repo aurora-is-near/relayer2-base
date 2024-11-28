@@ -210,7 +210,7 @@ Logs:
 			match := len(sub) == 0 // empty rule set == wildcard
 			for _, topic := range sub {
 				// empty rule set == wildcard. Otherwise, check if topic index of opts fits in the number of topics in received log and if it fits check topics for equality
-				if len(topic) == 0 || (i < len(log.Topics) && bytes.Equal(log.Topics[i].Bytes(), primitives.Data32FromHex(string(topic)).Bytes())) {
+				if len(topic) == 0 || (i < len(log.Topics) && bytes.Equal(log.Topics[i].Bytes(), primitives.MustData32FromHex(string(topic)).Bytes())) {
 					match = true
 					break
 				}

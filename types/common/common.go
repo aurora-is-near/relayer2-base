@@ -293,7 +293,7 @@ func BytesToAddress(b []byte) Address {
 }
 
 func HexStringToAddress(s string) Address {
-	return Address{primitives.Data20FromHex(s)}
+	return Address{primitives.MustData20FromHex(s)}
 }
 
 func HexStringToDataVec(s string) DataVec {
@@ -302,7 +302,7 @@ func HexStringToDataVec(s string) DataVec {
 }
 
 func HexStringToHash(s string) H256 {
-	return H256{primitives.Data32FromHex(s)}
+	return H256{primitives.MustData32FromHex(s)}
 }
 
 func Uint256FromBytes(b []byte) Uint256 {

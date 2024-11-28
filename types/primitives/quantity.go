@@ -106,7 +106,7 @@ func QuantityFromBytes(b []byte) Quantity {
 }
 
 func QuantityFromHex(s string) Quantity {
-	b, _ := hexToByte(s)
+	b, _ := hexToBytes(s)
 	return QuantityFromBytes(b)
 }
 

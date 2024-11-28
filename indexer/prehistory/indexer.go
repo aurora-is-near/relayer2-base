@@ -111,8 +111,8 @@ func (i *Indexer) index() {
 
 	// Declare and initialize required variables
 	emptyBytes := make([]byte, 2)
-	epmtyTxsAndRcptRoot := primitives.Data32FromHex("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421") // use keccak(rlp(''))
-	defaultTxsAndRcptRoot := primitives.Data32FromBytes(emptyBytes)                                                       // use "0x0..........0"
+	epmtyTxsAndRcptRoot := primitives.MustData32FromHex("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421") // use keccak(rlp(''))
+	defaultTxsAndRcptRoot := primitives.Data32FromBytes(emptyBytes)                                                           // use "0x0..........0"
 	d20 := primitives.Data20FromBytes(emptyBytes)
 	d32 := primitives.Data32FromBytes(emptyBytes)
 	d256 := primitives.Data256FromBytes(emptyBytes)

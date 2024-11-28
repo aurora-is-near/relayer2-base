@@ -234,7 +234,7 @@ func byteArrayToData[LD tinypack.LengthDescriptor](in []byte) (*primitives.Data[
 			return nil, err
 		}
 	}
-	p := primitives.DataFromHex[LD](sb.String())
+	p := primitives.MustDataFromHex[LD](sb.String())
 	return &p, nil
 }
 

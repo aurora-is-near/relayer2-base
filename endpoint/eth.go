@@ -489,7 +489,7 @@ func (e *Eth) parseRequestFilter(ctx context.Context, filter *request.Filter) (*
 		for i, t := range filter.Topics {
 			f.Topics = append(f.Topics, make([]primitives.Data32, 0))
 			for _, tt := range t {
-				f.Topics[i] = append(f.Topics[i], primitives.Data32FromHex(string(tt)))
+				f.Topics[i] = append(f.Topics[i], primitives.MustData32FromHex(string(tt)))
 			}
 		}
 	}
