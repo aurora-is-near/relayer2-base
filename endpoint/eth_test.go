@@ -40,11 +40,14 @@ func TestLogFilterUnmarshalJSON(t *testing.T) {
 		`"],"fromBlock":"0xb1","toBlock":"0xb2","blockHash":"` +
 		fmt.Sprintf("0x%064x", 0xabcdf) +
 		`"}`
-	wantHash := common.HexStringToHash("0xabcdf")
+	wantHash := common.MustHexStringToHash("0xabcdf")
 	wantFromBlock := common.IntToBN64(0xb1)
 	wantToBlock := common.IntToBN64(0xb2)
 	want := request.Filter{
-		Addresses: []common.Address{common.HexStringToAddress("1"), common.HexStringToAddress("2")},
+		Addresses: []common.Address{
+			common.MustHexStringToAddress("1"),
+			common.MustHexStringToAddress("2"),
+		},
 		FromBlock: &wantFromBlock,
 		ToBlock:   &wantToBlock,
 		BlockHash: &wantHash,
@@ -74,7 +77,7 @@ func TestFormatFilterOptions(t *testing.T) {
 
 	blockHash := primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x2))
 	parentHash := primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x1))
-	filterHash := common.HexStringToHash(blockHash.Hex())
+	filterHash := common.MustHexStringToHash(blockHash.Hex())
 
 	data20 := primitives.MustData20FromHex("0x11")
 	data32 := primitives.MustData32FromHex("0x22")

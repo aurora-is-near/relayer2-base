@@ -292,16 +292,47 @@ func BytesToAddress(b []byte) Address {
 	return Address{primitives.Data20FromBytes(b)}
 }
 
-func HexStringToAddress(s string) Address {
+func HexStringToAddress(s string) (Address, error) {
+	data, err := primitives.Data20FromHex(s)
+	if err != nil {
+		return Address{}, err
+	}
+
+	return Address{data}, nil
+}
+
+func MustHexStringToAddress(s string) Address {
 	return Address{primitives.MustData20FromHex(s)}
 }
 
-func HexStringToDataVec(s string) DataVec {
-	data, _ := hex.DecodeString(s[2:])
-	return DataVec{primitives.VarDataFromBytes(data)}
+func HexStringToDataVec(s string) (DataVec, error) {
+	data, err := hex.DecodeString(s[2:])
+	if err != nil {
+		return DataVec{}, err
+	}
+
+	return DataVec{primitives.VarDataFromBytes(data)}, nil
 }
 
-func HexStringToHash(s string) H256 {
+func MustHexStringToDataVec(s string) DataVec {
+	dataVec, err := HexStringToDataVec(s)
+	if err != nil {
+		panic(err)
+	}
+
+	return dataVec
+}
+
+func HexStringToHash(s string) (H256, error) {
+	data, err := primitives.Data32FromHex(s)
+	if err != nil {
+		return H256{}, err
+	}
+
+	return H256{data}, nil
+}
+
+func MustHexStringToHash(s string) H256 {
 	return H256{primitives.MustData32FromHex(s)}
 }
 

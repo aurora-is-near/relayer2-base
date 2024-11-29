@@ -60,12 +60,20 @@ func (a *SingleOrSliceOfAddress) UnmarshalJSON(b []byte) error {
 		// rawAddr can contain a single address or an slice of addresses
 		switch rawAddr := raw.(type) {
 		case string:
-			addr := common.HexStringToAddress(rawAddr)
+			addr, err := common.HexStringToAddress(rawAddr)
+			if err != nil {
+				return err
+			}
+
 			*a = []common.Address{addr}
 		case []interface{}:
 			for i, addr := range rawAddr {
 				if strAddr, ok := addr.(string); ok {
-					addr := common.HexStringToAddress(strAddr)
+					addr, err := common.HexStringToAddress(strAddr)
+					if err != nil {
+						return err
+					}
+
 					*a = append(*a, addr)
 				} else {
 					return fmt.Errorf("non-string address at index %d", i)
