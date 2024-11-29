@@ -17,6 +17,11 @@ var (
 )
 
 var (
+	VarDataFromHex     = DataFromHex[VarLen]
+	Data8FromHex       = DataFromHex[Len8]
+	Data20FromHex      = DataFromHex[Len20]
+	Data32FromHex      = DataFromHex[Len32]
+	Data256FromHex     = DataFromHex[Len256]
 	MustVarDataFromHex = MustDataFromHex[VarLen]
 	MustData8FromHex   = MustDataFromHex[Len8]
 	MustData20FromHex  = MustDataFromHex[Len20]

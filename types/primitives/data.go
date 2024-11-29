@@ -37,7 +37,7 @@ func (d *Data[LD]) UnmarshalJSON(b []byte) error {
 	if len(b) < 2 || b[0] != '"' || b[len(b)-1] != '"' {
 		return &json.UnmarshalTypeError{Value: "non-string", Type: reflect.ValueOf(Data[LD]{}).Type()}
 	}
-	*d, err = hexStringToData[LD](string(b[1 : len(b)-1]))
+	*d, err = DataFromHex[LD](string(b[1 : len(b)-1]))
 	return err
 }
 
@@ -48,7 +48,7 @@ func (d *Data[LD]) UnmarshalCBOR(b []byte) error {
 	if err != nil {
 		return err
 	}
-	*d, err = hexStringToData[LD](in)
+	*d, err = DataFromHex[LD](in)
 	return err
 }
 
@@ -60,7 +60,7 @@ func DataFromBytes[LD tp.LengthDescriptor](b []byte) Data[LD] {
 }
 
 func MustDataFromHex[LD tp.LengthDescriptor](s string) Data[LD] {
-	data, err := hexStringToData[LD](s)
+	data, err := DataFromHex[LD](s)
 	if err != nil {
 		panic(err)
 	}
@@ -68,7 +68,7 @@ func MustDataFromHex[LD tp.LengthDescriptor](s string) Data[LD] {
 	return data
 }
 
-func hexStringToData[LD tp.LengthDescriptor](in string) (Data[LD], error) {
+func DataFromHex[LD tp.LengthDescriptor](in string) (Data[LD], error) {
 	if len(in) == 2 && in[0] == '0' && (in[1] == 'x' || in[2] == 'X') {
 		return Data[LD]{}, nil
 	}
