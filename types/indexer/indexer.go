@@ -1,14 +1,11 @@
 package indexer
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/aurora-is-near/relayer2-base/db/codec"
-	"github.com/aurora-is-near/relayer2-base/tinypack"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"github.com/aurora-is-near/relayer2-base/types/utils"
 	"github.com/btcsuite/btcutil/base58"
@@ -91,11 +88,8 @@ func (iod *InputOutputData) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	p, err := byteArrayToData[primitives.VarLen](i)
-	if err != nil {
-		return err
-	}
-	*iod = InputOutputData(*p)
+	p := primitives.VarDataFromBytes(i)
+	*iod = InputOutputData(p)
 	return nil
 }
 
@@ -105,11 +99,8 @@ func (iod *InputOutputData) UnmarshalCBOR(b []byte) error {
 	if err != nil {
 		return err
 	}
-	p, err := byteArrayToData[primitives.VarLen](i)
-	if err != nil {
-		return err
-	}
-	*iod = InputOutputData(*p)
+	p := primitives.VarDataFromBytes(i)
+	*iod = InputOutputData(p)
 	return nil
 }
 
@@ -123,11 +114,8 @@ func (t *Topic) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	p, err := byteArrayToData[primitives.Len32](i)
-	if err != nil {
-		return err
-	}
-	*t = Topic(*p)
+	p := primitives.Data32FromBytes(i)
+	*t = Topic(p)
 	return nil
 }
 
@@ -137,11 +125,8 @@ func (t *Topic) UnmarshalCBOR(b []byte) error {
 	if err != nil {
 		return err
 	}
-	p, err := byteArrayToData[primitives.Len32](i)
-	if err != nil {
-		return err
-	}
-	*t = Topic(*p)
+	p := primitives.Data32FromBytes(i)
+	*t = Topic(p)
 	return nil
 }
 
@@ -219,23 +204,6 @@ func timeStringToTimestamp(time string) (Timestamp, error) {
 		return Timestamp(0), err
 	}
 	return Timestamp(t), nil
-}
-
-func byteArrayToData[LD tinypack.LengthDescriptor](in []byte) (*primitives.Data[LD], error) {
-	var sb strings.Builder
-	_, err := sb.WriteString("0x")
-	if err != nil {
-		return nil, err
-	}
-	if len(in) > 0 {
-		s := hex.EncodeToString(in)
-		_, err = sb.WriteString(s)
-		if err != nil {
-			return nil, err
-		}
-	}
-	p := primitives.MustDataFromHex[LD](sb.String())
-	return &p, nil
 }
 
 func base58StringToNearHash(in string) (NearHash, error) {
