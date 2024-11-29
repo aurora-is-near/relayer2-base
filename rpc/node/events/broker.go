@@ -10,7 +10,6 @@ import (
 	"github.com/aurora-is-near/relayer2-base/rpc"
 	"github.com/aurora-is-near/relayer2-base/types/common"
 	"github.com/aurora-is-near/relayer2-base/types/event"
-	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"github.com/aurora-is-near/relayer2-base/types/request"
 )
 
@@ -210,7 +209,7 @@ Logs:
 			match := len(sub) == 0 // empty rule set == wildcard
 			for _, topic := range sub {
 				// empty rule set == wildcard. Otherwise, check if topic index of opts fits in the number of topics in received log and if it fits check topics for equality
-				if len(topic) == 0 || (i < len(log.Topics) && bytes.Equal(log.Topics[i].Bytes(), primitives.MustData32FromHex(string(topic)).Bytes())) {
+				if len(topic.Content) == 0 || (i < len(log.Topics) && bytes.Equal(log.Topics[i].Bytes(), topic.Bytes())) {
 					match = true
 					break
 				}

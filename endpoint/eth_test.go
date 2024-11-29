@@ -172,12 +172,20 @@ func TestFormatFilterOptions(t *testing.T) {
 		{
 			name: "topics are added as is", // TODO: add stronger topics validation/restrict the type from []byte when unmarshalling?
 			data: request.Filter{
-				Topics: request.Topics{{[]byte(primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x1111)).Hex())}, {[]byte(primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x2222)).Hex())}, {[]byte(primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x3333)).Hex())}},
+				Topics: request.Topics{
+					{primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x1111))},
+					{primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x2222))},
+					{primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x3333))},
+				},
 			},
 			wantFrom:    &blockData.Height,
 			wantTo:      nil,
 			wantAddress: []primitives.Data20{},
-			wantTopics:  [][]primitives.Data32{{primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x1111))}, {primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x2222))}, {primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x3333))}},
+			wantTopics: [][]primitives.Data32{
+				{primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x1111))},
+				{primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x2222))},
+				{primitives.MustData32FromHex(fmt.Sprintf("0x%064x", 0x3333))},
+			},
 		},
 	}
 	for _, tc := range ttable {
@@ -227,19 +235,19 @@ func TestTopicsUnmarshalJSON(t *testing.T) {
 		{
 			data: `["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",null,["0xabc","0x123"]]`,
 			want: request.Topics{
-				{[]byte(`0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef`)},
+				{primitives.MustData32FromHex(`0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef`)},
 				{},
-				{[]byte("0xabc"), []byte("0x123")},
+				{primitives.MustData32FromHex("0xabc"), primitives.MustData32FromHex("0x123")},
 				{},
 			},
 		},
 		{
 			data: `["0x1","0x2","0x3","0x4","0x5"]`,
 			want: request.Topics{
-				{[]byte("0x1")},
-				{[]byte("0x2")},
-				{[]byte("0x3")},
-				{[]byte("0x4")},
+				{primitives.MustData32FromHex("0x1")},
+				{primitives.MustData32FromHex("0x2")},
+				{primitives.MustData32FromHex("0x3")},
+				{primitives.MustData32FromHex("0x4")},
 			},
 		},
 		{
