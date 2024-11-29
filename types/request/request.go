@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	"github.com/aurora-is-near/relayer2-base/types/common"
+	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	jsoniter "github.com/json-iterator/go"
 )
 
-type Topics [][][]byte
+type Topics [][]primitives.Data32
 type SingleOrSliceOfAddress []common.Address
 
 type LogSubscriptionOptions struct {
@@ -34,11 +35,21 @@ func (t *Topics) UnmarshalJSON(b []byte) error {
 	for i, t := range tps {
 		switch v := t.(type) {
 		case string:
-			results[i] = append(results[i], []byte(v))
+			data, err := primitives.Data32FromHex(v)
+			if err != nil {
+				return err
+			}
+
+			results[i] = append(results[i], data)
 		case []interface{}:
 			for _, topic := range v {
 				if topic, ok := topic.(string); ok {
-					results[i] = append(results[i], []byte(topic))
+					data, err := primitives.Data32FromHex(topic)
+					if err != nil {
+						return err
+					}
+
+					results[i] = append(results[i], data)
 				}
 			}
 		case nil:

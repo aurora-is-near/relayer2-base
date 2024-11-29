@@ -167,7 +167,7 @@ func TestBrokerReturnsCorrectEventsWithAddressAndTopics(t *testing.T) {
 	topics := request.Topics{
 		{},
 		{},
-		{[]byte(`0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e`)},
+		{primitives.MustData32FromHex(`0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e`)},
 	}
 
 	filterParams := request.LogSubscriptionOptions{
@@ -267,7 +267,7 @@ func TestBrokerReturnsCorrectEventsWithTopics(t *testing.T) {
 	}()
 
 	topics := request.Topics{
-		{[]byte(`0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e`)},
+		{primitives.MustData32FromHex(`0x0000000000000000000000005eec60f348cb1d661e4a5122cf4638c7db7a886e`)},
 	}
 
 	filterParams := request.LogSubscriptionOptions{
