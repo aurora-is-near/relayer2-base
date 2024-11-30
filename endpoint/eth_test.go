@@ -126,7 +126,7 @@ func TestFormatFilterOptions(t *testing.T) {
 			wantFrom:    &blockData.Height,
 			wantTo:      nil,
 			wantAddress: []primitives.Data20{},
-			wantTopics:  [][]primitives.Data32{},
+			wantTopics:  nil,
 		},
 		{
 			name: "blockHash is added",
@@ -136,7 +136,7 @@ func TestFormatFilterOptions(t *testing.T) {
 			wantFrom:    &blockData.Height,
 			wantTo:      &blockData.Height,
 			wantAddress: []primitives.Data20{},
-			wantTopics:  [][]primitives.Data32{},
+			wantTopics:  nil,
 		},
 		{
 			name: "block range is not overwritten",
@@ -147,7 +147,7 @@ func TestFormatFilterOptions(t *testing.T) {
 			wantFrom:    reqFrom.Uint64(),
 			wantTo:      reqTo.Uint64(),
 			wantAddress: []primitives.Data20{},
-			wantTopics:  [][]primitives.Data32{},
+			wantTopics:  nil,
 		},
 		{
 			name: "addresses get added once",
@@ -167,7 +167,7 @@ func TestFormatFilterOptions(t *testing.T) {
 				primitives.MustData20FromHex(fmt.Sprintf("0x%040x", 0x1)),
 				primitives.MustData20FromHex(fmt.Sprintf("0x%040x", 0x3)),
 			},
-			wantTopics: [][]primitives.Data32{},
+			wantTopics: nil,
 		},
 		{
 			name: "topics are added as is", // TODO: add stronger topics validation/restrict the type from []byte when unmarshalling?
