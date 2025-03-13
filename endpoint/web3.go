@@ -19,16 +19,16 @@ func NewWeb3(endpoint *Endpoint) *Web3 {
 
 // ClientVersion returns client version
 //
-// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
-// 	TODO: implement
+//	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+//	TODO: implement
 func (e *Web3) ClientVersion(_ context.Context) (*string, error) {
-	return utils.Constants.ClientVersion(), nil
+	return utils.Constants.RelayerVersion(), nil
 }
 
 // Sha3 returns Keccak-256 hash of the given data.
 //
-// 	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
-// 	On failure, returns errors code '-32000' with custom message.
+//	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+//	On failure, returns errors code '-32000' with custom message.
 func (e *Web3) Sha3(_ context.Context, in string) (*string, error) {
 	in = strings.TrimPrefix(in, "0x")
 	dec := make([]byte, hex.DecodedLen(len(in)))
