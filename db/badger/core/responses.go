@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/aurora-is-near/relayer2-base/tweaks"
 	dbt "github.com/aurora-is-near/relayer2-base/types/db"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"github.com/aurora-is-near/relayer2-base/types/response"
@@ -26,7 +27,9 @@ func makeBlockResponse(height uint64, hash primitives.Data32, data dbt.Block, tx
 	if data.GasUsed.Uint64() > *utils.Constants.GasLimit() {
 		gasUsed = primitives.QuantityFromUint64(*utils.Constants.GasLimit())
 	}
+
 	return &response.Block{
+		BaseFeePerGas:    tweaks.BaseFeePerGas(),
 		Number:           primitives.HexUint(height),
 		Hash:             hash,
 		ParentHash:       data.ParentHash,

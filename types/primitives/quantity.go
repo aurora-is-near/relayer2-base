@@ -3,11 +3,13 @@ package primitives
 import (
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"reflect"
 
 	tp "github.com/aurora-is-near/relayer2-base/tinypack"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/fxamacker/cbor/v2"
 )
@@ -118,4 +120,34 @@ func QuantityFromUint64(v uint64) Quantity {
 	buf := make([]byte, 32)
 	binary.BigEndian.PutUint64(buf[24:], v)
 	return QuantityFromBytes(buf)
+}
+
+func QuantityDecodeHook() mapstructure.DecodeHookFuncType {
+	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+		if t != reflect.TypeOf(Quantity{}) {
+			return data, nil
+		}
+
+		result := big.NewInt(0)
+
+		switch f.Kind() {
+		case reflect.String:
+			var ok bool
+			result, ok = big.NewInt(0).SetString(data.(string), 0)
+			if !ok {
+				return nil, fmt.Errorf("unable to parse unsigned quantity from string '%s'", data)
+			}
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			result.SetInt64(reflect.ValueOf(data).Int())
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			result.SetUint64(reflect.ValueOf(data).Uint())
+		default:
+			return data, nil
+		}
+
+		if result.Sign() < 0 {
+			return nil, fmt.Errorf("can't parse negative number %s into unsigned quantity", result.Text(10))
+		}
+		return QuantityFromBigInt(result), nil
+	}
 }
