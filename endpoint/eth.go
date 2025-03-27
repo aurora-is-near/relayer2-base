@@ -3,7 +3,9 @@ package endpoint
 import (
 	"context"
 	"errors"
+	"fmt"
 
+	"github.com/aurora-is-near/relayer2-base/tweaks"
 	utils2 "github.com/aurora-is-near/relayer2-base/types/utils"
 
 	"github.com/aurora-is-near/relayer2-base/types"
@@ -17,11 +19,19 @@ import (
 )
 
 type Eth struct {
+	aurora AuroraClient
 	*Endpoint
 }
 
 func NewEth(endpoint *Endpoint) *Eth {
-	return &Eth{endpoint}
+	return &Eth{
+		Endpoint: endpoint,
+		aurora:   NewAuroraRPC(endpoint.Config.ProxyUrl),
+	}
+}
+
+func (e *Eth) WithAurora(aurora AuroraClient) {
+	e.aurora = aurora
 }
 
 // Accounts returns empty array
@@ -487,4 +497,97 @@ func (e *Eth) parseRequestFilter(ctx context.Context, filter *request.Filter) (*
 	f.Topics = filter.Topics
 
 	return f, nil
+}
+
+// FeeHistory returns historical gas information, allowing you to track
+// trends over time.
+// `blockCount` is the number of blocks in the requested range. Between 1 and
+// 1024 blocks can be requested in a single query. If blocks in the specified
+// block range are not available, then only the fee history for available blocks
+// is returned.
+// `newestBlock` represents the highest number block of the requested range, or
+// one of the string tags latest, earliest, or pending.
+// `percentiles` is an optional array of integers; a monotonically increasing
+// list of percentile values to sample from each block's effective priority fees
+// per gas in ascending order, weighted by gas used.
+//
+//	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
+//	On DB failure or number not found, returns errors code '-32000' with custom message.
+//	On missing or invalid param returns errors code '-32602' with custom message.
+func (e *Eth) FeeHistory(ctx context.Context, blockCount uint, newestBlock common.BN64, percentiles *[]uint) (*response.FeeHistory, error) {
+	if blockCount < 1 || blockCount > 1024 {
+		return nil, &errs.InvalidParamsError{
+			Message: fmt.Sprintf("invalid block count %d. Must be between 1 and 1024", blockCount),
+		}
+	}
+
+	block, err := e.DbHandler.GetBlockByNumber(ctx, newestBlock, false)
+	if err != nil {
+		return nil, &errs.GenericError{Err: err}
+	}
+
+	oldestBlock := block.Number - primitives.HexUint(blockCount) + 1
+	feeHistory := response.FeeHistory{
+		OldestBlock:       oldestBlock,
+		BaseFeePerGas:     make([]primitives.Quantity, blockCount),
+		BaseFeePerBlobGas: make([]primitives.Quantity, blockCount),
+		BlobGasUsedRatio:  make([]float32, blockCount),
+		GasUsedRatio:      make([]float32, blockCount),
+	}
+
+	zeroQuantity := primitives.QuantityFromUint64(0)
+
+	baseFeePerGas := tweaks.BaseFeePerGas()
+	if baseFeePerGas == nil {
+		baseFeePerGas = &zeroQuantity
+	}
+
+	baseFeePerBlobGas := tweaks.BaseFeePerBlobGas()
+	if baseFeePerBlobGas == nil {
+		baseFeePerBlobGas = &zeroQuantity
+	}
+
+	gasUsedRatio := tweaks.GasUsedRatio()
+
+	var reward []primitives.Quantity
+	if percentiles != nil {
+		maxPriorityFeePerGas := tweaks.MaxPriorityFeePerGas()
+		if maxPriorityFeePerGas == nil {
+			maxPriorityFeePerGas, err = e.aurora.MaxPriorityFeePerGas()
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		reward = make([]primitives.Quantity, len(*percentiles))
+		for i := range *percentiles {
+			reward[i] = *maxPriorityFeePerGas
+		}
+
+		feeHistory.Reward = make([][]primitives.Quantity, blockCount)
+	}
+
+	for i := uint(0); i < blockCount; i++ {
+		feeHistory.BaseFeePerGas[i] = *baseFeePerGas
+		feeHistory.BaseFeePerBlobGas[i] = *baseFeePerBlobGas
+		feeHistory.BlobGasUsedRatio[i] = 0
+
+		if gasUsedRatio == nil {
+			blockNumber := common.UintToBN64(oldestBlock + primitives.HexUint(i))
+			block, err = e.DbHandler.GetBlockByNumber(ctx, blockNumber, false)
+			if err != nil {
+				return nil, &errs.GenericError{Err: err}
+			}
+
+			feeHistory.GasUsedRatio[i] = block.GasUsedRatio()
+		} else {
+			feeHistory.GasUsedRatio[i] = *gasUsedRatio
+		}
+
+		if percentiles != nil {
+			feeHistory.Reward[i] = reward
+		}
+	}
+
+	return &feeHistory, nil
 }

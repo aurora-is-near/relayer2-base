@@ -1,6 +1,8 @@
 package response
 
 import (
+	"math/big"
+
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 )
 
@@ -30,4 +32,13 @@ type Block struct {
 	Timestamp        primitives.HexUint   `json:"timestamp"`
 	Transactions     []any                `json:"transactions"`
 	Uncles           []primitives.Data32  `json:"uncles"`
+}
+
+func (b *Block) GasUsedRatio() float32 {
+	gasUsed := big.NewFloat(0).SetInt(b.GasUsed.BigInt())
+	gasLimit := big.NewFloat(0).SetInt(b.GasLimit.BigInt())
+
+	ratio, _ := gasUsed.Quo(gasUsed, gasLimit).Float32()
+
+	return ratio
 }

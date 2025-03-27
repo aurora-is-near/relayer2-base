@@ -19,12 +19,18 @@ var (
 )
 
 type Config struct {
-	BaseFeePerGas *primitives.Quantity `mapstructure:"baseFeePerGas"`
+	BaseFeePerGas        *primitives.Quantity `mapstructure:"baseFeePerGas"`
+	BaseFeePerBlobGas    *primitives.Quantity `mapstructure:"baseFeePerBlobGas"`
+	GasUsedRatio         *float32             `mapstructure:"gasUsedRatio"`
+	MaxPriorityFeePerGas *primitives.Quantity `mapstructure:"maxPriorityFeePerGas"`
 }
 
 func defaultConfig() *Config {
 	return &Config{
-		BaseFeePerGas: nil,
+		BaseFeePerGas:        nil,
+		BaseFeePerBlobGas:    nil,
+		GasUsedRatio:         nil,
+		MaxPriorityFeePerGas: nil,
 	}
 }
 
@@ -46,4 +52,19 @@ func loadConfig() {
 func BaseFeePerGas() *primitives.Quantity {
 	loadConfig()
 	return config.BaseFeePerGas
+}
+
+func BaseFeePerBlobGas() *primitives.Quantity {
+	loadConfig()
+	return config.BaseFeePerBlobGas
+}
+
+func GasUsedRatio() *float32 {
+	loadConfig()
+	return config.GasUsedRatio
+}
+
+func MaxPriorityFeePerGas() *primitives.Quantity {
+	loadConfig()
+	return config.MaxPriorityFeePerGas
 }
