@@ -197,3 +197,9 @@ func (e *EthProcessorAware) GasPrice(ctx context.Context) (*common.Uint256, erro
 		return e.Eth.GasPrice(ctx)
 	})
 }
+
+func (e *EthProcessorAware) FeeHistory(ctx context.Context, blockCount uint, newestBlock common.BN64, percentiles *[]uint) (*response.FeeHistory, error) {
+	return Process(ctx, "eth_feeHistory", e.Endpoint, func(ctx context.Context) (*response.FeeHistory, error) {
+		return e.Eth.FeeHistory(ctx, blockCount, newestBlock, percentiles)
+	}, blockCount, newestBlock, percentiles)
+}
