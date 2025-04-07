@@ -514,8 +514,8 @@ func (e *Eth) parseRequestFilter(ctx context.Context, filter *request.Filter) (*
 //	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
 //	On DB failure or number not found, returns errors code '-32000' with custom message.
 //	On missing or invalid param returns errors code '-32602' with custom message.
-func (e *Eth) FeeHistory(ctx context.Context, blockCount uint, newestBlock common.BN64, percentiles *[]uint) (*response.FeeHistory, error) {
-	if blockCount < 1 || blockCount > 1024 {
+func (e *Eth) FeeHistory(ctx context.Context, blockCount common.Uint64, newestBlock common.BN64, percentiles *[]uint) (*response.FeeHistory, error) {
+	if blockCount.Uint64() < 1 || blockCount.Uint64() > 1024 {
 		return nil, &errs.InvalidParamsError{
 			Message: fmt.Sprintf("invalid block count %d. Must be between 1 and 1024", blockCount),
 		}
@@ -526,13 +526,13 @@ func (e *Eth) FeeHistory(ctx context.Context, blockCount uint, newestBlock commo
 		return nil, &errs.GenericError{Err: err}
 	}
 
-	oldestBlock := block.Number - primitives.HexUint(blockCount) + 1
+	oldestBlock := block.Number - primitives.HexUint(blockCount.Uint64()) + 1
 	feeHistory := response.FeeHistory{
 		OldestBlock:       oldestBlock,
-		BaseFeePerGas:     make([]primitives.Quantity, blockCount),
-		BaseFeePerBlobGas: make([]primitives.Quantity, blockCount),
-		BlobGasUsedRatio:  make([]float32, blockCount),
-		GasUsedRatio:      make([]float32, blockCount),
+		BaseFeePerGas:     make([]primitives.Quantity, blockCount.Uint64()),
+		BaseFeePerBlobGas: make([]primitives.Quantity, blockCount.Uint64()),
+		BlobGasUsedRatio:  make([]float32, blockCount.Uint64()),
+		GasUsedRatio:      make([]float32, blockCount.Uint64()),
 	}
 
 	zeroQuantity := primitives.QuantityFromUint64(0)
@@ -564,10 +564,10 @@ func (e *Eth) FeeHistory(ctx context.Context, blockCount uint, newestBlock commo
 			reward[i] = *maxPriorityFeePerGas
 		}
 
-		feeHistory.Reward = make([][]primitives.Quantity, blockCount)
+		feeHistory.Reward = make([][]primitives.Quantity, blockCount.Uint64())
 	}
 
-	for i := uint(0); i < blockCount; i++ {
+	for i := uint64(0); i < blockCount.Uint64(); i++ {
 		feeHistory.BaseFeePerGas[i] = *baseFeePerGas
 		feeHistory.BaseFeePerBlobGas[i] = *baseFeePerBlobGas
 		feeHistory.BlobGasUsedRatio[i] = 0
