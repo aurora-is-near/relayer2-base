@@ -32,7 +32,7 @@ type AuroraRPC struct {
 	maxPriorityFeePerGasCache      *primitives.Quantity
 	maxPriorityFeePerGasValidUntil time.Time
 	url                            string
-	mu                             sync.Mutex
+	maxPriorityFeePerGasMutex      sync.Mutex
 }
 
 func NewAuroraRPC(url string) *AuroraRPC {
@@ -42,8 +42,8 @@ func NewAuroraRPC(url string) *AuroraRPC {
 func (a *AuroraRPC) MaxPriorityFeePerGas() (*primitives.Quantity, error) {
 	now := time.Now()
 
-	a.mu.Lock()
-	defer a.mu.Unlock()
+	a.maxPriorityFeePerGasMutex.Lock()
+	defer a.maxPriorityFeePerGasMutex.Unlock()
 
 	if a.maxPriorityFeePerGasCache != nil && a.maxPriorityFeePerGasValidUntil.Before(now) {
 		return a.maxPriorityFeePerGasCache, nil
