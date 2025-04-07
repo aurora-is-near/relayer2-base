@@ -3,6 +3,7 @@ package endpoint
 import (
 	"errors"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/aurora-is-near/relayer2-base/log"
@@ -31,6 +32,7 @@ type AuroraRPC struct {
 	maxPriorityFeePerGasCache      *primitives.Quantity
 	maxPriorityFeePerGasValidUntil time.Time
 	url                            string
+	mu                             sync.Mutex
 }
 
 func NewAuroraRPC(url string) *AuroraRPC {
@@ -39,6 +41,9 @@ func NewAuroraRPC(url string) *AuroraRPC {
 
 func (a *AuroraRPC) MaxPriorityFeePerGas() (*primitives.Quantity, error) {
 	now := time.Now()
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
 
 	if a.maxPriorityFeePerGasCache != nil && a.maxPriorityFeePerGasValidUntil.Before(now) {
 		return a.maxPriorityFeePerGasCache, nil
