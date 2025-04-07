@@ -555,7 +555,7 @@ func (e *Eth) FeeHistory(ctx context.Context, blockCount common.Uint64, newestBl
 		if maxPriorityFeePerGas == nil {
 			maxPriorityFeePerGas, err = e.aurora.MaxPriorityFeePerGas()
 			if err != nil {
-				return nil, err
+				return nil, &errs.InternalError{Message: err.Error()}
 			}
 		}
 
