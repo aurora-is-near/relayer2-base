@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/aurora-is-near/relayer2-base/log"
 	"github.com/aurora-is-near/relayer2-base/tweaks"
 	utils2 "github.com/aurora-is-near/relayer2-base/types/utils"
 
@@ -555,7 +556,8 @@ func (e *Eth) FeeHistory(ctx context.Context, blockCount common.Uint64, newestBl
 		if maxPriorityFeePerGas == nil {
 			maxPriorityFeePerGas, err = e.aurora.MaxPriorityFeePerGas()
 			if err != nil {
-				return nil, &errs.InternalError{Message: err.Error()}
+				log.Log().Warn().Err(err).Msg("Failed aurora.MaxPriorityFeePerGas()")
+				return nil, &errs.InternalError{Message: "failed to query max priority fee per gas"}
 			}
 		}
 
