@@ -1,12 +1,10 @@
 package endpoint
 
 import (
-	"errors"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/aurora-is-near/relayer2-base/log"
 	"github.com/aurora-is-near/relayer2-base/rpc"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	jsoniter "github.com/json-iterator/go"
@@ -61,14 +59,12 @@ func (a *AuroraRPC) MaxPriorityFeePerGas() (*primitives.Quantity, error) {
 	req.SetBody([]byte(maxPriorityFeePerGasBody))
 	err := fasthttp.Do(req, resp)
 	if err != nil {
-		log.Log().Warn().Err(err).Msg("failed to query max priority fee per gas")
-		return nil, errors.New("failed to query max priority fee per gas")
+		return nil, err
 	}
 
 	var val RPCResponse
 	if err := json.Unmarshal(resp.Body(), &val); err != nil {
-		log.Log().Warn().Err(err).Msg("failed to read max priority fee per gas")
-		return nil, errors.New("failed to read max priority fee per gas")
+		return nil, err
 	}
 
 	a.maxPriorityFeePerGasCache = val.Result
