@@ -19,7 +19,7 @@ const (
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type AuroraClient interface {
-	MaxPriorityFeePerGas() (*primitives.Quantity, error)
+	MaxPriorityFeePerGas(chainId uint64) (*primitives.Quantity, error)
 }
 
 type RPCResponse struct {
@@ -37,7 +37,9 @@ func NewAuroraRPC(url string) *AuroraRPC {
 	return &AuroraRPC{url: url}
 }
 
-func (a *AuroraRPC) MaxPriorityFeePerGas() (*primitives.Quantity, error) {
+func (a *AuroraRPC) MaxPriorityFeePerGas(chainId uint64) (*primitives.Quantity, error) {
+	_ = chainId // Assuming single-chain scenario in this basic implementation
+
 	now := time.Now()
 
 	a.maxPriorityFeePerGasMutex.Lock()
