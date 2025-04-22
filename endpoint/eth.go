@@ -526,6 +526,12 @@ func (e *Eth) FeeHistory(ctx context.Context, blockCount common.Uint64, newestBl
 		}
 	}
 
+	if percentiles != nil && len(*percentiles)*int(blockCount.Uint64()) > 10000 {
+		return nil, &errs.InvalidParamsError{
+			Message: "blockCount * len(percentiles) is too big, should be <= 10000",
+		}
+	}
+
 	block, err := e.DbHandler.GetBlockByNumber(ctx, newestBlock, false)
 	if err != nil {
 		return nil, &errs.GenericError{Err: err}
@@ -555,7 +561,7 @@ func (e *Eth) FeeHistory(ctx context.Context, blockCount common.Uint64, newestBl
 	gasUsedRatio := tweaks.GasUsedRatio()
 
 	var reward []primitives.Quantity
-	if percentiles != nil {
+	if percentiles != nil && len(*percentiles) > 0 {
 		maxPriorityFeePerGas := tweaks.MaxPriorityFeePerGas()
 		if maxPriorityFeePerGas == nil {
 			chainId := utils.GetChainId(ctx)
@@ -591,7 +597,7 @@ func (e *Eth) FeeHistory(ctx context.Context, blockCount common.Uint64, newestBl
 			feeHistory.GasUsedRatio[i] = *gasUsedRatio
 		}
 
-		if percentiles != nil {
+		if percentiles != nil && len(*percentiles) > 0 {
 			feeHistory.Reward[i] = reward
 		}
 	}

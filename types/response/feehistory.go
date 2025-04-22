@@ -10,7 +10,7 @@ import (
 type FeeHistory struct {
 	BaseFeePerBlobGas []primitives.Quantity   `json:"baseFeePerBlobGas"`
 	BaseFeePerGas     []primitives.Quantity   `json:"baseFeePerGas"`
-	Reward            [][]primitives.Quantity `json:"reward"`
+	Reward            [][]primitives.Quantity `json:"reward,omitempty"`
 	BlobGasUsedRatio  []float32               `json:"blobGasUsedRatio"`
 	GasUsedRatio      []float32               `json:"gasUsedRatio"`
 	OldestBlock       primitives.HexUint      `json:"oldestBlock"`
