@@ -300,7 +300,7 @@ func (e *Eth) UninstallFilter(ctx context.Context, filterId common.Uint256) (*bo
 //
 //	If API is disabled, returns errors code '-32601' with message 'the method does not exist/is not available'.
 //	On failure, returns errors code '-32000' with custom message.
-func (e *Eth) GetFilterChanges(ctx context.Context, filterId common.Uint256) (*[]interface{}, error) {
+func (e *Eth) GetFilterChanges(ctx context.Context, filterId common.Uint256) (*[]any, error) {
 	fid := filterId.Data32()
 	filter, err := e.DbHandler.GetFilter(ctx, fid)
 	if err != nil {

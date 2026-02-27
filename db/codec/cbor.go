@@ -5,18 +5,6 @@ import (
 	"github.com/fxamacker/cbor/v2"
 )
 
-type CborCodec struct {
-	Encoder
-	Decoder
-}
-
-func NewCborCodec() Codec {
-	return CborCodec{
-		Encoder: CborEncoder(),
-		Decoder: CborDecoder(),
-	}
-}
-
 func CborDecoder() cbor.DecMode {
 	dec, err := cbor.DecOptions{
 		MaxArrayElements: 2147483647,

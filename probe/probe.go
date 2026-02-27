@@ -50,9 +50,9 @@ func Get(metricId string) (Metric, bool) {
 // Set creates a metric with given metricConfig if probe is enabled and started. If config file contains a metric with
 // same id as metricConfig.Id, metricConfig values are overwritten by config file. Caller can use the returned metric by
 // casting it to one of appropriate metric types; probe.GaugeMetric, probe.CounterMetric, probe.HistogramMetric
-//  - On success, returns (metric, true)
-//  - If probe is disabled or not started, returns (nil, false)
-//  - If there is a metric created with same id previously, returns the previously created metric.
+//   - On success, returns (metric, true)
+//   - If probe is disabled or not started, returns (nil, false)
+//   - If there is a metric created with same id previously, returns the previously created metric.
 func Set(metricConfig MetricConfig) (Metric, bool) {
 	var m Metric
 	if Enabled() {

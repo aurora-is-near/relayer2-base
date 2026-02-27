@@ -11,7 +11,6 @@ import (
 
 	"github.com/aurora-is-near/relayer2-base/db/badger/core/logscan"
 	"github.com/aurora-is-near/relayer2-base/db/codec"
-	"github.com/aurora-is-near/relayer2-base/tinypack"
 	dbt "github.com/aurora-is-near/relayer2-base/types/db"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"github.com/aurora-is-near/relayer2-base/types/response"
@@ -69,7 +68,7 @@ func genVarData(minLength int, maxLength int, seeds ...uint64) primitives.VarDat
 }
 
 func genBlock(seed uint64) *dbt.Block {
-	return &dbt.Block{
+	b := &dbt.Block{
 		ParentHash:       genHash(seed, 1),
 		Miner:            genAddress(seed, 2),
 		Timestamp:        genUint64(seed, 3),
@@ -81,23 +80,26 @@ func genBlock(seed uint64) *dbt.Block {
 		ReceiptsRoot:     genHash(seed, 9),
 		Size:             genUint64(seed, 10),
 	}
+	return b
 }
 
 func genTx(seed uint64) *dbt.Transaction {
-	tmpAddr := genAddress(seed, 4)
-	tmpHash := genHash(seed, 11)
+	// Map type 3 to type 4: blob transactions (0x03) are unsupported; ensure EIP-7702 (0x04) is tested.
+	rawType := genUint64(seed, 1) % 4
+	if rawType == 3 {
+		rawType = 4
+	}
 	tx := &dbt.Transaction{
-		Type:                 genUint64(seed, 1) % 3,
+		Type:                 rawType,
 		From:                 genAddress(seed, 2),
 		IsContractDeployment: genBool(seed, 3),
-		ToOrContract:         tinypack.CreateNullable(&tmpAddr),
 		Nonce:                genQuantity(seed, 5),
 		GasPrice:             genQuantity(seed, 6),
 		GasLimit:             genQuantity(seed, 7),
 		GasUsed:              genUint64(seed, 8),
+		CumulativeGasUsed:    genQuantity(seed, 36),
 		Value:                genQuantity(seed, 9),
 		Input:                genVarData(0, 512, seed, 10),
-		NearHash:             tinypack.CreateNullable(&tmpHash),
 		NearReceiptHash:      genHash(seed, 12),
 		Status:               genBool(seed, 13),
 		V:                    genUint64(seed, 14),
@@ -105,25 +107,50 @@ func genTx(seed uint64) *dbt.Transaction {
 		S:                    genQuantity(seed, 16),
 		LogsBloom:            genLogsBloom(seed, 17),
 	}
+	// Occasionally generate nil ToOrContract and NearHash to test nil-pointer round-trips
+	if genUint64(seed, 37)%4 != 0 {
+		tmpAddr := genAddress(seed, 4)
+		tx.ToOrContract = &tmpAddr
+	}
+	if genUint64(seed, 38)%4 != 0 {
+		tmpHash := genHash(seed, 11)
+		tx.NearHash = &tmpHash
+	}
 	if tx.Type >= 1 {
-		tx.AccessList.Content = []dbt.AccessListEntry{}
+		yp := uint8(genUint64(seed, 39) % 2)
+		tx.YParity = &yp
+		tx.AccessList = []dbt.AccessListEntry{}
 		n := int(genUint64(seed, 18) % 10)
-		for i := 0; i < n; i++ {
+		for i := range n {
 			ale := dbt.AccessListEntry{
 				Address: genAddress(seed, 19, uint64(i)),
 			}
 			m := int(genUint64(seed, 20, uint64(i)) % 10)
-			ale.StorageKeys.Content = []primitives.Data32{}
-			for j := 0; j < m; j++ {
+			ale.StorageKeys = []primitives.Data32{}
+			for j := range m {
 				sk := genHash(seed, 21, uint64(i), uint64(j))
-				ale.StorageKeys.Content = append(ale.StorageKeys.Content, sk)
+				ale.StorageKeys = append(ale.StorageKeys, sk)
 			}
-			tx.AccessList.Content = append(tx.AccessList.Content, ale)
+			tx.AccessList = append(tx.AccessList, ale)
 		}
 	}
 	if tx.Type >= 2 {
 		tx.MaxPriorityFeePerGas = genQuantity(seed, 22)
 		tx.MaxFeePerGas = genQuantity(seed, 23)
+	}
+	if tx.Type == 4 {
+		n := int(genUint64(seed, 29)%4) + 1 // at least 1 to avoid empty-vs-nil proto3 issue
+		tx.AuthorizationList = make([]dbt.Authorization, n)
+		for i := range tx.AuthorizationList {
+			tx.AuthorizationList[i] = dbt.Authorization{
+				ChainId: genUint64(seed, 30, uint64(i)),
+				Address: genAddress(seed, 31, uint64(i)),
+				Nonce:   genUint64(seed, 32, uint64(i)),
+				YParity: uint8(genUint64(seed, 33, uint64(i)) % 2),
+				R:       genQuantity(seed, 34, uint64(i)),
+				S:       genQuantity(seed, 35, uint64(i)),
+			}
+		}
 	}
 	return tx
 }
@@ -133,9 +160,9 @@ func genLog(addressSeed uint64, dataSeed uint64, topicSeeds ...uint64) *dbt.Log 
 		Address: genAddress(addressSeed),
 		Data:    genVarData(0, 100, dataSeed),
 	}
-	log.Topics.Content = []primitives.Data32{}
+	log.Topics = []primitives.Data32{}
 	for _, topicSeed := range topicSeeds {
-		log.Topics.Content = append(log.Topics.Content, genHash(topicSeed))
+		log.Topics = append(log.Topics, genHash(topicSeed))
 	}
 	return log
 }
@@ -353,23 +380,23 @@ func (l *testLogger) getWarnCnt() int32 {
 	return atomic.LoadInt32(&l.warnCnt)
 }
 
-func (l testLogger) Errorf(f string, v ...interface{}) {
+func (l *testLogger) Errorf(f string, v ...any) {
 	atomic.AddInt32(&l.errCnt, 1)
 	log.Printf("ERROR: "+f, v...)
 }
 
-func (l testLogger) Warningf(f string, v ...interface{}) {
+func (l *testLogger) Warningf(f string, v ...any) {
 	atomic.AddInt32(&l.warnCnt, 1)
 	log.Printf("WARNING: "+f, v...)
 }
 
-func (l testLogger) Infof(f string, v ...interface{}) {
+func (l *testLogger) Infof(f string, v ...any) {
 	if !suppressSecondaryLogging {
 		log.Printf("INFO: "+f, v...)
 	}
 }
 
-func (l testLogger) Debugf(f string, v ...interface{}) {
+func (l *testLogger) Debugf(f string, v ...any) {
 	if !suppressSecondaryLogging {
 		log.Printf("DEBUG: "+f, v...)
 	}
@@ -382,29 +409,15 @@ func initTestDb(t *testing.T) (*DB, *testLogger) {
 	core, err := Open(opts, 10, false)
 	require.NoError(t, err, "DB must tryOpen")
 
-	logger := testLogger{}
+	logger := &testLogger{}
 	testDb := &DB{
-		codec:                 codec.NewTinypackCodec(),
+		codec:                 codec.NewProtobufCodec(),
 		maxLogScanIterators:   1000,
 		logScanRangeThreshold: 1000,
 		filterTtlMinutes:      15,
 		logger:                logger,
 		core:                  core,
 	}
-
-	// testDb := &DB{
-	// 	CoreOpts: &dbcore.DBCoreOpts{
-	// 		GCIntervalSeconds: 10,
-	// 		InMemory:          true,
-	// 	},
-	// 	Encoder:               tinypack.DefaultEncoder(),
-	// 	Decoder:               tinypack.DefaultDecoder(),
-	// 	maxLogScanIterators:   1000,
-	// 	logScanRangeThreshold: 1000,
-	// }
-	//
-	// logger := &testLogger{}
-	// err := testDb.Open(logger)
 
 	writer := testDb.NewWriter()
 
@@ -439,7 +452,7 @@ func initTestDb(t *testing.T) (*DB, *testLogger) {
 	require.EqualValues(t, 0, logger.getErrCnt(), "There should be no errors")
 	require.EqualValues(t, 0, logger.getWarnCnt(), "There should be no warnings")
 
-	return testDb, &logger
+	return testDb, logger
 }
 
 func testView(t *testing.T, ensureNoErrors bool, ensureNoWarnings bool, fn func(txn *ViewTxn) error) {

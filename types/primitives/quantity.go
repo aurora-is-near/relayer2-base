@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"reflect"
 
-	tp "github.com/aurora-is-near/relayer2-base/tinypack"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/mitchellh/mapstructure"
 
@@ -15,7 +14,7 @@ import (
 )
 
 type Quantity struct {
-	tp.Data[Len32]
+	Content []byte
 }
 
 func (q Quantity) Bytes() []byte {

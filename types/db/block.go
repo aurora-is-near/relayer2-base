@@ -16,18 +16,3 @@ type Block struct {
 	ReceiptsRoot     primitives.Data32
 	Size             uint64
 }
-
-func (b *Block) GetTinyPackChildrenPointers() ([]any, error) {
-	return []any{
-		&b.ParentHash,
-		&b.Miner,
-		&b.Timestamp,
-		&b.GasLimit,
-		&b.GasUsed,
-		&b.LogsBloom,
-		&b.TransactionsRoot,
-		&b.StateRoot,
-		&b.ReceiptsRoot,
-		&b.Size,
-	}, nil
-}

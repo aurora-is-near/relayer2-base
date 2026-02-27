@@ -25,7 +25,7 @@ type BlockHandler struct {
 }
 
 func NewBlockHandler() (*BlockHandler, error) {
-	return NewBlockHandlerWithCodec(codec.NewTinypackCodec())
+	return NewBlockHandlerWithCodec(codec.NewProtobufCodec())
 }
 
 func NewBlockHandlerWithCodec(codec codec.Codec) (*BlockHandler, error) {
@@ -306,9 +306,9 @@ func (h *BlockHandler) GetFilterLogs(ctx context.Context, filter *dbt.LogFilter)
 	return h.GetLogs(ctx, filter)
 }
 
-func (h *BlockHandler) GetFilterChanges(ctx context.Context, filter any) (*[]interface{}, error) {
+func (h *BlockHandler) GetFilterChanges(ctx context.Context, filter any) (*[]any, error) {
 	var err error
-	filterChanges := make([]interface{}, 0)
+	filterChanges := make([]any, 0)
 	if bf, ok := filter.(*dbt.BlockFilter); ok {
 		var blockHashes []primitives.Data32
 		var lastKey *dbt.BlockKey
@@ -487,11 +487,8 @@ func (h *BlockHandler) getLogs(ctx context.Context, txn *core.ViewTxn, filter *d
 		to = &filter.To
 	}
 
-	addresses := filter.Addresses.Content
-	topics := make([][]primitives.Data32, len(filter.Topics.Content))
-	for i, t := range filter.Topics.Content {
-		topics[i] = t.Content
-	}
+	addresses := filter.Addresses
+	topics := filter.Topics
 
 	if from.CompareTo(to) > 0 {
 		// unlikely but can happen if, for the same filter, getFilterChanges called twice within one block indexing time.

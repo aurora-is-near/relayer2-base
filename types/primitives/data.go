@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 	"reflect"
 
-	"github.com/aurora-is-near/relayer2-base/db/codec"
-	tp "github.com/aurora-is-near/relayer2-base/tinypack"
+	"github.com/fxamacker/cbor/v2"
 )
 
-type Data[LD tp.LengthDescriptor] struct {
-	tp.Data[LD]
+type Data[LD LengthDescriptor] struct {
+	Content []byte
 }
 
 func (d Data[LD]) Bytes() []byte {
@@ -44,7 +43,7 @@ func (d *Data[LD]) UnmarshalJSON(b []byte) error {
 func (d *Data[LD]) UnmarshalCBOR(b []byte) error {
 	var in string
 	var err error
-	err = codec.CborDecoder().Unmarshal(b, &in)
+	err = cbor.Unmarshal(b, &in)
 	if err != nil {
 		return err
 	}
@@ -52,14 +51,14 @@ func (d *Data[LD]) UnmarshalCBOR(b []byte) error {
 	return err
 }
 
-func DataFromBytes[LD tp.LengthDescriptor](b []byte) Data[LD] {
+func DataFromBytes[LD LengthDescriptor](b []byte) Data[LD] {
 	var ld LD
 	var d Data[LD]
-	d.Content = alignBytes(b, ld.GetTinyPackLength(), true)
+	d.Content = alignBytes(b, ld.GetLength(), true)
 	return d
 }
 
-func MustDataFromHex[LD tp.LengthDescriptor](s string) Data[LD] {
+func MustDataFromHex[LD LengthDescriptor](s string) Data[LD] {
 	data, err := DataFromHex[LD](s)
 	if err != nil {
 		panic(err)
@@ -68,8 +67,8 @@ func MustDataFromHex[LD tp.LengthDescriptor](s string) Data[LD] {
 	return data
 }
 
-func DataFromHex[LD tp.LengthDescriptor](in string) (Data[LD], error) {
-	if len(in) == 2 && in[0] == '0' && (in[1] == 'x' || in[2] == 'X') {
+func DataFromHex[LD LengthDescriptor](in string) (Data[LD], error) {
+	if len(in) == 2 && in[0] == '0' && (in[1] == 'x' || in[1] == 'X') {
 		return Data[LD]{}, nil
 	}
 	bytes, err := hexToBytes(in)

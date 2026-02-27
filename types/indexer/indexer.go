@@ -38,37 +38,48 @@ type Block struct {
 }
 
 type Transaction struct {
-	Hash                 primitives.Data32   `cbor:"hash"                     json:"hash"`
-	BlockHash            primitives.Data32   `cbor:"block_hash"               json:"block_hash"`
-	BlockHeight          uint64              `cbor:"block_height"             json:"block_height"`
-	ChainId              uint64              `cbor:"chain_id"                 json:"chain_id"`
-	TransactionIndex     uint64              `cbor:"transaction_index"        json:"transaction_index"`
-	From                 primitives.Data20   `cbor:"from"                     json:"from"`
-	To                   *primitives.Data20  `cbor:"to"                       json:"to"`
-	Nonce                primitives.Quantity `cbor:"nonce"                    json:"nonce"`
-	GasPrice             primitives.Quantity `cbor:"gas_price"                json:"gas_price"`
-	GasLimit             primitives.Quantity `cbor:"gas_limit"                json:"gas_limit"`
-	GasUsed              uint64              `cbor:"gas_used"                 json:"gas_used"`
-	MaxPriorityFeePerGas primitives.Quantity `cbor:"max_priority_fee_per_gas" json:"max_priority_fee_per_gas"`
-	MaxFeePerGas         primitives.Quantity `cbor:"max_fee_per_gas"          json:"max_fee_per_gas"`
-	Value                primitives.Quantity `cbor:"value"                    json:"value"`
-	Input                InputOutputData     `cbor:"input"                    json:"input"`
-	Output               InputOutputData     `cbor:"output"                   json:"output"`
-	AccessList           []AccessList        `cbor:"access_list"              json:"access_list"`
-	TxType               uint64              `cbor:"tx_type"                  json:"tx_type"`
-	Status               bool                `cbor:"status"                   json:"status"`
-	Logs                 []*Log              `cbor:"logs"                     json:"logs"`
-	LogsBloom            primitives.Data256  `cbor:"logs_bloom"               json:"logs_bloom"`
-	ContractAddress      *primitives.Data20  `cbor:"contract_address"         json:"contract_address"`
-	V                    uint64              `cbor:"v"                        json:"v"`
-	R                    primitives.Quantity `cbor:"r"                        json:"r"`
-	S                    primitives.Quantity `cbor:"s"                        json:"s"`
-	NearTransaction      NearTransaction     `cbor:"near_metadata"            json:"near_metadata"`
+	Hash                 primitives.Data32   `cbor:"hash"                      json:"hash"`
+	BlockHash            primitives.Data32   `cbor:"block_hash"                json:"block_hash"`
+	BlockHeight          uint64              `cbor:"block_height"              json:"block_height"`
+	ChainId              uint64              `cbor:"chain_id"                  json:"chain_id"`
+	TransactionIndex     uint64              `cbor:"transaction_index"         json:"transaction_index"`
+	From                 primitives.Data20   `cbor:"from"                      json:"from"`
+	To                   *primitives.Data20  `cbor:"to"                        json:"to"`
+	Nonce                primitives.Quantity `cbor:"nonce"                     json:"nonce"`
+	GasPrice             primitives.Quantity `cbor:"gas_price"                 json:"gas_price"`
+	GasLimit             primitives.Quantity `cbor:"gas_limit"                 json:"gas_limit"`
+	GasUsed              uint64              `cbor:"gas_used"                  json:"gas_used"`
+	MaxPriorityFeePerGas primitives.Quantity `cbor:"max_priority_fee_per_gas"  json:"max_priority_fee_per_gas"`
+	MaxFeePerGas         primitives.Quantity `cbor:"max_fee_per_gas"           json:"max_fee_per_gas"`
+	Value                primitives.Quantity `cbor:"value"                     json:"value"`
+	Input                InputOutputData     `cbor:"input"                     json:"input"`
+	Output               InputOutputData     `cbor:"output"                    json:"output"`
+	AccessList           []AccessList        `cbor:"access_list"               json:"access_list"`
+	TxType               uint64              `cbor:"tx_type"                   json:"tx_type"`
+	Status               bool                `cbor:"status"                    json:"status"`
+	Logs                 []*Log              `cbor:"logs"                      json:"logs"`
+	LogsBloom            primitives.Data256  `cbor:"logs_bloom"                json:"logs_bloom"`
+	ContractAddress      *primitives.Data20  `cbor:"contract_address"          json:"contract_address"`
+	V                    uint64              `cbor:"v"                         json:"v"`
+	R                    primitives.Quantity `cbor:"r"                         json:"r"`
+	S                    primitives.Quantity `cbor:"s"                         json:"s"`
+	YParity              *uint8              `cbor:"y_parity"                  json:"yParity"`
+	NearTransaction      NearTransaction     `cbor:"near_metadata"             json:"near_metadata"`
+	AuthorizationList    []Authorization     `cbor:"authorization_list"        json:"authorization_list"`
 }
 
 type AccessList struct {
-	Address     primitives.Data20   `json:"address"     json:"address"`
-	StorageKeys []primitives.Data32 `json:"storageKeys" json:"storageKeys"`
+	Address     primitives.Data20   `cbor:"address"     json:"address"`
+	StorageKeys []primitives.Data32 `cbor:"storageKeys" json:"storageKeys"`
+}
+
+type Authorization struct {
+	ChainId uint64              `cbor:"chain_id" json:"chainId"`
+	Address primitives.Data20   `cbor:"address"  json:"address"`
+	Nonce   uint64              `cbor:"nonce"    json:"nonce"`
+	YParity uint8               `cbor:"y_parity" json:"yParity"`
+	R       primitives.Quantity `cbor:"r"        json:"r"`
+	S       primitives.Quantity `cbor:"s"        json:"s"`
 }
 
 type NearTransaction struct {

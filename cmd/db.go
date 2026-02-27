@@ -125,7 +125,7 @@ func FlattenDB() *cobra.Command {
 				BadgerConfig:         badger.DefaultOptions(dbPath),
 				GcIntervalSeconds:    60 * 60 * 24 * 365, // We don't want GC to be running during the flattening
 			}
-			db, err := core.NewDB(config, codec.NewTinypackCodec())
+			db, err := core.NewDB(config, codec.NewProtobufCodec())
 			if err != nil {
 				return fmt.Errorf("unable to open database: %w", err)
 			}
@@ -155,9 +155,10 @@ func dbView(dbPath string, fn func(txn *core.ViewTxn) error) error {
 		BadgerConfig:         badger.DefaultOptions(dbPath).WithLogger(nil).WithReadOnly(true),
 		GcIntervalSeconds:    10,
 	}
-	db, err := core.NewDB(config, codec.NewTinypackCodec())
+	db, err := core.NewDB(config, codec.NewProtobufCodec())
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	return db.View(fn)
 }

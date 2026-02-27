@@ -17,7 +17,7 @@ type FilterHandler struct {
 }
 
 func NewFilterHandler() (*FilterHandler, error) {
-	return NewFilterHandlerWithCodec(codec.NewTinypackCodec())
+	return NewFilterHandlerWithCodec(codec.NewProtobufCodec())
 }
 
 func NewFilterHandlerWithCodec(codec codec.Codec) (*FilterHandler, error) {

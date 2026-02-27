@@ -92,9 +92,9 @@ func (w *Writer) InsertLog(chainId, height, txIndex, logIndex uint64, data *dbt.
 		return err
 	}
 
-	scanFeatures := make([][]byte, len(data.Topics.Content)+1)
+	scanFeatures := make([][]byte, len(data.Topics)+1)
 	scanFeatures[0] = data.Address.Bytes()
-	for i, t := range data.Topics.Content {
+	for i, t := range data.Topics {
 		scanFeatures[i+1] = t.Bytes()
 	}
 

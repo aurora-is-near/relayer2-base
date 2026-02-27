@@ -193,8 +193,9 @@ func (n *BN64) UnmarshalJSON(data []byte) error {
 }
 
 // Uint64 returns block number as *uint64.
-// 	If BN64 contains following tags; Safe, Finalized, Pending, Latest it returns nil
-//  If BN64 contains the Earliest tag, it returns 0
+//
+//		If BN64 contains following tags; Safe, Finalized, Pending, Latest it returns nil
+//	 If BN64 contains the Earliest tag, it returns 0
 func (n *BN64) Uint64() *uint64 {
 	i := n.Int64()
 	if *i >= 0 {

@@ -1,14 +1,6 @@
 package codec
 
-type Encoder interface {
-	Marshal(v interface{}) ([]byte, error)
-}
-
-type Decoder interface {
-	Unmarshal(data []byte, v interface{}) error
-}
-
 type Codec interface {
-	Encoder
-	Decoder
+	Marshal(v any) ([]byte, error)
+	Unmarshal(data []byte, v any) error
 }

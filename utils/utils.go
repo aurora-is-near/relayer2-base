@@ -10,7 +10,6 @@ import (
 	"math/big"
 
 	"github.com/aurora-is-near/relayer2-base/log"
-	"github.com/aurora-is-near/relayer2-base/tinypack"
 	dbt "github.com/aurora-is-near/relayer2-base/types/db"
 	"github.com/aurora-is-near/relayer2-base/types/indexer"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
@@ -38,7 +37,7 @@ func IndexerBlockToDbBlock(block *indexer.Block) *dbt.Block {
 }
 
 func IndexerTxnToDbTxn(txn *indexer.Transaction, cumulativeGas primitives.Quantity) *dbt.Transaction {
-	toOrContract := tinypack.CreateNullable[primitives.Data20](nil)
+	var toOrContract *primitives.Data20
 	isContractDeployment := false
 	if txn.ContractAddress != nil {
 		if txn.To != nil {
@@ -46,9 +45,9 @@ func IndexerTxnToDbTxn(txn *indexer.Transaction, cumulativeGas primitives.Quanti
 				txn.Hash, txn.To.Hex(), txn.ContractAddress.Hex())
 		}
 		isContractDeployment = true
-		toOrContract = tinypack.CreateNullable[primitives.Data20](txn.ContractAddress)
+		toOrContract = txn.ContractAddress
 	} else if txn.To != nil {
-		toOrContract = tinypack.CreateNullable[primitives.Data20](txn.To)
+		toOrContract = txn.To
 	} else {
 		log.Log().Warn().Msgf("both contract address and to address is null for txn: [%v]", txn.Hash.Hex())
 	}
@@ -59,18 +58,29 @@ func IndexerTxnToDbTxn(txn *indexer.Transaction, cumulativeGas primitives.Quanti
 		for _, sk := range al.StorageKeys {
 			storageKeys = append(storageKeys, sk)
 		}
-		sk := tinypack.CreateList[primitives.VarLen, primitives.Data32](storageKeys...)
 		accessListEntry := dbt.AccessListEntry{
 			Address:     al.Address,
-			StorageKeys: tinypack.VarList[primitives.Data32]{sk},
+			StorageKeys: storageKeys,
 		}
 		accessListEntries = append(accessListEntries, accessListEntry)
 	}
-	ake := tinypack.CreateList[primitives.VarLen, dbt.AccessListEntry](accessListEntries...)
-	nearHash := tinypack.CreateNullable[primitives.Data32](nil)
+
+	var nearHash *primitives.Data32
 	if txn.NearTransaction.Hash != nil {
 		nh := primitives.Data32(*txn.NearTransaction.Hash)
-		nearHash = tinypack.CreateNullable[primitives.Data32](&nh)
+		nearHash = &nh
+	}
+
+	var authorizationList []dbt.Authorization
+	for _, auth := range txn.AuthorizationList {
+		authorizationList = append(authorizationList, dbt.Authorization{
+			ChainId: auth.ChainId,
+			Address: auth.Address,
+			Nonce:   auth.Nonce,
+			YParity: auth.YParity,
+			R:       auth.R,
+			S:       auth.S,
+		})
 	}
 
 	t := dbt.Transaction{
@@ -91,10 +101,12 @@ func IndexerTxnToDbTxn(txn *indexer.Transaction, cumulativeGas primitives.Quanti
 		V:                    txn.V,
 		R:                    txn.R,
 		S:                    txn.S,
+		YParity:              txn.YParity,
 		LogsBloom:            txn.LogsBloom,
-		AccessList:           tinypack.VarList[dbt.AccessListEntry]{ake},
+		AccessList:           accessListEntries,
 		MaxPriorityFeePerGas: txn.MaxPriorityFeePerGas,
 		MaxFeePerGas:         txn.MaxFeePerGas,
+		AuthorizationList:    authorizationList,
 	}
 	return &t
 }
@@ -104,12 +116,11 @@ func IndexerLogToDbLog(log *indexer.Log) *dbt.Log {
 	for _, t := range log.Topics {
 		topics = append(topics, primitives.Data32(t))
 	}
-	t := tinypack.CreateList[primitives.VarLen, primitives.Data32](topics...)
 
 	l := dbt.Log{
 		Address: log.Address,
 		Data:    primitives.VarData(log.Data),
-		Topics:  tinypack.VarList[primitives.Data32]{t},
+		Topics:  topics,
 	}
 	return &l
 }

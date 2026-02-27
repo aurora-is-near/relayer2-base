@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package dbpb;
+
+option go_package = "github.com/aurora-is-near/relayer2-base/db/codec/dbpb";
+
+message Block {
+  bytes parent_hash = 1;
+  bytes miner = 2;
+  uint64 timestamp = 3;
+  bytes gas_limit = 4;
+  bytes gas_used = 5;
+  bytes logs_bloom = 6;
+  bytes transactions_root = 7;
+  bytes state_root = 8;
+  bytes receipts_root = 9;
+  uint64 size = 10;
+}
+
+message Transaction {
+  uint64 type = 1;
+  bytes from = 2;
+  bool is_contract_deployment = 3;
+  optional bytes to_or_contract = 4;
+  bytes nonce = 5;
+  bytes gas_price = 6;
+  bytes gas_limit = 7;
+  uint64 gas_used = 8;
+  bytes cumulative_gas_used = 9;
+  bytes value = 10;
+  bytes input = 11;
+  optional bytes near_hash = 12;
+  bytes near_receipt_hash = 13;
+  bool status = 14;
+  uint64 v = 15;
+  bytes r = 16;
+  bytes s = 17;
+  bytes logs_bloom = 18;
+  repeated AccessListEntry access_list = 19;
+  bytes max_priority_fee_per_gas = 20;
+  bytes max_fee_per_gas = 21;
+  repeated Authorization authorization_list = 22;
+  optional uint32 y_parity = 23;
+}
+
+message AccessListEntry {
+  bytes address = 1;
+  repeated bytes storage_keys = 2;
+}
+
+message Authorization {
+  uint64 chain_id = 1;
+  bytes address = 2;
+  uint64 nonce = 3;
+  uint32 y_parity = 4;
+  bytes r = 5;
+  bytes s = 6;
+}
+
+message Log {
+  bytes address = 1;
+  bytes data = 2;
+  repeated bytes topics = 3;
+}
+
+message BlockKey {
+  uint64 height = 1;
+}
+
+message TransactionKey {
+  uint64 block_height = 1;
+  uint64 transaction_index = 2;
+}
+
+message LogKey {
+  uint64 block_height = 1;
+  uint64 transaction_index = 2;
+  uint64 log_index = 3;
+}
+
+message BlockFilter {
+  uint64 created_at = 1;
+  bytes metadata = 2;
+  BlockKey from = 3;
+  BlockKey next = 4;
+  BlockKey to = 5;
+}
+
+message TransactionFilter {
+  uint64 created_at = 1;
+  bytes metadata = 2;
+  TransactionKey from = 3;
+  TransactionKey next = 4;
+  TransactionKey to = 5;
+}
+
+message LogFilter {
+  uint64 created_at = 1;
+  bytes metadata = 2;
+  LogKey from = 3;
+  LogKey next = 4;
+  LogKey to = 5;
+  repeated bytes addresses = 6;
+  repeated TopicList topics = 7;
+}
+
+message TopicList {
+  repeated bytes topics = 1;
+}
+
+message Data {
+  bytes content = 1;
+}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
 	"github.com/aurora-is-near/relayer2-base/db/badger/core/logscan"
-	tp "github.com/aurora-is-near/relayer2-base/tinypack"
 	"github.com/aurora-is-near/relayer2-base/types/db"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 	"github.com/aurora-is-near/relayer2-base/types/response"
@@ -133,7 +132,7 @@ func (txn *ViewTxn) ReadLogs(
 	}
 }
 
-func processFilter[LD tp.LengthDescriptor](filter []primitives.Data[LD]) (map[string]struct{}, [][]byte) {
+func processFilter[LD primitives.LengthDescriptor](filter []primitives.Data[LD]) (map[string]struct{}, [][]byte) {
 	mapValues := make(map[string]struct{}, len(filter))
 	values := make([][]byte, 0, len(filter))
 	for _, value := range filter {

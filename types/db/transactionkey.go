@@ -7,13 +7,6 @@ type TransactionKey struct {
 	TransactionIndex uint64
 }
 
-func (tk *TransactionKey) GetTinyPackChildrenPointers() ([]any, error) {
-	return []any{
-		&tk.BlockHeight,
-		&tk.TransactionIndex,
-	}, nil
-}
-
 func (tk TransactionKey) Prev() *TransactionKey {
 	if tk.TransactionIndex == 0 {
 		if tk.BlockHeight == 0 {
@@ -41,6 +34,7 @@ func (tk TransactionKey) Next() *TransactionKey {
 }
 
 // CompareTo compares receiver transaction key with the argument transaction key and returns
+//
 //	 0 if they are equal
 //	 1 if receiver is greater than argument
 //	-1 if receiver is smaller than argument

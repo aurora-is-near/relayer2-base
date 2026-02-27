@@ -8,14 +8,6 @@ type LogKey struct {
 	LogIndex         uint64
 }
 
-func (lk *LogKey) GetTinyPackChildrenPointers() ([]any, error) {
-	return []any{
-		&lk.BlockHeight,
-		&lk.TransactionIndex,
-		&lk.LogIndex,
-	}, nil
-}
-
 func (lk LogKey) Prev() *LogKey {
 	if lk.LogIndex == 0 {
 		if lk.TransactionIndex == 0 {
@@ -53,6 +45,7 @@ func (lk LogKey) Next() *LogKey {
 }
 
 // CompareTo compares receiver log key with the argument log key and returns
+//
 //	 0 if they are equal
 //	 1 if receiver is greater than argument
 //	-1 if receiver is smaller than argument

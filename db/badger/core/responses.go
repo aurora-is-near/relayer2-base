@@ -28,7 +28,7 @@ func makeBlockResponse(height uint64, hash primitives.Data32, data dbt.Block, tx
 		gasUsed = primitives.QuantityFromUint64(*utils.Constants.GasLimit())
 	}
 
-	return &response.Block{
+	block := &response.Block{
 		BaseFeePerGas:    tweaks.BaseFeePerGas(),
 		Number:           primitives.HexUint(height),
 		Hash:             hash,
@@ -51,6 +51,7 @@ func makeBlockResponse(height uint64, hash primitives.Data32, data dbt.Block, tx
 		Transactions:     txs,
 		Uncles:           uncles,
 	}
+	return block
 }
 
 func makeTransactionResponse(
@@ -64,10 +65,7 @@ func makeTransactionResponse(
 	// It is not allowed to burn more gas than the gas limit. However, because of an error there were
 	// invalid gas consumption records. Below control is added to support the following fix.
 	// https://github.com/aurora-is-near/aurora-relayer/pull/348/files
-	gas := data.GasLimit.Uint64()
-	if gas > *utils.Constants.GasLimit() {
-		gas = *utils.Constants.GasLimit()
-	}
+	gas := min(data.GasLimit.Uint64(), *utils.Constants.GasLimit())
 
 	tx := &response.Transaction{
 		BlockHash:        blockHash,
@@ -86,26 +84,47 @@ func makeTransactionResponse(
 		Type:             primitives.HexUint(data.Type),
 	}
 	if !data.IsContractDeployment {
-		tx.To = data.ToOrContract.Ptr
+		tx.To = data.ToOrContract
 	}
-	if data.Type >= 1 {
-		accessList := make([]*response.AccessListEntry, len(data.AccessList.Content))
-		for i, alEntry := range data.AccessList.Content {
+	switch {
+	case data.Type > 4:
+		tx.Type = primitives.HexUint(0)
+	case data.Type >= 1:
+		cid := primitives.HexUint(chainId)
+		tx.ChainID = &cid
+		if data.YParity != nil {
+			yParity := primitives.HexUint(*data.YParity)
+			tx.YParity = &yParity
+		} else if data.V == 0 || data.V == 1 {
+			yParity := primitives.HexUint(data.V)
+			tx.YParity = &yParity
+		}
+		accessList := make([]*response.AccessListEntry, len(data.AccessList))
+		for i, alEntry := range data.AccessList {
 			accessList[i] = &response.AccessListEntry{
 				Address:     alEntry.Address,
-				StorageKeys: alEntry.StorageKeys.Content,
+				StorageKeys: alEntry.StorageKeys,
 			}
 		}
 		tx.AccessList = &accessList
-	}
-	if data.Type == 2 {
-		chainId := primitives.HexUint(chainId)
-		tx.ChainID = &chainId
-		tx.MaxPriorityFeePerGas = &data.MaxPriorityFeePerGas
-		tx.MaxFeePerGas = &data.MaxFeePerGas
-	}
-	if data.Type > 2 {
-		tx.Type = primitives.HexUint(0)
+		if data.Type >= 2 {
+			tx.MaxPriorityFeePerGas = &data.MaxPriorityFeePerGas
+			tx.MaxFeePerGas = &data.MaxFeePerGas
+		}
+		if data.Type == 4 {
+			authList := make([]*response.AuthorizationEntry, len(data.AuthorizationList))
+			for i, auth := range data.AuthorizationList {
+				authList[i] = &response.AuthorizationEntry{
+					ChainID: primitives.HexUint(auth.ChainId),
+					Address: auth.Address,
+					Nonce:   primitives.HexUint(auth.Nonce),
+					YParity: primitives.HexUint(auth.YParity),
+					R:       auth.R,
+					S:       auth.S,
+				}
+			}
+			tx.AuthorizationList = authList
+		}
 	}
 
 	return tx
@@ -128,7 +147,7 @@ func makeLogResponse(
 		BlockHash:        blockHash,
 		BlockNumber:      primitives.HexUint(height),
 		Address:          data.Address,
-		Topics:           data.Topics.Content,
+		Topics:           data.Topics,
 		Data:             data.Data,
 	}
 }
@@ -144,10 +163,7 @@ func makeTransactionReceiptResponse(
 	// It is not allowed to burn more gas than the gas limit. However, because of an error there were
 	// invalid gas consumption records. Below control is added to support the following fix.
 	// https://github.com/aurora-is-near/aurora-relayer/pull/348/files
-	gasUsed := txData.GasUsed
-	if txData.GasUsed > *utils.Constants.GasLimit() {
-		gasUsed = *utils.Constants.GasLimit()
-	}
+	gasUsed := min(txData.GasUsed, *utils.Constants.GasLimit())
 
 	txReceipt := &response.TransactionReceipt{
 		BlockHash:         blockHash,
@@ -164,19 +180,19 @@ func makeTransactionReceiptResponse(
 		Type:              primitives.HexUint(txData.Type),
 	}
 	if txData.IsContractDeployment {
-		txReceipt.ContractAddress = txData.ToOrContract.Ptr
+		txReceipt.ContractAddress = txData.ToOrContract
 	} else {
-		txReceipt.To = txData.ToOrContract.Ptr
+		txReceipt.To = txData.ToOrContract
 	}
 	if txData.Status {
 		txReceipt.Status = 1
 	} else {
 		txReceipt.Status = 0
 	}
-	if txData.NearHash.Ptr != nil {
-		txReceipt.NearTransactionHash = *txData.NearHash.Ptr
+	if txData.NearHash != nil {
+		txReceipt.NearTransactionHash = *txData.NearHash
 	}
-	if txData.Type > 2 {
+	if txData.Type > 4 {
 		txReceipt.Type = primitives.HexUint(0)
 	}
 

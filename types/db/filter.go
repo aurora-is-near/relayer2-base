@@ -1,7 +1,6 @@
 package db
 
 import (
-	tp "github.com/aurora-is-near/relayer2-base/tinypack"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 )
 
@@ -13,16 +12,6 @@ type BlockFilter struct {
 	To        BlockKey
 }
 
-func (f *BlockFilter) GetTinyPackChildrenPointers() ([]any, error) {
-	return []any{
-		&f.CreatedAt,
-		&f.Metadata,
-		&f.From,
-		&f.Next,
-		&f.To,
-	}, nil
-}
-
 type TransactionFilter struct {
 	CreatedAt uint64
 	Metadata  primitives.VarData
@@ -31,34 +20,12 @@ type TransactionFilter struct {
 	To        TransactionKey
 }
 
-func (f *TransactionFilter) GetTinyPackChildrenPointers() ([]any, error) {
-	return []any{
-		&f.CreatedAt,
-		&f.Metadata,
-		&f.From,
-		&f.Next,
-		&f.To,
-	}, nil
-}
-
 type LogFilter struct {
 	CreatedAt uint64
 	Metadata  primitives.VarData
 	From      LogKey
 	Next      LogKey
 	To        LogKey
-	Addresses tp.VarList[primitives.Data20]
-	Topics    tp.VarList[tp.VarList[primitives.Data32]]
-}
-
-func (f *LogFilter) GetTinyPackChildrenPointers() ([]any, error) {
-	return []any{
-		&f.CreatedAt,
-		&f.Metadata,
-		&f.From,
-		&f.Next,
-		&f.To,
-		&f.Addresses,
-		&f.Topics,
-	}, nil
+	Addresses []primitives.Data20
+	Topics    [][]primitives.Data32
 }

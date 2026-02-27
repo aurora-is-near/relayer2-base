@@ -179,10 +179,10 @@ func (lf *logFetcher) processItem(item *logFetch) (*response.Log, error) {
 		if len(topicFilter) == 0 {
 			continue
 		}
-		if i >= len(item.data.Topics.Content) {
+		if i >= len(item.data.Topics) {
 			return nil, nil
 		}
-		if _, ok := topicFilter[string(item.data.Topics.Content[i].Bytes())]; !ok {
+		if _, ok := topicFilter[string(item.data.Topics[i].Bytes())]; !ok {
 			return nil, nil
 		}
 	}

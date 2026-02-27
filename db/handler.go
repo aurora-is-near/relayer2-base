@@ -30,7 +30,7 @@ type BlockHandler interface {
 
 	GetLogs(ctx context.Context, filter *db.LogFilter) ([]*response.Log, error)
 	GetFilterLogs(ctx context.Context, filter *db.LogFilter) ([]*response.Log, error)
-	GetFilterChanges(ctx context.Context, filter any) (*[]interface{}, error)
+	GetFilterChanges(ctx context.Context, filter any) (*[]any, error)
 
 	BlockHashToNumber(ctx context.Context, hash common.H256) (*uint64, error)
 	BlockNumberToHash(ctx context.Context, number common.BN64) (*string, error)
@@ -73,5 +73,8 @@ func (h StoreHandler) Close() error {
 	if err != nil {
 		errs = append(errs, err.Error())
 	}
-	return fmt.Errorf(strings.Join(errs, "\n"))
+	if len(errs) == 0 {
+		return nil
+	}
+	return fmt.Errorf("%s", strings.Join(errs, "\n"))
 }

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/aurora-is-near/relayer2-base/db/badger/core/dbkey"
-	"github.com/aurora-is-near/relayer2-base/tinypack"
 	"github.com/aurora-is-near/relayer2-base/types/db"
 	"github.com/aurora-is-near/relayer2-base/types/primitives"
 )
@@ -45,18 +44,13 @@ func (f *Filter) ToLogFilter() *db.LogFilter {
 		tl = *f.ToLog
 	}
 
-	var topics []tinypack.VarList[primitives.Data32]
-	for _, t := range f.Topics {
-		topic := tinypack.VarList[primitives.Data32]{tinypack.CreateList[primitives.VarLen, primitives.Data32](t...)}
-		topics = append(topics, topic)
-	}
 	return &db.LogFilter{
 		CreatedAt: uint64(time.Now().UnixNano()),
 		Metadata:  primitives.VarDataFromBytes(nil),
 		From:      db.LogKey{BlockHeight: fb, TransactionIndex: ft, LogIndex: fl},
 		To:        db.LogKey{BlockHeight: tb, TransactionIndex: tt, LogIndex: tl},
-		Addresses: tinypack.VarList[primitives.Data20]{tinypack.CreateList[primitives.VarLen, primitives.Data20](f.Addresses...)},
-		Topics:    tinypack.VarList[tinypack.VarList[primitives.Data32]]{tinypack.CreateList[primitives.VarLen, tinypack.VarList[primitives.Data32]](topics...)},
+		Addresses: f.Addresses,
+		Topics:    f.Topics,
 	}
 }
 

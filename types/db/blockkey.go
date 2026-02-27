@@ -6,12 +6,6 @@ type BlockKey struct {
 	Height uint64
 }
 
-func (bk *BlockKey) GetTinyPackChildrenPointers() ([]any, error) {
-	return []any{
-		&bk.Height,
-	}, nil
-}
-
 func (bk BlockKey) Prev() *BlockKey {
 	if bk.Height == 0 {
 		return nil
@@ -29,6 +23,7 @@ func (bk BlockKey) Next() *BlockKey {
 }
 
 // CompareTo compares receiver block key with the argument block key and returns
+//
 //	 0 if they are equal
 //	 1 if receiver is greater than argument
 //	-1 if receiver is smaller than argument

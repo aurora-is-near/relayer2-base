@@ -168,8 +168,8 @@ func (e *EthProcessorAware) UninstallFilter(ctx context.Context, filterId common
 	}, filterId)
 }
 
-func (e *EthProcessorAware) GetFilterChanges(ctx context.Context, filterId common.Uint256) (*[]interface{}, error) {
-	return Process(ctx, "eth_getFilterChanges", e.Endpoint, func(ctx context.Context) (*[]interface{}, error) {
+func (e *EthProcessorAware) GetFilterChanges(ctx context.Context, filterId common.Uint256) (*[]any, error) {
+	return Process(ctx, "eth_getFilterChanges", e.Endpoint, func(ctx context.Context) (*[]any, error) {
 		return e.Eth.GetFilterChanges(ctx, filterId)
 	}, filterId)
 }

@@ -157,7 +157,7 @@ func (h *handler) call(ctx *context.Context, args []reflect.Value) (res interfac
 			const size = 64 << 10
 			buf := make([]byte, size)
 			buf = buf[:runtime.Stack(buf, false)]
-			log.Log().Error().Msgf("RPC method " + h.name + " crashed: " + fmt.Sprintf("%v\n%s", err, buf))
+			log.Log().Error().Msgf("RPC method %s crashed: %v\n%s", h.name, err, buf)
 			errRes = errors.New("method handler crashed")
 		}
 	}()
